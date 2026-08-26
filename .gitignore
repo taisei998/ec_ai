@@ -21,3 +21,7 @@ _ローカル専用（共有しない）/
 ~$*
 Thumbs.db
 desktop.ini
+
+# Python
+__pycache__/
+*.pyc

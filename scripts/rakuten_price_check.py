@@ -37,6 +37,7 @@ import urllib.parse
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone, timedelta
+from lib_unit_parser import normalize, parse_unit as _shared_parse_unit
 
 JST = timezone(timedelta(hours=9))
 
@@ -87,90 +88,10 @@ def load_items():
     return [it for it in items if it.get("keyword") and it.get("price")]
 
 
-def normalize(s):
-    return (s or "").replace("×", "x").replace("＊", "x").replace("*", "x")
-
-
-def _strip_max_phrases(s):
-    """
-    「最大約10kg」「上限20本」のような、実際の内容量ではなく上限を示す表現を消す。
-    これを内容量として読むと単価が実際より安く見え、誤解を招くため。
-    （実例：「河内晩柑 1.5kg ... 最大約 10kg」を10kgと読み 222円/kg と誤表示していた）
-
-    「6本／10本入り」のような選択式はここでは消さない。
-    自社の内容量に一致する選択肢を後段で選べるほうが実用的なため。
-    """
-    return re.sub(r"(?:最大|最大で|上限)\s*(?:約)?\s*\d+(?:\.\d+)?\s*(?:kg|Kg|KG|キロ|g|G|本|個|袋|パック)",
-                  " ", s)
-
-
 def parse_unit(item, mode, count_hint):
-    """
-    参考用の単価を求める。
-    mode="count" なら「円/個」、mode="weight" なら「円/kg」。
-    読めない・信頼できない場合は (None, None)。
-
-    自社の内容量(count_hint)から大きく外れるものは、比較対象として意味がないため
-    単価を出さない（例：45本入りを見ているのに5本セットの単価を並べても混乱するだけ）。
-    """
-    price = item["itemPrice"]
-    for field in ("catchcopy", "itemName"):
-        s = normalize(item.get(field))
-        if not s:
-            continue
-        s = _strip_max_phrases(s)
-
-        if mode == "weight":
-            cands = []
-            for m in re.finditer(r"(?:約)?\s*(\d+(?:\.\d+)?)\s*(?:kg|Kg|KG|キロ)", s):
-                kg = float(m.group(1))
-                if 0.3 <= kg <= 30:
-                    cands.append(kg)
-            for m in re.finditer(r"(?:約)?\s*(\d{3,5})\s*g\b", s):
-                kg = int(m.group(1)) / 1000
-                if 0.3 <= kg <= 30:
-                    cands.append(kg)
-            if not cands:
-                continue
-            # 複数の重量が併記されている場合は、自社の内容量に最も近いものを採る
-            ambiguous = len(set(cands)) > 1
-            kg = min(cands, key=lambda v: abs(v - count_hint)) if count_hint else min(cands)
-            if not _within_range(kg, count_hint):
-                return None, None
-            return price / kg, f"{kg}kg" + ("?" if ambiguous else "")
-
-        cands = []
-        for pat in (r"\d{3,4}\s*(?:ml|mL|ML|g|G)\s*x?\s*(\d{1,3})\s*(?:本|個|袋|パック)",
-                    r"(?:計|合計)\s*(\d{1,3})\s*(?:本|個|袋|パック)",
-                    r"(\d{1,3})\s*(?:本|個|袋|パック)入",
-                    r"x\s*(\d{1,3})\s*(?:本|個|袋|パック)",
-                    # 「ピュアホワイト 6本」のように単独で書かれている場合も拾う。
-                    # ただしサイズ表記（2L等）を誤って拾わないよう単位を限定する。
-                    r"(?<![\d.])(\d{1,2})\s*本(?![入り]*パック)"):
-            for m in re.finditer(pat, s):
-                n = int(m.group(1))
-                if 1 <= n <= 200:
-                    cands.append(n)
-        if not cands:
-            continue
-
-        # 「6本／10本入り」のように複数の選択肢がある場合、表示価格がどちらの
-        # ものかは判別できない。自社と同じ数量の選択肢を採用しつつ、印を付けて
-        # 「価格が対応しているか要確認」と分かるようにする。
-        ambiguous = len(set(cands)) > 1
-        n = min(cands, key=lambda v: abs(v - count_hint)) if count_hint else min(cands)
-        if not _within_range(n, count_hint):
-            return None, None
-        label = f"{n}個" + ("?" if ambiguous else "")
-        return price / n, label
-    return None, None
-
-
-def _within_range(value, hint):
-    """自社の内容量から大きく外れていないか（0.5〜2倍を目安とする）。"""
-    if not hint:
-        return True
-    return hint * 0.5 <= value <= hint * 2.0
+    """商品(catchcopy優先→itemName)から単価を推定する薄いラッパー。実装は lib_unit_parser 共通。"""
+    texts = [item.get("catchcopy"), item.get("itemName")]
+    return _shared_parse_unit(item["itemPrice"], texts, mode, count_hint)
 
 
 def search(app_id, access_key, keyword, min_price=None, max_price=None,

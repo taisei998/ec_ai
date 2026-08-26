@@ -90,3 +90,61 @@ python scripts/rakuten_price_check.py --verbose
 | accessKey の渡し方 | **クエリパラメータ**。ヘッダー方式は環境により通らないことがある |
 
 旧仕様（`app.rakuten.co.jp/services/api/...` に19桁の数字IDだけ）は使えない。
+
+---
+
+## amazon_price_check.py
+
+Amazonで競合価格を調べる、楽天版と同じ方針のスクリプト。
+
+### 使い方
+
+```bash
+python scripts/amazon_price_check.py
+python scripts/amazon_price_check.py --json
+```
+
+### 監視商品の設定
+
+`監視商品.json` の `keyword` を楽天とAmazonで共用する。Amazon用に別の
+キーワードを使いたい場合だけ `amazon_keyword` を追加すれば、そちらが優先される。
+
+```json
+{
+  "name": "熊本イオン純天然水",
+  "keyword": "天然水 500ml",
+  "amazon_keyword": "天然水 500ml 45本",
+  "price": 2250,
+  "unit_size": "500ml×45本",
+  "unit_count": 45,
+  "unit_mode": "count"
+}
+```
+
+### 鍵
+
+`_ローカル専用（共有しない）/ここに鍵を置きます.md` の
+`### Amazon SP-API` セクションから `Client ID` / `Client Secret` / `Refresh Token`
+を読み込む。実行のたびにLWAでアクセストークンを発行する（有効期限1時間）。
+
+### 実装上の重要な注意（実データ検証で判明したこと）
+
+**1. 2段構成のAPI呼び出し**
+楽天は検索結果に価格が含まれる1段構成だったが、Amazonは
+`searchCatalogItems`（キーワード→ASIN）→ `getItemOffers`（ASIN→価格）の2段構成。
+監視商品1件につき、ASINの数だけPricing APIを呼ぶ。
+
+**2. Pricing APIのレート制限**
+呼び出し間隔を1.2秒にしたところ、実際に **429 QuotaExceeded** が複数件発生した。
+2.2秒に広げて解消。ただし正確な制限値は事前に分からないため、
+429が返った場合は自動で待機・再試行する仕組みも入れてある（`_sp_api_get`の`retries`）。
+
+**3. ロール選択**
+Solution Provider Portalのアプリ登録画面で、キーワード検索
+（`searchCatalogItems`）には「**商品の出品**」ロールが必要（「Catalog」という
+名前の項目は無い）。価格取得（`getItemOffers`）には「**価格**」ロールが必要。
+
+**4. 単価換算ロジックは楽天と共通化**
+内容量の読み取り（`最大約10kg`の誤読対策、選択式表記の扱い等）は
+`lib_unit_parser.py` に切り出し、楽天・Amazon両方から使っている。
+片方だけ直して他方が古いままになる事故を防ぐため。
