@@ -3361,6 +3361,27 @@
     return null;
   }
 
+  // クラウド同期を設定していない端末でも、リロードや再ログインでデータが
+  // 消えないよう、ブラウザのlocalStorageに全データを自動保存する。
+  // クラウド同期の接続設定（SYNC_CFG_KEY）とは別のキーで、こちらはAIリサーチ・
+  // ニュース・価格アラートの全履歴が対象。
+  var LOCAL_STATE_KEY = "shinshouhin-navi.state";
+  var localSaveTimer = null;
+
+  function saveLocalState(){
+    try {
+      state.updatedAt = syncNowStamp();
+      window.localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(syncBuildPayload()));
+    } catch (e) { /* localStorageが使えない環境では黙って諦める（クラウド同期があればそちらで救済） */ }
+  }
+
+  function loadLocalState(){
+    try {
+      var raw = window.localStorage.getItem(LOCAL_STATE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
   function syncSetStatus(kind, text){
     var pill = document.getElementById("syncPill");
     var pillText = document.getElementById("syncPillText");
@@ -3478,6 +3499,12 @@
 
   // 変更が起きたことを記録し、少し待ってからまとめて保存する（連続入力での多重送信を防ぐ）
   function markDirty(){
+    // ローカル保存はクラウド同期の設定有無に関わらず必ず行う。
+    // クラウド同期は任意機能なので、設定していない端末でもリロード・再ログインで
+    // データが消えないようにするための最終防衛線（実際にこれが無く消える不具合が起きていた）。
+    if (localSaveTimer) clearTimeout(localSaveTimer);
+    localSaveTimer = setTimeout(function(){ saveLocalState(); }, 1500);
+
     if (!sync.enabled) return;
     sync.dirty = true;
     syncSetStatus("busy", "未保存の変更があります");
@@ -3931,6 +3958,12 @@
   })();
 
   // init
+  // クラウド同期を使っていない端末でも、直前までの入力・履歴をlocalStorageから復元する。
+  // 保存が無ければ何もせず、通常通り空の初期状態のまま起動する。
+  (function(){
+    var saved = loadLocalState();
+    if (saved) syncApplyRemote(saved);
+  })();
   renderAll();
   goToView("home");
 
