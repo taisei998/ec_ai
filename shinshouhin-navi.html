@@ -510,6 +510,12 @@
     font-size:12.5px; font-weight:600; cursor:pointer; color: var(--text-secondary); font-family:inherit;
   }
   .historyTabBtn.active { background: var(--series-1); border-color: var(--series-1); color:#fff; }
+  .newsCategoryTabs { display:flex; gap:8px; margin-bottom:12px; }
+  .newsCategoryTab {
+    padding:8px 14px; border-radius:8px; border:1px solid var(--border); background: var(--surface-2);
+    font-size:13px; font-weight:600; cursor:pointer; color: var(--text-secondary); font-family:inherit;
+  }
+  .newsCategoryTab.active { background: var(--series-1); border-color: var(--series-1); color:#fff; }
   .historyBody { max-height:52vh; overflow-y:auto; }
   .historyEmpty { font-size:12.5px; color: var(--text-muted); text-align:center; padding:24px 0; margin:0; }
   .historyListRow { padding:10px 0; border-bottom:1px solid var(--grid); }
@@ -872,9 +878,13 @@
   </section>
 
   <section id="view-news" class="topView">
-    <h2>食品業界ニュース</h2>
+    <div class="newsCategoryTabs" id="newsCategoryTabs">
+      <button type="button" class="newsCategoryTab active" data-cat="food">📰 食品業界ニュース</button>
+      <button type="button" class="newsCategoryTab" data-cat="ai">🤖 AIニュース</button>
+    </div>
+    <h2 id="newsCategoryTitle">食品業界ニュース</h2>
     <p class="newsUpdatedAt" id="newsUpdatedAt">保存済みの記録: 0件</p>
-    <p class="hint" style="margin-top:0;">今後伸びそうなジャンル・下がりそうなジャンル・ジャンルを問わず知っておくべき大きなニュースをまとめて表示します。毎朝9時に届く自動要約チャットのJSONをここに貼り付けると、その日付の記録として保存され、日付ごとに履歴を切り替えて閲覧できます。手動で調査を依頼したい場合は、下の依頼文をコピーしてこの会話に貼り付けてください。</p>
+    <p class="hint" id="newsCategoryHint" style="margin-top:0;"></p>
 
     <div class="card" id="newsPromptCard">
       <div class="cardHeader">
@@ -1243,12 +1253,14 @@
   ];
 
   var state = {
-    ui: { theme:null, activeView:"home", selectedNewsDate:null },
+    ui: { theme:null, activeView:"home", selectedNewsDate:null, selectedAiNewsDate:null, activeNewsCategory:"food" },
     aiInput: { name:"", volume:"", category:"", keyword:"", grade:"standard", platforms: PLATFORMS.map(function(p){ return p.key; }) },
     aiResearch: null,
     // 過去に反映したAIリサーチ結果の履歴（新しい順）。「読み込む」で aiResearch に復元できる。
     aiResearchHistory: [],
     newsHistory: [],
+    // AIニュース（ChatGPT/Gemini/Claude等の動向）の履歴。newsHistoryと完全に並行する配列。
+    aiNewsHistory: [],
     // 価格アラート機能のデータ（監視対象モール・監視商品・商品ごとの日別スナップショット履歴）
     priceWatch: {}
   };
@@ -1277,7 +1289,7 @@
     if (v === "home") renderHomeView();
     if (v === "airesearch") renderOutputView();
     if (v === "watch"){ renderPwAll(); }
-    if (v === "news") renderNewsHistory();
+    if (v === "news") renderNewsView();
     window.scrollTo({top:0, behavior:"instant"});
   }
   bottomNavBtns.forEach(function(b){ b.addEventListener("click", function(){ goToView(b.dataset.view); }); });
@@ -3087,7 +3099,24 @@
   // ことはできないため、(1) 毎朝9時に別途届くスケジュール済みチャットのJSON、または
   // (2) 下の依頼文をこの会話に貼り付けて都度リサーチを依頼した結果のJSON、のいずれかを
   // 「調査結果のJSONを貼り付け」欄に貼り付けることで表示を更新する方式にしている。
-  function newsSchemaTemplate(){
+  function newsSchemaTemplate(kind){
+    if (kind === "ai"){
+      return [
+'{',
+'  "updatedAt": "調査日（例: 2026-08-27）",',
+'  "summary": "全体の簡潔な要約（3〜5行程度の文章）",',
+'  "vendorNews": [',
+'    { "vendor": "Claude", "title": "見出し", "summary": "内容の要約", "category": "モデルリリース/製品アップデート/企業動向/業界での位置づけ", "date": "日付（例: 2026-08-27）", "source": "情報源（媒体名等）", "url": "参照URL（あれば。無ければ空文字でよい）" }',
+'  ],',
+'  "claudeTips": [',
+'    { "title": "Tipの見出し", "summary": "説明", "feature": "該当する機能（例: Skills / Scheduled Tasks / Cowork / MCPコネクタ）" }',
+'  ],',
+'  "todayExample": {',
+'    "title": "見出し", "summary": "誰が・何に・どう使ったかの説明", "aiTool": "使われたAIツール（Claude/ChatGPT/Gemini等、不明なら空文字）", "source": "情報源", "url": "参照URL（あれば。無ければ空文字でよい）"',
+'  }',
+'}'
+      ].join("\n");
+    }
     return [
 '{',
 '  "updatedAt": "調査日（例: 2026-08-17）",',
@@ -3105,8 +3134,23 @@
     ].join("\n");
   }
 
-  function buildNewsPrompt(){
+  function buildNewsPrompt(kind){
     var lines = [];
+    if (kind === "ai"){
+      lines.push("ChatGPT・Gemini・Claudeそれぞれの最新動向（新機能・モデル更新・企業ニュース）をWeb検索で調査し、次の観点で整理してください。");
+      lines.push("");
+      lines.push("1. vendorNews: 各社の動向。ChatGPT・Gemini・Claudeは必須。**Claudeは特に深く**（Anthropicの製品アップデート、モデルリリース、企業動向、業界での位置づけ）まとめてください。Grok・Llama・Mistral等、他に特筆すべきAIの動きがあれば追加してください。");
+      lines.push("2. claudeTips: Skills・Scheduled Tasks・Cowork・MCPコネクタなど、Claudeで「すぐ使える」機能のうち、今日時点で参考になる使い方・小技・活用パターンを1〜2個。");
+      lines.push("3. todayExample: 実際に個人や企業がAI（Claude/ChatGPT/Gemini問わず）をどう業務や生活に使っているか、具体的な事例を1つ。ブログ・SNS・レビュー記事等から探してください。特にX（旧Twitter）上で話題になった投稿・スレッドを紹介しているブログ記事・まとめサイト・ニュースサイトを優先的に検索し、「Xで話題」「バズった」「反響を呼んだ」といったキーワードも組み合わせて探してください。");
+      lines.push("");
+      lines.push("必ずその時点の最新情報をWeb検索で確認してから作成してください。該当する情報が少ない項目は、無理に埋めず空配列・空文字にしてください。");
+      lines.push("");
+      lines.push("【回答形式】");
+      lines.push("通常の説明・調査結果の記載に加えて、最後に必ず次のJSONスキーマに沿ったJSONを ```json コードブロックで出力してください（このアプリの「ニュース」画面に貼り戻して表示するために使います）。コメント（//で始まる行）は説明用なので実際のJSONには含めないでください。");
+      lines.push("");
+      lines.push(newsSchemaTemplate("ai"));
+      return lines.join("\n");
+    }
     lines.push("食品業界（食品・飲料・小売・ECモール等）に関する直近のニュースをWeb検索で調査し、次の3つの観点で整理してください。");
     lines.push("");
     lines.push("1. growingGenres: 今後伸びそうな食品ジャンル・カテゴリ（売上増加、トレンド化、新規参入増加等の兆候があるもの）");
@@ -3118,10 +3162,9 @@
     lines.push("【回答形式】");
     lines.push("通常の説明・調査結果の記載に加えて、最後に必ず次のJSONスキーマに沿ったJSONを ```json コードブロックで出力してください（このアプリの「ニュース」画面に貼り戻して表示するために使います）。コメント（//で始まる行）は説明用なので実際のJSONには含めないでください。");
     lines.push("");
-    lines.push(newsSchemaTemplate());
+    lines.push(newsSchemaTemplate("food"));
     return lines.join("\n");
   }
-  document.getElementById("newsPromptText").value = buildNewsPrompt();
 
   document.getElementById("newsCopyPromptBtn").addEventListener("click", function(){
     var text = document.getElementById("newsPromptText").value;
@@ -3160,19 +3203,32 @@
     var w = NEWS_WEEKDAY[new Date(p.y, p.m - 1, p.d).getDay()];
     return p.m + "/" + p.d + "（" + w + "）";
   }
-  // 履歴は updatedAt の降順（新しい日付が先頭）で保持する。
-  function sortNewsHistory(){
-    state.newsHistory.sort(function(a, b){
+  // 履歴は updatedAt の降順（新しい日付が先頭）で保持する。食品・AI共通で使う。
+  function sortNewsHistoryList(list){
+    list.sort(function(a, b){
       return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
     });
   }
+  function sortNewsHistory(){ sortNewsHistoryList(state.newsHistory); }
+  function sortAiNewsHistory(){ sortNewsHistoryList(state.aiNewsHistory); }
 
-  // 日経新聞風の紙面としてレンダリングする。
-  // majorNews の1件目だけをトップ記事（大きな見出し）として扱い、残りを2段組みで並べる。
-  function buildNewsPaperHtml(data){
+  // 新聞紙面ふうの記事カード（見出し・メタ・本文・参照リンク）。食品のmajorNews・
+  // AIのvendorNews/todayExampleなど、共通の「1件の記事」表示に使う。
+  function paperArticleHtml(n, isLead){
+    var meta = [n.date, n.source].filter(Boolean).join("　／　");
+    return "<div class='paperArticle" + (isLead ? " lead" : "") + "'>" +
+      "<h4>" + esc(n.title || "-") + "</h4>" +
+      (meta ? "<p class='paperArticleMeta'>" + esc(meta) + "</p>" : "") +
+      (n.summary ? "<p class='paperBody'>" + esc(n.summary) + "</p>" : "") +
+      (n.url ? "<p style='margin:6px 0 0;'><a href='" + attr(n.url) + "' target='_blank' rel='noopener'>参照リンク →</a></p>" : "") +
+    "</div>";
+  }
+
+  // 日経新聞風の紙面としてレンダリングする。kind: "food" | "ai"。
+  function buildNewsPaperHtml(data, kind){
     var html = "";
     html += "<div class='paperMast'>" +
-      "<h3 class='paperMastTitle'>食品業界日報</h3>" +
+      "<h3 class='paperMastTitle'>" + (kind === "ai" ? "AI業界日報" : "食品業界日報") + "</h3>" +
       "<p class='paperMastSub'>新商品開発ナビ ／ EC事業部</p>" +
     "</div>";
     html += "<div class='paperDateBar'>" +
@@ -3185,6 +3241,68 @@
         "<span class='paperLeadLabel'>総 括</span>" +
         "<p>" + esc(data.summary) + "</p>" +
       "</div>";
+    }
+
+    if (kind === "ai"){
+      var vendorNews = data.vendorNews || [];
+      var claudeNews = vendorNews.filter(function(n){ return n.vendor === "Claude"; });
+      var otherNews = vendorNews.filter(function(n){ return n.vendor !== "Claude"; });
+
+      html += "<div class='paperSection'>" +
+        "<div class='paperSectionHead'><h3>Claudeの動向</h3><span class='paperSectionNote'>CLAUDE</span></div>";
+      if (!claudeNews.length){
+        html += "<p class='paperEmpty'>該当する情報はありませんでした。</p>";
+      } else {
+        html += paperArticleHtml(claudeNews[0], true);
+        if (claudeNews.length > 1){
+          html += "<div class='paperCols'>" + claudeNews.slice(1).map(function(n){ return paperArticleHtml(n, false); }).join("") + "</div>";
+        }
+      }
+      html += "</div>";
+
+      html += "<div class='paperSection'>" +
+        "<div class='paperSectionHead'><h3>各社の動向</h3><span class='paperSectionNote'>OTHER PLAYERS</span></div>";
+      if (!otherNews.length){
+        html += "<p class='paperEmpty'>該当する情報はありませんでした。</p>";
+      } else {
+        html += "<div class='paperCols'>" + otherNews.map(function(n){
+          var labeled = Object.assign({}, n, { title: "【" + (n.vendor || "他") + "】" + (n.title || "-") });
+          return paperArticleHtml(labeled, false);
+        }).join("") + "</div>";
+      }
+      html += "</div>";
+
+      var tips = data.claudeTips || [];
+      html += "<div class='paperSection'>" +
+        "<div class='paperSectionHead'><h3>Claudeの実践Tips</h3><span class='paperSectionNote'>TIPS</span></div>";
+      if (!tips.length){
+        html += "<p class='paperEmpty'>該当する情報はありませんでした。</p>";
+      } else {
+        html += "<div class='paperCols'>" + tips.map(function(t){
+          return "<div class='paperArticle'>" +
+            "<h4>" + esc(t.title || "-") + "</h4>" +
+            (t.feature ? "<p class='paperArticleMeta'>" + esc(t.feature) + "</p>" : "") +
+            (t.summary ? "<p class='paperBody'>" + esc(t.summary) + "</p>" : "") +
+          "</div>";
+        }).join("") + "</div>";
+      }
+      html += "</div>";
+
+      var example = data.todayExample;
+      html += "<div class='paperSection'>" +
+        "<div class='paperSectionHead'><h3>今日の一例</h3><span class='paperSectionNote'>REAL USE</span></div>";
+      if (!example || !example.title){
+        html += "<p class='paperEmpty'>該当する情報はありませんでした。</p>";
+      } else {
+        var meta = [example.aiTool, example.source].filter(Boolean).join("　／　");
+        html += paperArticleHtml(Object.assign({}, example, {
+          date: null, source: meta
+        }), true);
+      }
+      html += "</div>";
+
+      html += "<p class='paperFoot'>本紙はAIによるWeb調査をもとに自動生成した社内向け要約です。掲載内容は必ず一次情報をご確認のうえご活用ください。</p>";
+      return html;
     }
 
     function genreHtml(list, cls, mark){
@@ -3217,18 +3335,9 @@
     if (!major.length){
       html += "<p class='paperEmpty'>該当する情報はありませんでした。</p>";
     } else {
-      function articleHtml(n, isLead){
-        var meta = [n.date, n.source].filter(Boolean).join("　／　");
-        return "<div class='paperArticle" + (isLead ? " lead" : "") + "'>" +
-          "<h4>" + esc(n.title || "-") + "</h4>" +
-          (meta ? "<p class='paperArticleMeta'>" + esc(meta) + "</p>" : "") +
-          (n.summary ? "<p class='paperBody'>" + esc(n.summary) + "</p>" : "") +
-          (n.url ? "<p style='margin:6px 0 0;'><a href='" + attr(n.url) + "' target='_blank' rel='noopener'>参照リンク →</a></p>" : "") +
-        "</div>";
-      }
-      html += articleHtml(major[0], true);
+      html += paperArticleHtml(major[0], true);
       if (major.length > 1){
-        html += "<div class='paperCols'>" + major.slice(1).map(function(n){ return articleHtml(n, false); }).join("") + "</div>";
+        html += "<div class='paperCols'>" + major.slice(1).map(function(n){ return paperArticleHtml(n, false); }).join("") + "</div>";
       }
     }
     html += "</div>";
@@ -3237,12 +3346,36 @@
     return html;
   }
 
-  function renderNewsHistory(){
+  // カテゴリ（食品/AI）ごとの設定を1箇所にまとめる。配列名・選択日付のui欄・
+  // 見出し文言・必須フィールドの検証など、カテゴリで分岐する箇所はすべてここを参照する。
+  var NEWS_CATEGORY = {
+    food: {
+      historyKey: "newsHistory",
+      dateKey: "selectedNewsDate",
+      title: "食品業界ニュース",
+      hint: "今後伸びそうなジャンル・下がりそうなジャンル・ジャンルを問わず知っておくべき大きなニュースをまとめて表示します。毎朝9時に届く自動要約チャットのJSONをここに貼り付けると、その日付の記録として保存され、日付ごとに履歴を切り替えて閲覧できます。手動で調査を依頼したい場合は、下の依頼文をコピーしてこの会話に貼り付けてください。",
+      placeholder: "毎朝の自動要約チャット、またはClaudeへの依頼で返ってきたJSON部分（```json 〜 ``` の中身）をここに貼り付けてください",
+      hasContent: function(d){ return Array.isArray(d.growingGenres) || Array.isArray(d.decliningGenres) || Array.isArray(d.majorNews); },
+      invalidMsg: "JSON形式が想定と異なります（growingGenres / decliningGenres / majorNews のいずれも見つかりません）。"
+    },
+    ai: {
+      historyKey: "aiNewsHistory",
+      dateKey: "selectedAiNewsDate",
+      title: "AIニュース",
+      hint: "ChatGPT・Gemini・Claudeの最新動向（特にClaudeは深く）、Claudeの実践Tips、実際の活用事例をまとめて表示します。下の依頼文をコピーしてこの会話に貼り付けると調査を依頼できます。返ってきたJSONを貼り付けると、その日付の記録として保存されます。",
+      placeholder: "Claudeへの依頼で返ってきたJSON部分（```json 〜 ``` の中身）をここに貼り付けてください",
+      hasContent: function(d){ return Array.isArray(d.vendorNews) || Array.isArray(d.claudeTips) || (d.todayExample && typeof d.todayExample === "object"); },
+      invalidMsg: "JSON形式が想定と異なります（vendorNews / claudeTips / todayExample のいずれも見つかりません）。"
+    }
+  };
+
+  function renderNewsHistory(kind){
+    var cfg = NEWS_CATEGORY[kind];
     var rowEl = document.getElementById("newsHistoryRow");
     var cardEl = document.getElementById("newsHistoryCard");
     var reportEl = document.getElementById("newsReport");
     var countEl = document.getElementById("newsUpdatedAt");
-    var list = state.newsHistory || [];
+    var list = state[cfg.historyKey] || [];
 
     countEl.textContent = list.length
       ? "保存済みの記録: " + list.length + "件（最新: " + formatNewsDateLong(list[0].updatedAt) + "）"
@@ -3257,27 +3390,52 @@
     cardEl.hidden = false;
 
     // 選択中の日付が履歴に無ければ最新にフォールバックする
-    var selected = state.ui.selectedNewsDate;
+    var selected = state.ui[cfg.dateKey];
     var found = list.filter(function(e){ return e.updatedAt === selected; })[0];
-    if (!found){ found = list[0]; state.ui.selectedNewsDate = found.updatedAt; }
+    if (!found){ found = list[0]; state.ui[cfg.dateKey] = found.updatedAt; }
 
     rowEl.innerHTML = list.map(function(e){
-      var active = e.updatedAt === state.ui.selectedNewsDate ? " active" : "";
+      var active = e.updatedAt === state.ui[cfg.dateKey] ? " active" : "";
       return "<button type='button' class='newsDateChip" + active + "' data-date='" + attr(e.updatedAt) + "'>" +
         esc(formatNewsDateShort(e.updatedAt)) + "</button>";
     }).join("");
     rowEl.querySelectorAll(".newsDateChip").forEach(function(b){
       b.addEventListener("click", function(){
-        state.ui.selectedNewsDate = b.dataset.date;
-        renderNewsHistory();
+        state.ui[cfg.dateKey] = b.dataset.date;
+        renderNewsHistory(kind);
       });
     });
 
-    document.getElementById("newsPaper").innerHTML = buildNewsPaperHtml(found);
+    document.getElementById("newsPaper").innerHTML = buildNewsPaperHtml(found, kind);
     reportEl.hidden = false;
   }
 
+  // トップ画面のニュース画面全体（タイトル・説明文・依頼文・履歴表示）を、
+  // 現在選択中のカテゴリ（state.ui.activeNewsCategory）に合わせてまとめて更新する。
+  function renderNewsView(){
+    var kind = state.ui.activeNewsCategory || "food";
+    var cfg = NEWS_CATEGORY[kind];
+    document.getElementById("newsCategoryTitle").textContent = cfg.title;
+    document.getElementById("newsCategoryHint").textContent = cfg.hint;
+    document.getElementById("newsResultInput").placeholder = cfg.placeholder;
+    document.getElementById("newsPromptText").value = buildNewsPrompt(kind);
+    document.querySelectorAll("#newsCategoryTabs .newsCategoryTab").forEach(function(b){
+      b.classList.toggle("active", b.dataset.cat === kind);
+    });
+    newsShowError("");
+    renderNewsHistory(kind);
+  }
+
+  document.querySelectorAll("#newsCategoryTabs .newsCategoryTab").forEach(function(b){
+    b.addEventListener("click", function(){
+      state.ui.activeNewsCategory = b.dataset.cat;
+      renderNewsView();
+    });
+  });
+
   document.getElementById("newsApplyBtn").addEventListener("click", function(){
+    var kind = state.ui.activeNewsCategory || "food";
+    var cfg = NEWS_CATEGORY[kind];
     var raw = document.getElementById("newsResultInput").value.trim();
     if (!raw){ newsShowError("JSONを貼り付けてください。"); return; }
     var m = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -3285,8 +3443,8 @@
     var data;
     try { data = JSON.parse(raw); }
     catch(err){ newsShowError("JSONの解析に失敗しました。貼り付けた内容を確認してください（" + err.message + "）。"); return; }
-    if (!data || (!Array.isArray(data.growingGenres) && !Array.isArray(data.decliningGenres) && !Array.isArray(data.majorNews))){
-      newsShowError("JSON形式が想定と異なります（growingGenres / decliningGenres / majorNews のいずれも見つかりません）。");
+    if (!data || !cfg.hasContent(data)){
+      newsShowError(cfg.invalidMsg);
       return;
     }
     // updatedAtが無いJSONも履歴に残せるよう、その場合は当日の日付を採番する
@@ -3296,13 +3454,13 @@
       data.updatedAt = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
     }
     newsShowError("");
-    if (!Array.isArray(state.newsHistory)) state.newsHistory = [];
+    if (!Array.isArray(state[cfg.historyKey])) state[cfg.historyKey] = [];
     // 同じ日付の記録は上書きする
-    state.newsHistory = state.newsHistory.filter(function(e){ return e.updatedAt !== data.updatedAt; });
-    state.newsHistory.push(data);
-    sortNewsHistory();
-    state.ui.selectedNewsDate = data.updatedAt;
-    renderNewsHistory();
+    state[cfg.historyKey] = state[cfg.historyKey].filter(function(e){ return e.updatedAt !== data.updatedAt; });
+    state[cfg.historyKey].push(data);
+    sortNewsHistoryList(state[cfg.historyKey]);
+    state.ui[cfg.dateKey] = data.updatedAt;
+    renderNewsHistory(kind);
     markDirty();
   });
 
@@ -3327,16 +3485,20 @@
         timer = setTimeout(disarm, 4000);
         return;
       }
-      var target = state.ui.selectedNewsDate;
-      state.newsHistory = (state.newsHistory || []).filter(function(e){ return e.updatedAt !== target; });
-      state.ui.selectedNewsDate = state.newsHistory.length ? state.newsHistory[0].updatedAt : null;
+      var kind = state.ui.activeNewsCategory || "food";
+      var cfg = NEWS_CATEGORY[kind];
+      var target = state.ui[cfg.dateKey];
+      state[cfg.historyKey] = (state[cfg.historyKey] || []).filter(function(e){ return e.updatedAt !== target; });
+      state.ui[cfg.dateKey] = state[cfg.historyKey].length ? state[cfg.historyKey][0].updatedAt : null;
       disarm();
-      renderNewsHistory();
+      renderNewsHistory(kind);
       markDirty();
     });
   })();
 
   document.getElementById("newsPrintBtn").addEventListener("click", function(){ window.print(); });
+
+  renderNewsView();
 
   // ---------- CLOUD SYNC (SharePoint via Power Automate) ----------
   // 設計上の注意:
@@ -3410,6 +3572,7 @@
       aiResearch: state.aiResearch,
       aiResearchHistory: arhEnsureState(),
       newsHistory: state.newsHistory,
+      aiNewsHistory: state.aiNewsHistory,
       priceWatch: pwEnsureState(),
       updatedAt: state.updatedAt || syncNowStamp()
     };
@@ -3421,11 +3584,13 @@
     state.aiResearch = typeof remote.aiResearch === "undefined" ? null : remote.aiResearch;
     state.aiResearchHistory = Array.isArray(remote.aiResearchHistory) ? remote.aiResearchHistory : [];
     state.newsHistory = Array.isArray(remote.newsHistory) ? remote.newsHistory : [];
+    state.aiNewsHistory = Array.isArray(remote.aiNewsHistory) ? remote.aiNewsHistory : [];
     // 旧形式（{prices:{}}）は非互換のため引き継がず、新形式の空状態にフォールバックする
     state.priceWatch = (remote.priceWatch && typeof remote.priceWatch === "object" && Array.isArray(remote.priceWatch.items)) ? remote.priceWatch : {};
     pwEnsureState();
     state.updatedAt = remote.updatedAt || syncNowStamp();
     sortNewsHistory();
+    sortAiNewsHistory();
     renderAll();
     return true;
   }
@@ -3602,14 +3767,16 @@
         if (!state.aiInput) state.aiInput = { name:"", volume:"", category:"", keyword:"", grade:"standard", platforms: PLATFORMS.map(function(p){ return p.key; }) };
         if (typeof state.aiResearch === "undefined") state.aiResearch = null;
         state.aiResearchHistory = Array.isArray(loaded.aiResearchHistory) ? loaded.aiResearchHistory : [];
-        if (!state.ui) state.ui = { theme:null, activeView:"home", selectedNewsDate:null };
+        if (!state.ui) state.ui = { theme:null, activeView:"home", selectedNewsDate:null, selectedAiNewsDate:null, activeNewsCategory:"food" };
         // priceWatch が無い/旧形式（{prices:{}}）のファイルでも落ちないようにする。
         // 旧形式は商品名・内容量・キーワードを持たず今回のデータ構造と非互換のため、新形式の空状態にリセットする。
         state.priceWatch = (loaded.priceWatch && typeof loaded.priceWatch === "object" && Array.isArray(loaded.priceWatch.items)) ? loaded.priceWatch : {};
         pwEnsureState();
         // 読み込みは「そのファイルの内容に置き換える」挙動にする（メモリ上の履歴と混ざらないようにする）
         state.newsHistory = Array.isArray(loaded.newsHistory) ? loaded.newsHistory : [];
+        state.aiNewsHistory = Array.isArray(loaded.aiNewsHistory) ? loaded.aiNewsHistory : [];
         state.ui.selectedNewsDate = null;
+        state.ui.selectedAiNewsDate = null;
         // 旧形式（単一のnews）で保存されたファイルを、日付ごとの履歴形式に移行する
         if (state.news && typeof state.news === "object"){
           if (!state.news.updatedAt) state.news.updatedAt = "不明";
@@ -3618,6 +3785,7 @@
           delete state.news;
         }
         sortNewsHistory();
+        sortAiNewsHistory();
         renderAll();
         goToView("home");
       } catch(err){
@@ -3653,7 +3821,8 @@
     pwBuildMallUrlInputs();
     renderPwAll();
     if (!Array.isArray(state.newsHistory)) state.newsHistory = [];
-    renderNewsHistory();
+    if (!Array.isArray(state.aiNewsHistory)) state.aiNewsHistory = [];
+    renderNewsView();
     renderHomeView();
     renderOutputView();
   }
@@ -3790,15 +3959,34 @@
 
   function renderHistoryNewsTab(){
     var el = document.getElementById("historyBodyNews");
-    var list = state.newsHistory || [];
-    if (!list.length){ el.innerHTML = "<p class='historyEmpty'>まだニュースの記録がありません。</p>"; return; }
-    el.innerHTML = list.map(function(e){
-      return "<div class='historyListRow'><button type='button' class='newsDateChip' data-date='" + attr(e.updatedAt) + "' style='width:100%; text-align:left;'>" +
-        esc(formatNewsDateLong(e.updatedAt)) + "</button></div>";
-    }).join("");
+    var kind = state.ui.activeNewsCategory || "food";
+    var cfg = NEWS_CATEGORY[kind];
+    var list = state[cfg.historyKey] || [];
+
+    var tabsHtml = "<div class='newsCategoryTabs' id='historyNewsCategoryTabs'>" +
+      "<button type='button' class='newsCategoryTab" + (kind === "food" ? " active" : "") + "' data-cat='food'>📰 食品業界ニュース</button>" +
+      "<button type='button' class='newsCategoryTab" + (kind === "ai" ? " active" : "") + "' data-cat='ai'>🤖 AIニュース</button>" +
+    "</div>";
+
+    var listHtml = !list.length
+      ? "<p class='historyEmpty'>まだ" + (kind === "ai" ? "AIニュース" : "ニュース") + "の記録がありません。</p>"
+      : list.map(function(e){
+          return "<div class='historyListRow'><button type='button' class='newsDateChip' data-date='" + attr(e.updatedAt) + "' style='width:100%; text-align:left;'>" +
+            esc(formatNewsDateLong(e.updatedAt)) + "</button></div>";
+        }).join("");
+
+    el.innerHTML = tabsHtml + listHtml;
+
+    el.querySelectorAll("#historyNewsCategoryTabs .newsCategoryTab").forEach(function(b){
+      b.addEventListener("click", function(){
+        state.ui.activeNewsCategory = b.dataset.cat;
+        renderHistoryNewsTab();
+      });
+    });
+
     el.querySelectorAll("[data-date]").forEach(function(btn){
       btn.addEventListener("click", function(){
-        state.ui.selectedNewsDate = btn.dataset.date;
+        state.ui[cfg.dateKey] = btn.dataset.date;
         closeHistoryModal();
         goToView("news");
       });

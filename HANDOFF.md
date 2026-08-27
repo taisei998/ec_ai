@@ -260,8 +260,8 @@ Amazonについてはもう古い。** `scripts/rakuten_price_check.py` と `scr
 
 ## ニュース機能
 
-- 下部ナビの「ニュース」から、食品業界ニュースの要約を日経新聞風レイアウトで表示します
-  （`.newsPaper` 関連CSS、`buildNewsPaperHtml()`）。
+- 下部ナビの「ニュース」から、ニュースの要約を日経新聞風レイアウトで表示します
+  （`.newsPaper` 関連CSS、`buildNewsPaperHtml(data, kind)`）。
 - 貼り付けるJSONの `updatedAt`（日付）ごとに1レコードとして保存し、日付タブで
   過去分を切り替えて閲覧できます。同じ日付を再度貼り付けると上書き。
 - **毎朝9時（日本時間）に自動でニュース調査を行うスケジュールタスクを、開発時のClaude
@@ -270,7 +270,39 @@ Amazonについてはもう古い。** `scripts/rakuten_price_check.py` と `scr
   トリガーのプロンプト内容（本ファイルと同じリポジトリのコミット履歴、または元の会話ログに
   記載）を参考に、新しいアカウント側で `create_trigger` を作り直す必要があります。
   プロンプトの要点：食品業界ニュースをWeb検索→growingGenres/decliningGenres/majorNewsの
-  3分類でJSON化→ユーザーにチャットで送る、という内容です。
+  3分類でJSON化→ユーザーにチャットで送る、という内容です。**この自動配信は「食品業界ニュース」
+  カテゴリのみを対象にしています**（下記のAIニュース追加時点では未対応）。
+
+### 2026年8月27日：「食品業界ニュース」「AIニュース」の2カテゴリに拡張
+
+トップ画面・履歴モーダルの両方で、2つのボタン（`.newsCategoryTab`、data-cat="food"/"ai"）
+により切り替えられるようにした。データ・ロジックは完全に独立した2系統で、`NEWS_CATEGORY`
+オブジェクト（`historyKey`/`dateKey`/`title`/`hint`/`placeholder`/`hasContent`/`invalidMsg`
+をカテゴリごとに1箇所にまとめたもの）で分岐先を一元管理している。
+
+- **食品業界ニュース**：`state.newsHistory[]`。既存のスキーマ（`growingGenres`/
+  `decliningGenres`/`majorNews`）は変更していない。
+- **AIニュース**：`state.aiNewsHistory[]`。新規スキーマ（`vendorNews`/`claudeTips`/
+  `todayExample`）。
+  - **食品の「ジャンルの成長/衰退」という枠組みは、AI業界のニュース（モデル発表・企業動向
+    など個別ニュース中心）には合わないと判断し、あえて異なるスキーマにした**（ユーザーとの
+    合意の上での設計判断）。
+  - `vendorNews`は`vendor`フィールド（"Claude"/"ChatGPT"/"Gemini"等）を持つニュースの
+    フラット配列。表示時に`vendor==="Claude"`かどうかで「Claudeの動向」（深掘り・専用
+    セクション）と「各社の動向」（その他ベンダーをまとめて表示）に振り分ける
+    （`buildNewsPaperHtml`内、`kind==="ai"`の分岐）。Claudeを特に厚く扱ってほしいという
+    ユーザー要望を反映した構成。
+  - `claudeTips`・`todayExample`はAI業界ニュース特有の項目（Claudeの実践活用法、
+    実際の活用事例の紹介。特にX(旧Twitter)で話題になった投稿を紹介する記事を優先的に
+    検索するよう`buildNewsPrompt("ai")`の指示文に明記している）。
+- 紙面レンダリングの共通部分（1件の記事カードのHTML）は`paperArticleHtml()`として
+  切り出し、食品の`majorNews`・AIの`vendorNews`/`todayExample`のいずれからも再利用
+  している（丸ごと複製していない）。
+- 履歴モーダルのニュースタブ（`renderHistoryNewsTab`）にも同じカテゴリ切替を実装。
+  トップ画面と`state.ui.activeNewsCategory`を共有しているため、どちらで切り替えても
+  もう一方に反映される。
+- 同期・エクスポート・インポート（`syncBuildPayload`/`syncApplyRemote`/`#importFile`）に
+  `aiNewsHistory`を配線済み。既存の「配列でなければ空配列にフォールバック」パターンを踏襲。
 
 ## クラウド同期機能（SharePoint連携）
 
