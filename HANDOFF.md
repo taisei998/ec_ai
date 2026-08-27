@@ -282,6 +282,31 @@ Amazonについてはもう古い。** `scripts/rakuten_price_check.py` と `scr
   入力してその端末の `localStorage` にだけ保存されます（GitHub Pagesは公開されるため、
   埋め込むとトークン漏洩になる）。
 
+### ⚠ 2026年8月26日時点：構築を保留中（Power Automate Premiumライセンスが必要）
+
+「他のPCにもデータを引き継ぎたい」という要望を受け、Power AutomateでSharePoint連携
+フロー（`新商品開発ナビ_データ同期`）を実際に組み上げた。トリガー・本文解析・
+トークン確認・load/save分岐・SharePointの読み書きまで、すべてのアクションは
+完成している。
+
+**しかし保存時に「Your flow is saved but can't be used」というエラーが出た。**
+原因は「Response」アクション（3箇所すべて）が、この会社のテナントでは
+**Power Automate Premiumライセンスが必要な扱いになっている**ため
+（本来は無料枠のはずの`Request`コネクタだが、テナントの契約プランによってはPremium
+判定になることがある）。
+
+- 個人の判断で90日間無料トライアルを開始することは避け、ユーザー判断で保留を選択。
+  理由：トライアル終了後に自動課金へ移行するリスクがあり、会社のMicrosoft契約に
+  関わる決定を一開発者の判断だけで行うべきではないため。
+- **フロー自体はPower Automate上に保存済みで消えていない。** ライセンスが確保でき
+  次第、フローを開いてそのまま「Save」し直せば使えるようになる見込み（設計・実装は
+  完了しており、あとはライセンスの問題だけ）。
+- サイトは「マーケティング部」チームのSharePoint
+  （`https://cms00moriuchi.sharepoint.com/sites/msteams_dc861a`）、ファイルは
+  `Shared Documents/shinshouhin-navi-data.json`。
+- 再開する場合は、社内の情報システム部門・Microsoft契約管理者にPremiumライセンスの
+  要否を確認してから、フローを開いて保存し直す、という流れになる。
+
 ## 開発・検証の進め方（踏襲を推奨）
 
 これまでの開発では、変更のたびに次の手順で検証してから納品しています。
