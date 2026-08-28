@@ -535,6 +535,107 @@
   .pwHistDetailRow { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; padding:6px 0; border-bottom:1px solid var(--grid); }
   .pwHistDetailRow:last-child { border-bottom:none; }
 
+  /* ---- 価格アラート: 登録/見るタブ ---- */
+  .pwTabs { display:flex; gap:8px; margin-bottom:12px; }
+  .pwTab {
+    padding:8px 14px; border-radius:8px; border:1px solid var(--border); background: var(--surface-2);
+    font-size:13px; font-weight:600; cursor:pointer; color: var(--text-secondary); font-family:inherit;
+  }
+  .pwTab.active { background: var(--series-1); border-color: var(--series-1); color:#fff; }
+  .pwProductRow {
+    display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px;
+    border:1px solid var(--border); border-radius:8px; margin-bottom:8px; cursor:pointer; background: var(--surface-1);
+  }
+  .pwProductRow:hover { background: var(--surface-2); }
+  .pwProductRow.selected { border-color: var(--series-1); box-shadow: 0 0 0 1px var(--series-1) inset; }
+  .pwProductRowName { font-size:13px; font-weight:600; }
+  .pwMasterSearchInput { width:100%; }
+  .pwMasterEntryRow {
+    display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px;
+    border:1px solid var(--border); border-radius:8px; margin-bottom:8px; background: var(--surface-1); flex-wrap:wrap;
+  }
+  .pwMasterEntryVolume { font-size:12px; color: var(--text-secondary); }
+  .pwMasterEntryKeyword { font-size:13px; font-weight:600; margin-top:2px; }
+  .pwMasterEntryActions { display:flex; gap:6px; flex:none; }
+  .pwKeywordTabSection { margin-top:14px; }
+  .pwKeywordTabsLabel { font-size:12.5px; font-weight:600; display:block; margin-bottom:6px; }
+  .pwKeywordTabs { display:flex; gap:8px; flex-wrap:wrap; }
+  .pwKeywordTab {
+    display:inline-flex; align-items:center; padding:6px 12px; border-radius:999px; border:1px solid var(--border);
+    background: var(--surface-1); font-size:12.5px; font-weight:600; cursor:pointer; color: var(--text-secondary); font-family:inherit;
+  }
+  .pwKeywordTab:hover { background: var(--surface-2); }
+  .pwKeywordTab.active { background: var(--series-1); border-color: var(--series-1); color:#fff; }
+  .pwKeywordTab.disabled { opacity:0.55; }
+  .pwTabDot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; flex:none; }
+  .pwDotAlert { background: var(--status-critical); }
+  .pwDotTie { background: var(--status-warning); }
+  .pwDotLead { background: var(--status-good); }
+  .pwDotNodata { background: var(--text-muted); }
+  .pwKeywordTab.active .pwTabDot { background:#fff; }
+  .pwProductTabsLabel { font-size:12.5px; font-weight:600; display:block; margin-bottom:6px; }
+  .pwSelectedAsin { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:10px 0 0; }
+  .pwSelectedAsinCode {
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; font-weight:700;
+    background: var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:3px 8px;
+  }
+  .pwSelectedAsinCode.none { font-family:inherit; font-weight:600; color: var(--text-muted); }
+  .pwSelectedAsinName { font-size:13px; font-weight:600; }
+  .pwAlertToggle {
+    flex:none; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:600; cursor:pointer;
+    border:1px solid var(--border); background: var(--surface-2); color: var(--text-secondary); font-family:inherit;
+  }
+  .pwAlertToggle.on { background: var(--status-good); border-color: var(--status-good); color:#fff; }
+  /* ---- 自社を下回る競合の一覧（最大5件） ---- */
+  .pwUnderList { margin-top:8px; padding-top:8px; border-top:1px dashed var(--grid); }
+  .pwUnderTitle { font-size:11px; font-weight:800; color: var(--status-critical); margin-bottom:5px; }
+  .pwUnderRow { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; padding:4px 0; border-bottom:1px solid var(--grid); }
+  .pwUnderRow:last-child { border-bottom:none; }
+  .pwUnderMain { min-width:0; flex:1 1 auto; }
+  .pwUnderName { font-size:11.5px; font-weight:600; display:inline-block; overflow-wrap:anywhere; }
+  a.pwUnderName { color: var(--series-1); text-decoration:none; }
+  a.pwUnderName:hover { text-decoration:underline; }
+  .pwUnderShop { font-size:10.5px; color: var(--text-muted); margin-top:1px; }
+  .pwUnderRight { flex:none; text-align:right; }
+  .pwUnderPrice { font-size:12px; font-weight:700; white-space:nowrap; }
+  .pwUnderPrice small { font-weight:400; color: var(--text-secondary); font-size:10px; }
+  .pwUnderGap { font-size:10.5px; font-weight:700; color: var(--status-critical); white-space:nowrap; }
+  .pwUnderMore { font-size:10.5px; color: var(--text-muted); margin-top:4px; }
+
+  /* ---- ベンチマーク商品（競合ASINの定点観測） ---- */
+  .pwBenchRow {
+    display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px;
+    border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background: var(--surface-1); flex-wrap:wrap;
+  }
+  .pwBenchMain { display:flex; flex-direction:column; gap:3px; min-width:180px; flex:1 1 auto; }
+  .pwBenchHead { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .pwBenchName { font-size:12.5px; font-weight:600; }
+  .pwBenchPrice { font-size:13.5px; font-weight:700; }
+  .pwBenchActions { display:flex; gap:6px; align-items:center; flex:none; flex-wrap:wrap; }
+  .pwBenchLink { font-size:11px; }
+  /* 「ギラギラ」：ベンチマークに自社売価を下回られている状態を強調する。
+     常時点滅はアクセシビリティ上の負荷になりうるので prefers-reduced-motion を尊重し、
+     動きを止めても赤リングは残して視認性を落とさない。 */
+  @keyframes pwGlowPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.70); }
+    50%     { box-shadow: 0 0 0 7px rgba(220,38,38,0); }
+  }
+  .pwGlowAlert { animation: pwGlowPulse 1.4s ease-out infinite; border-color: var(--status-critical) !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .pwGlowAlert { animation: none; box-shadow: 0 0 0 3px rgba(220,38,38,0.55); }
+  }
+  .pwInfoIcon {
+    display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
+    border-radius:50%; border:none; background:transparent; cursor:pointer; font-size:13px; padding:0; margin-left:2px;
+    vertical-align:middle;
+  }
+  .pwInfoPopover {
+    position:absolute; top:100%; left:0; z-index:20; margin-top:6px; width:min(320px, 80vw);
+    background: var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:12px 14px;
+    font-size:12px; line-height:1.6; color: var(--text-secondary); font-weight:400;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+  }
+
   /* ---- Help modal ---- */
   .helpCard { max-width: 620px; }
   .helpSteps { display:flex; flex-direction:column; gap:18px; margin-bottom: 22px; }
@@ -829,52 +930,87 @@
 
     <div class="pwSummaryBar" id="pwSummaryBar"></div>
 
-    <div class="card" id="pwCheckCard">
-      <div class="cardHeader">
-        <h3 style="margin:0;">🕘 モール調査</h3>
-        <button class="btn primary" id="pwGenPromptBtn">📝 依頼文を作成</button>
-      </div>
-      <p class="hint" style="margin:0 0 10px;">このアプリはサーバーを持たないため、ボタン一つでモールを自動巡回することはできません。「依頼文を作成」でコピーし、Claude in Chromeが使えるこの会話（毎朝9時に自動実行されるルーティンも同じ形式でJSONを出力します）に貼り付けて調査を依頼してください。返ってきたJSONを下の欄に貼り付けると結果が反映されます。<b>Amazon・au PAYマーケット・Qoo10は自動調査が難しく「データ不足」になりやすい</b>ため、正確に見たい場合はこの会話でのチェックを推奨します。</p>
+    <div class="pwTabs" id="pwTabs">
+      <button type="button" class="pwTab" data-tab="register">📦 商品を登録</button>
+      <button type="button" class="pwTab active" data-tab="view">📋 商品を見る</button>
+    </div>
 
-      <div class="card" id="pwPromptCard" hidden>
-        <div class="cardHeader">
-          <h3 style="margin:0; font-size:13px;">依頼文</h3>
-          <button class="btn small" id="pwCopyPromptBtn">📋 コピー</button>
+    <div id="pwRegisterSection" hidden>
+      <div class="card" id="pwRegisterCard">
+        <h3 style="margin-top:0;">📦 監視商品を登録</h3>
+        <div class="pwFormGrid">
+          <div><label>商品名</label><input type="text" id="pwFormName" placeholder="例: 熊本イオン純天然水"></div>
+          <div><label>内容量</label><input type="text" id="pwFormVolume" placeholder="例: 500ml×45本"></div>
+          <div><label>自社売価（円）</label><input type="number" id="pwFormPrice" min="0" step="1" placeholder="例: 2240"></div>
+          <div><label>アラートキーワード（モール内検索に使用）</label><input type="text" id="pwFormKeyword" placeholder="例: 天然水 500ml"></div>
+          <div><label>子ASIN（任意・Amazon）</label><input type="text" id="pwFormAsin" placeholder="例: B072Z8FFXR"></div>
         </div>
-        <textarea id="pwPromptText" rows="14" readonly style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; line-height:1.5;"></textarea>
+        <details style="margin-top:12px;">
+          <summary style="cursor:pointer; font-size:12.5px; font-weight:600;">詳細設定（任意）：モール別の検索URLを指定</summary>
+          <div style="padding-top:10px;" id="pwFormMallUrls"></div>
+          <p class="hint" style="margin:6px 0 0;">指定すると、その分キーワードから自動生成するURLより精度が上がります（特に楽天市場）。Amazonは検索結果ページの自動取得が難しい場合があり、URLを指定しても解消されないことがあります。</p>
+        </details>
+        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button class="btn primary" id="pwAddItemBtn">＋ 商品を登録</button>
+          <button class="btn ghost" id="pwCancelEditBtn" type="button" hidden>編集をキャンセル</button>
+        </div>
+        <p id="pwFormError" class="hint" style="color:var(--danger); display:none; margin:8px 0 0;"></p>
       </div>
 
-      <label for="pwResultInput" style="margin-top:10px;">調査結果のJSONを貼り付け</label>
-      <textarea id="pwResultInput" rows="8" placeholder="返ってきたJSON部分（&#96;&#96;&#96;json 〜 &#96;&#96;&#96; の中身）をここに貼り付けてください"></textarea>
-      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn primary" id="pwApplyBtn">📊 結果を反映</button>
-        <button class="btn ghost" id="pwSampleBtn">サンプルJSONを試す</button>
+      <div class="card" id="pwMasterCard">
+        <h3 style="margin-top:0;">📋 登録済みマスタから選ぶ</h3>
+        <p class="hint" style="margin:0 0 10px;">これまでに登録した商品名・内容量・キーワードを検索して選ぶと、上のフォームにコピーまたは編集用に読み込めます。</p>
+        <button type="button" class="btn small ghost" id="pwMasterBackBtn" hidden style="margin-bottom:10px;">← ASIN一覧に戻る</button>
+        <input type="text" id="pwMasterSearchInput" class="pwMasterSearchInput" placeholder="🔍 商品名で検索">
+        <div id="pwMasterRows" style="margin-top:10px;"></div>
       </div>
-      <p id="pwApplyError" class="hint" style="color:var(--danger); display:none; margin-bottom:0;"></p>
-      <p id="pwApplyInfo" class="hint" style="display:none; margin-bottom:0;"></p>
     </div>
 
-    <div class="card" id="pwRegisterCard">
-      <h3 style="margin-top:0;">📦 監視商品を登録</h3>
-      <div class="pwFormGrid">
-        <div><label>商品名</label><input type="text" id="pwFormName" placeholder="例: 熊本イオン純天然水"></div>
-        <div><label>内容量</label><input type="text" id="pwFormVolume" placeholder="例: 500ml×45本"></div>
-        <div><label>自社売価（円）</label><input type="number" id="pwFormPrice" min="0" step="1" placeholder="例: 2240"></div>
-        <div><label>アラートキーワード（モール内検索に使用）</label><input type="text" id="pwFormKeyword" placeholder="例: 天然水 500ml"></div>
+    <div id="pwViewSection">
+      <div class="card pwEmptyCard" id="pwEmptyCard">
+        <p class="hint" style="margin:0 0 10px;">まだ監視商品が登録されていません。「📦 商品を登録」タブから最初の商品を登録してください。</p>
+        <button class="btn ghost" id="pwGoRegisterBtn" type="button">📦 商品を登録タブへ</button>
       </div>
-      <details style="margin-top:12px;">
-        <summary style="cursor:pointer; font-size:12.5px; font-weight:600;">詳細設定（任意）：モール別の検索URLを指定</summary>
-        <div style="padding-top:10px;" id="pwFormMallUrls"></div>
-        <p class="hint" style="margin:6px 0 0;">指定すると、その分キーワードから自動生成するURLより精度が上がります（特に楽天市場・Yahoo!ショッピング）。Amazon・au PAYマーケット・Qoo10はURLを指定しても自動取得の壁（bot対策・JS描画）は解消されません。</p>
-      </details>
-      <button class="btn primary" id="pwAddItemBtn" style="margin-top:12px;">＋ 商品を登録</button>
-      <p id="pwFormError" class="hint" style="color:var(--danger); display:none; margin:8px 0 0;"></p>
-    </div>
 
-    <div class="card pwEmptyCard" id="pwEmptyCard">
-      <p class="hint" style="margin:0;">まだ監視商品が登録されていません。上のフォームから最初の商品を登録してください。</p>
+      <div class="card" id="pwSelectCard">
+        <label class="pwProductTabsLabel" for="pwProductSearchInput">商品を選択（ASINまたは商品名で検索）</label>
+        <input type="text" id="pwProductSearchInput" class="pwMasterSearchInput" placeholder="🔍 ASIN・商品名で検索" autocomplete="off">
+        <p class="pwSelectedAsin" id="pwSelectedAsin"></p>
+        <p class="hint" id="pwProductMatchHint" style="margin:8px 0 0;" hidden></p>
+        <label class="pwProductTabsLabel" id="pwKeywordTabsLabel" style="margin-top:12px;">🔖 登録キーワード</label>
+        <div class="pwKeywordTabs" id="pwKeywordTabs"></div>
+      </div>
+      <div id="pwProductDetail"></div>
+
+      <div class="card" id="pwCheckCard">
+        <div class="cardHeader">
+          <h3 style="margin:0; position:relative;">🕘 モール調査
+            <button type="button" class="pwInfoIcon" id="pwCheckInfoBtn" aria-label="説明を表示">ℹ️</button>
+            <div class="pwInfoPopover" id="pwCheckInfoPopover" hidden>このアプリはサーバーを持たないため、ボタン一つでモールを自動巡回することはできません。「依頼文を作成」でコピーし、Claude in Chromeが使えるこの会話に貼り付けて調査を依頼してください（依頼文の末尾で、毎日10:00に自動で同じ調査を行うルーティンの作成もお願いできます）。返ってきたJSONを下の欄に貼り付けると結果が反映されます。調査対象はAmazon・楽天市場の2モールです。<b>Amazonは自動調査が難しく「データ不足」になりやすい</b>ため、正確に見たい場合はこの会話でのチェックを推奨します。</div>
+          </h3>
+          <button class="btn primary" id="pwGenPromptBtn">📝 依頼文を作成</button>
+        </div>
+
+        <div class="card" id="pwPromptCard" hidden>
+          <div class="cardHeader">
+            <h3 style="margin:0; font-size:13px;">依頼文</h3>
+            <button class="btn small" id="pwCopyPromptBtn">📋 コピー</button>
+          </div>
+          <textarea id="pwPromptText" rows="14" readonly style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; line-height:1.5;"></textarea>
+        </div>
+      </div>
+
+      <div class="card" id="pwApplyCard">
+        <label for="pwResultInput">調査結果のJSONを貼り付け</label>
+        <textarea id="pwResultInput" rows="8" placeholder="返ってきたJSON部分（&#96;&#96;&#96;json 〜 &#96;&#96;&#96; の中身）をここに貼り付けてください"></textarea>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn primary" id="pwApplyBtn">📊 結果を反映</button>
+          <button class="btn ghost" id="pwSampleBtn">サンプルJSONを試す</button>
+        </div>
+        <p id="pwApplyError" class="hint" style="color:var(--danger); display:none; margin-bottom:0;"></p>
+        <p id="pwApplyInfo" class="hint" style="display:none; margin-bottom:0;"></p>
+      </div>
     </div>
-    <div id="pwProductList"></div>
   </section>
 
   <section id="view-news" class="topView">
@@ -930,7 +1066,7 @@
     </div>
     <div class="card">
       <h3 style="margin-top:0;">🔔 価格アラート：監視対象モール</h3>
-      <p class="hint" style="margin:0 0 10px;">ここでチェックしたモールが、価格アラートの依頼文・毎朝9時の自動調査の対象になります。商品登録のたびに選び直す必要はありません。</p>
+      <p class="hint" style="margin:0 0 10px;">ここでチェックしたモールが、価格アラートの依頼文（一括・キーワード単位いずれも共通）の調査対象になります。商品登録のたびに選び直す必要はありません。既定はAmazon・楽天市場の2モールです（他のモールは自動調査が難しく「データ不足」になりやすいため対象外にしています）。</p>
       <div class="airPlatformChecks" id="pwMallChecks"></div>
     </div>
     <div class="card">
@@ -1253,7 +1389,7 @@
   ];
 
   var state = {
-    ui: { theme:null, activeView:"home", selectedNewsDate:null, selectedAiNewsDate:null, activeNewsCategory:"food" },
+    ui: { theme:null, activeView:"home", selectedNewsDate:null, selectedAiNewsDate:null, activeNewsCategory:"food", activeWatchTab:"view", selectedWatchItemId:null, selectedWatchKeywordId:null, watchDetailMode:"keyword" },
     aiInput: { name:"", volume:"", category:"", keyword:"", grade:"standard", platforms: PLATFORMS.map(function(p){ return p.key; }) },
     aiResearch: null,
     // 過去に反映したAIリサーチ結果の履歴（新しい順）。「読み込む」で aiResearch に復元できる。
@@ -2168,20 +2304,54 @@
     lead:  { icon:"🟢", label:"自社が最安",   badgeClass:"badgeLead" },
     nodata:{ icon:"○",  label:"データ不足",   badgeClass:"confBadge unknown" }
   };
+  var PW_DOT_CLASS = { alert:"pwDotAlert", tie:"pwDotTie", lead:"pwDotLead", nodata:"pwDotNodata" };
   var pwActiveFilter = null;
+  var pwProductSearchText = "";
+  var pwMasterViewLevel = "names";
+  var pwMasterSelectedAsin = null;
+  var pwMasterSearchText = "";
+  var pwEditTarget = null;
   var pwIdCounter = 0;
   function pwNextId(){ pwIdCounter++; return "pw_" + Date.now().toString(36) + "_" + pwIdCounter; }
   var pwKeywordIdCounter = 0;
   function pwNextKeywordId(){ pwKeywordIdCounter++; return "pwkw_" + Date.now().toString(36) + "_" + pwKeywordIdCounter; }
+  var pwBenchmarkIdCounter = 0;
+  function pwNextBenchmarkId(){ pwBenchmarkIdCounter++; return "pwbm_" + Date.now().toString(36) + "_" + pwBenchmarkIdCounter; }
+
+  // ベンチマークはAmazonの特定ASINの定点観測なので、モールキーは常にこれ。
+  var PW_BENCHMARK_MALL = "amazon";
+
+  // Amazonの子ASIN（英数10桁）を正規化する。商品ページURLを貼られてもASINを抽出する。
+  function pwNormalizeAsin(input){
+    var s = String(input || "").trim();
+    if (!s) return "";
+    var m = s.match(/(?:dp|gp\/product|gp\/aw\/d)\/([A-Za-z0-9]{10})/);
+    if (m) return m[1].toUpperCase();
+    return /^[A-Za-z0-9]{10}$/.test(s) ? s.toUpperCase() : "";
+  }
+
+  // 価格アラートの調査対象モールの既定値。自動調査が安定しているAmazon・楽天のみに絞っている
+  // （Yahoo!・au PAY・Qoo10・カウシェは自動取得が難しく「データ不足」になりやすいため対象外）。
+  var PW_DEFAULT_MALLS = ["amazon", "rakuten"];
 
   function pwEnsureState(){
     if (!state.priceWatch || typeof state.priceWatch !== "object") state.priceWatch = {};
     if (!Array.isArray(state.priceWatch.malls) || !state.priceWatch.malls.length){
-      state.priceWatch.malls = PLATFORMS.map(function(p){ return p.key; });
+      state.priceWatch.malls = PW_DEFAULT_MALLS.slice();
+    }
+    // 旧デフォルト（全6モール、まだ一度も設定画面で選び直していない状態）からの一度だけの移行。
+    // すでに手動でカスタマイズ済みの選択には触れない。
+    if (!state.priceWatch.mallsMigratedToDefault){
+      var legacyAllMalls = PLATFORMS.map(function(p){ return p.key; });
+      var isLegacyDefault = state.priceWatch.malls.length === legacyAllMalls.length &&
+        legacyAllMalls.every(function(k){ return state.priceWatch.malls.indexOf(k) !== -1; });
+      if (isLegacyDefault){ state.priceWatch.malls = PW_DEFAULT_MALLS.slice(); markDirty(); }
+      state.priceWatch.mallsMigratedToDefault = true;
     }
     if (!Array.isArray(state.priceWatch.items)) state.priceWatch.items = [];
     state.priceWatch.items.forEach(function(it){
       if (!it.id) it.id = pwNextId();
+      if (typeof it.asin === "undefined") it.asin = "";
       // 旧形式（1商品=1キーワード、it.keyword/it.mallUrls/it.historyが直接商品に付いていた形）
       // からの移行：データを失わず、1件だけのキーワードエントリーとして包み直す
       if (!Array.isArray(it.keywords)){
@@ -2199,8 +2369,44 @@
         if (!kw.id) kw.id = pwNextKeywordId();
         if (!kw.mallUrls || typeof kw.mallUrls !== "object") kw.mallUrls = {};
         if (!Array.isArray(kw.history)) kw.history = [];
+        if (typeof kw.alertEnabled === "undefined") kw.alertEnabled = true;
+      });
+      // ベンチマーク商品（競合の特定ASINを定点観測）。historyはキーワードと
+      // 完全に同じ形（{date, checkedAt, malls:{...}}）にしてあるので、
+      // pwUpsertHistory / pwDiffAgainstPrevious / pwEvaluateMall をそのまま使える。
+      if (!Array.isArray(it.benchmarks)) it.benchmarks = [];
+      it.benchmarks.forEach(function(bm){
+        if (!bm.id) bm.id = pwNextBenchmarkId();
+        bm.asin = pwNormalizeAsin(bm.asin);
+        if (typeof bm.label !== "string") bm.label = "";
+        if (!Array.isArray(bm.history)) bm.history = [];
+        if (typeof bm.alertEnabled === "undefined") bm.alertEnabled = true;
       });
     });
+
+    // 同じASINが別々のアイテムとして重複登録されていたものを1アイテムに統合する
+    // （以前の pwAddItem は常に新規追加していたため、同じASINで2回登録すると
+    //  商品が2件に分かれ、キーワードもバラけてしまっていた）。
+    // 先に現れたアイテムを残し、後続のキーワードをそこへ移すのでデータは失われない。
+    var mergedAny = false;
+    var byAsin = {};
+    var keptItems = [];
+    state.priceWatch.items.forEach(function(it){
+      var asin = it.asin || "";
+      if (!asin){ keptItems.push(it); return; }
+      var head = byAsin[asin];
+      if (!head){ byAsin[asin] = it; keptItems.push(it); return; }
+      it.keywords.forEach(function(kw){ head.keywords.push(kw); });
+      // ベンチマークも移す。同じ競合ASINが両方にあった場合は先に現れた方を残す。
+      it.benchmarks.forEach(function(bm){
+        if (!head.benchmarks.some(function(b){ return b.asin === bm.asin; })) head.benchmarks.push(bm);
+      });
+      mergedAny = true;
+    });
+    if (mergedAny){
+      state.priceWatch.items = keptItems;
+      markDirty();
+    }
     return state.priceWatch;
   }
 
@@ -2323,14 +2529,97 @@
     return out;
   }
 
-  // 商品配下の全キーワード×全モールの評価結果をフラットな配列で返す
+  // 自社売価を下回っている競合を、下回り幅の大きい順（＝安い順）に返す。
+  // 判定バッジと食い違わないよう、pwEvaluateMall と全く同じ比較モードを使う：
+  // 自社と同じ単位の換算単価が出せる競合が1件でもあれば「単価モード」、無ければ「生値モード」。
+  // 単価モードのときは単位を揃えられない競合は対象外（pwEvaluateMallの判定と同じ扱い）。
+  function pwUndercuttingCompetitors(item, mallSnapshot, limit){
+    var res = [];
+    if (!mallSnapshot || mallSnapshot.status !== "ok") return res;
+    var valid = (Array.isArray(mallSnapshot.competitors) ? mallSnapshot.competitors : [])
+      .filter(function(c){ return c && c.price != null && !isNaN(Number(c.price)) && Number(c.price) > 0; });
+    if (!valid.length) return res;
+
+    var selfUnit = pwParseUnitPrice(item.volume, item.price);
+    var unitRows = [];
+    valid.forEach(function(c){
+      var cu = pwParseUnitPrice(c.volume, c.price);
+      if (cu && selfUnit && cu.unitLabel === selfUnit.unitLabel) unitRows.push({ c: c, unitPrice: cu.perUnitPrice });
+    });
+
+    if (unitRows.length){
+      var selfRounded = Math.round(selfUnit.perUnitPrice * 10) / 10;
+      unitRows.forEach(function(r){
+        var rivalRounded = Math.round(r.unitPrice * 10) / 10;
+        if (rivalRounded < selfRounded){
+          res.push({ c: r.c, gap: selfRounded - rivalRounded, isUnit: true, unitPrice: r.unitPrice, unitLabel: selfUnit.unitLabel });
+        }
+      });
+    } else {
+      valid.forEach(function(c){
+        var d = Number(item.price) - Number(c.price);
+        if (d > 0) res.push({ c: c, gap: d, isUnit: false });
+      });
+    }
+    res.sort(function(a, b){ return b.gap - a.gap; });
+    return { total: res.length, rows: (limit ? res.slice(0, limit) : res) };
+  }
+
+  // 「自社を下回る競合」リストのHTML（最大5件）。1モール分。
+  function pwBuildUndercutListHtml(item, mallSnapshot){
+    var u = pwUndercuttingCompetitors(item, mallSnapshot, 5);
+    if (!u.total) return "";
+    var rows = u.rows.map(function(r){
+      var c = r.c;
+      var nameText = esc(c.name || "（商品名なし）");
+      var nameHtml = c.url
+        ? "<a class='pwUnderName' href='" + attr(c.url) + "' target='_blank' rel='noopener noreferrer'>" + nameText + " ↗</a>"
+        : "<span class='pwUnderName'>" + nameText + "</span>";
+      var adTag = c.isAd ? "<span class='pwAdTag'>広告</span>" : "";
+      var shopText = c.shop ? "<div class='pwUnderShop'>" + esc(c.shop) + "</div>" : "";
+      var unitText = r.isUnit ? "<small>（" + r.unitLabel + " " + r.unitPrice.toFixed(1) + "）</small>" : "";
+      var gapText = r.isUnit
+        ? "単価 -" + r.gap.toFixed(1) + r.unitLabel.replace("円/", "円/")
+        : "-¥" + Math.round(r.gap).toLocaleString();
+      return "<div class='pwUnderRow'>" +
+        "<div class='pwUnderMain'>" + nameHtml + adTag + shopText + "</div>" +
+        "<div class='pwUnderRight'>" +
+          "<div class='pwUnderPrice'>" + pwYen(Number(c.price)) + unitText + "</div>" +
+          "<div class='pwUnderGap'>" + gapText + "</div>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+    var more = u.total > u.rows.length
+      ? "<div class='pwUnderMore'>ほか " + (u.total - u.rows.length) + "件が自社を下回っています</div>"
+      : "";
+    return "<div class='pwUnderList'>" +
+      "<div class='pwUnderTitle'>🔴 自社を下回る競合（" + u.total + "件中 上位" + u.rows.length + "件）</div>" +
+      rows + more +
+    "</div>";
+  }
+
+  // 1ベンチマーク（競合の特定ASIN）の判定。追跡商品を1要素のcompetitors配列として
+  // 保存してあるので、pwEvaluateMallをそのまま再利用できる
+  // （＝換算単価比較・判定ロジックを重複実装しなくて済む）。
+  function pwEvaluateBenchmark(item, bm){
+    var snap = pwGetLatestSnapshot(bm);
+    return pwEvaluateMall(item, snap && snap.malls ? snap.malls[PW_BENCHMARK_MALL] : null);
+  }
+
+  // 商品配下の全キーワード×全モール＋全ベンチマークの評価結果をフラットな配列で返す
+  // （アラートOFFのキーワード・ベンチマークは集計から除外）
   function pwEvaluateItemAll(item){
     var out = [];
     (item.keywords || []).forEach(function(kw){
+      if (kw.alertEnabled === false) return;
       var evals = pwEvaluateKeywordMalls(item, kw);
       Object.keys(evals).forEach(function(mk){
         out.push({ kw: kw, mallKey: mk, ev: evals[mk] });
       });
+    });
+    (item.benchmarks || []).forEach(function(bm){
+      if (bm.alertEnabled === false) return;
+      out.push({ bm: bm, mallKey: PW_BENCHMARK_MALL, ev: pwEvaluateBenchmark(item, bm) });
     });
     return out;
   }
@@ -2342,6 +2631,30 @@
     var levels = all.map(function(x){ return x.ev.level; });
     levels.sort(function(a, b){ return PW_LEVEL_RANK[a] - PW_LEVEL_RANK[b]; });
     return levels[0];
+  }
+
+  // 1キーワード分（全モール）の判定。アラートON/OFFに関わらず個別データは常に見られるようにする。
+  function pwAggregateKeywordLevel(item, kw){
+    var evals = pwEvaluateKeywordMalls(item, kw);
+    var levels = Object.keys(evals).map(function(mk){ return evals[mk].level; });
+    if (!levels.length) return "nodata";
+    levels.sort(function(a, b){ return PW_LEVEL_RANK[a] - PW_LEVEL_RANK[b]; });
+    return levels[0];
+  }
+
+  // ベンチマークだけを集約した判定（🎯タブのドット用）。ON/OFFに関わらず全件を見る。
+  function pwAggregateBenchmarkLevel(item){
+    var levels = (item.benchmarks || []).map(function(bm){ return pwEvaluateBenchmark(item, bm).level; });
+    if (!levels.length) return "nodata";
+    levels.sort(function(a, b){ return PW_LEVEL_RANK[a] - PW_LEVEL_RANK[b]; });
+    return levels[0];
+  }
+
+  // 「ギラギラ」演出の判定：有効なベンチマークに1件でも自社を下回るものがあるか
+  function pwItemHasBenchmarkAlert(item){
+    return (item.benchmarks || []).some(function(bm){
+      return bm.alertEnabled !== false && pwEvaluateBenchmark(item, bm).level === "alert";
+    });
   }
 
   function pwGlobalLowestPrice(item){
@@ -2391,19 +2704,45 @@
 '  "results": [',
 '    {',
 '      "keyword": "登録されたアラートキーワードそのまま",',
-'      "mall": "モールキー（amazon/rakuten/yahoo/aupay/qoo10/kaushe のいずれか）",',
+'      "mall": "モールキー（amazon/rakuten のいずれか）",',
 '      "status": "ok（1ページ目を確認できた） または unavailable（bot対策等で確認できなかった）",',
 '      "note": "補足（任意、無ければ空文字）",',
 '      "competitors": [',
 '        { "rank": 1, "isAd": false, "name": "商品名", "volume": "内容量（分かれば）", "price": 2180, "shop": "ショップ名", "url": "商品URL", "shipping": "free/paid/unknown", "coupon": "クーポン内容（無ければ空文字）", "points": "ポイント表記（無ければ空文字）" }',
 '      ]',
 '    }',
+'  ],',
+'  "benchmarks": [',
+'    { "asin": "登録された競合の子ASINそのまま", "status": "ok または unavailable", "name": "商品名", "volume": "内容量（分かれば）", "price": 2180, "shop": "ショップ名（出荷元・販売元）", "url": "商品URL", "shipping": "free/paid/unknown", "coupon": "クーポン内容（無ければ空文字）", "points": "ポイント表記（無ければ空文字）", "note": "補足（任意、無ければ空文字）" }',
 '  ]',
 '}'
     ].join("\n");
   }
 
-  function pwBuildPrompt(){
+  // ベンチマーク（競合ASINの定点観測）の依頼文セクション。itemsに含まれる
+  // 有効なベンチマークが1件も無ければ空配列を返す（依頼文に節を出さない）。
+  function pwBuildBenchmarkPromptLines(items){
+    var rows = [];
+    items.forEach(function(it){
+      (it.benchmarks || []).filter(function(bm){ return bm.alertEnabled !== false; }).forEach(function(bm){
+        rows.push("- ASIN: " + bm.asin + "（https://www.amazon.co.jp/dp/" + bm.asin + "）" +
+          (bm.label ? " ※" + bm.label : "") +
+          " ／ 比較対象の自社商品: " + it.name + "（内容量 " + it.volume + " / 自社売価 ¥" + Number(it.price).toLocaleString() + "）");
+      });
+    });
+    if (!rows.length) return [];
+    var lines = [];
+    lines.push("");
+    lines.push("【ベンチマーク商品（Amazonの特定ASINを定点観測）】");
+    lines.push("下記のASINについては、モール内検索ではなく Amazonの商品ページ（https://www.amazon.co.jp/dp/<ASIN>）を直接開き、現在の販売価格を取得してください。ベンチマークはAmazonのみが対象です（上記の「調査対象モール」の設定とは独立です）。");
+    lines.push("クーポン適用前の表示価格を price に入れ、クーポンの有無・内容は coupon に文字列で記載してください。取得できなかった場合は status を \"unavailable\" にし、無理な推測をしないでください。");
+    lines.push("結果は回答JSONの benchmarks 配列に、asin を登録どおりそのまま入れて返してください。");
+    lines.push("");
+    rows.forEach(function(r){ lines.push(r); });
+    return lines;
+  }
+
+  function pwBuildResearchPrompt(){
     var pw = pwEnsureState();
     var lines = [];
     lines.push("以下の商品について、指定のECモールで実際に検索し、検索結果1ページ目に表示された競合商品を調査してください。");
@@ -2416,10 +2755,13 @@
     } else {
       pw.items.forEach(function(it, i){
         lines.push((i + 1) + ". 商品名: " + it.name + " / 内容量: " + it.volume + " / 自社売価: ¥" + Number(it.price).toLocaleString());
+        var enabledKeywords = it.keywords.filter(function(kw){ return kw.alertEnabled !== false; });
         if (!it.keywords.length){
           lines.push("   （アラートキーワードが登録されていません）");
+        } else if (!enabledKeywords.length){
+          lines.push("   （有効なアラートキーワードがありません／すべて停止中）");
         }
-        it.keywords.forEach(function(kw){
+        enabledKeywords.forEach(function(kw){
           var urlNotes = pw.malls.filter(function(mk){ return kw.mallUrls && kw.mallUrls[mk]; })
             .map(function(mk){ return pwMallLabel(mk) + ": " + kw.mallUrls[mk]; });
           lines.push("   - アラートキーワード: 「" + kw.keyword + "」" + (urlNotes.length ? "（指定URL：" + urlNotes.join(" / ") + "）" : ""));
@@ -2433,13 +2775,102 @@
     lines.push("【取得する情報（検索結果1ページ目の各商品について）】");
     lines.push("検索順位（広告・スポンサー枠は isAd:true にしてください）、商品名、内容量、販売価格、ショップ名、商品URL、送料無料/送料別、クーポン表示、ポイント表示。最低限、商品名・内容量・販売価格・検索順位・URLは取得してください。");
     lines.push("");
-    lines.push("Amazon・au PAYマーケット・Qoo10はbot対策やJavaScript描画のため自動調査が難しいことがあります。取得できなかった場合は status を \"unavailable\" にし、無理な推測をしないでください。");
+    lines.push("Amazonはbot対策やJavaScript描画のため自動調査が難しいことがあります。取得できなかった場合は status を \"unavailable\" にし、無理な推測をしないでください。");
+    pwBuildBenchmarkPromptLines(pw.items).forEach(function(l){ lines.push(l); });
     lines.push("");
     lines.push("【回答形式】");
     lines.push("簡潔な説明のあと、最後に必ず次のJSONスキーマに沿ったJSONを ```json コードブロックで出力してください。コメント（日本語の説明）は実際のJSONに含めないでください。");
     lines.push("");
     lines.push(pwSchemaTemplate());
     return lines.join("\n");
+  }
+
+  // 1商品×1キーワードだけを対象にした調査依頼文（依頼が大きくなりすぎてJSONが
+  // 途中で切れる問題を避けるため、「見る」タブで選択中の1組だけに絞って生成する）。
+  function pwBuildSingleResearchPrompt(item, kw){
+    var pw = pwEnsureState();
+    var lines = [];
+    lines.push("以下の商品について、指定のECモールで実際に検索し、検索結果1ページ目に表示された競合商品を調査してください。");
+    lines.push("");
+    lines.push("【重要】Googleなどの一般的なWeb検索でその商品を探すのではなく、必ず各モールのサイトを直接開き、モール自身の検索窓に下記の「アラートキーワード」をそのまま入力して検索し、その検索結果1ページ目を確認してください。");
+    lines.push("");
+    lines.push("【調査対象商品】");
+    lines.push("商品名: " + item.name + " / 内容量: " + item.volume + " / 自社売価: ¥" + Number(item.price).toLocaleString() + (item.asin ? " / 子ASIN: " + item.asin : ""));
+    var urlNotes = pw.malls.filter(function(mk){ return kw.mallUrls && kw.mallUrls[mk]; })
+      .map(function(mk){ return pwMallLabel(mk) + ": " + kw.mallUrls[mk]; });
+    lines.push("   - アラートキーワード: 「" + kw.keyword + "」" + (urlNotes.length ? "（指定URL：" + urlNotes.join(" / ") + "）" : ""));
+    lines.push("");
+    lines.push("【調査対象モール】");
+    lines.push(pw.malls.map(pwMallLabel).join("・") || "（設定画面でモールを選択してください）");
+    lines.push("");
+    lines.push("【取得する情報（検索結果1ページ目の各商品について）】");
+    lines.push("検索順位（広告・スポンサー枠は isAd:true にしてください）、商品名、内容量、販売価格、ショップ名、商品URL、送料無料/送料別、クーポン表示、ポイント表示。最低限、商品名・内容量・販売価格・検索順位・URLは取得してください。");
+    lines.push("");
+    lines.push("Amazonはbot対策やJavaScript描画のため自動調査が難しいことがあります。取得できなかった場合は status を \"unavailable\" にし、無理な推測をしないでください。");
+    lines.push("");
+    lines.push("【回答形式】");
+    lines.push("簡潔な説明のあと、最後に必ず次のJSONスキーマに沿ったJSONを ```json コードブロックで出力してください。コメント（日本語の説明）は実際のJSONに含めないでください。");
+    lines.push("");
+    lines.push(pwSchemaTemplate());
+    return lines.join("\n");
+  }
+
+  // 1商品（ASIN）×その商品に登録された全ての有効キーワードを対象にした調査依頼文。
+  // 「全商品まとめて」（truncationの原因になりやすい）と「1キーワードだけ」の中間の粒度で、
+  // 1発の調査でそのASINの競合価格変動をまとめて確認したい、という要望に応える。
+  function pwBuildProductResearchPrompt(item){
+    var pw = pwEnsureState();
+    var lines = [];
+    lines.push("以下の商品について、指定のECモールで実際に検索し、検索結果1ページ目に表示された競合商品を調査してください。");
+    lines.push("");
+    lines.push("【重要】Googleなどの一般的なWeb検索でその商品を探すのではなく、必ず各モールのサイトを直接開き、モール自身の検索窓に下記の「アラートキーワード」をそれぞれそのまま入力して検索し、その検索結果1ページ目を確認してください。");
+    lines.push("");
+    lines.push("【調査対象商品】");
+    lines.push("商品名: " + item.name + " / 内容量: " + item.volume + " / 自社売価: ¥" + Number(item.price).toLocaleString() + (item.asin ? " / 子ASIN: " + item.asin : ""));
+    var enabledKeywords = item.keywords.filter(function(kw){ return kw.alertEnabled !== false; });
+    if (!item.keywords.length){
+      lines.push("   （アラートキーワードが登録されていません）");
+    } else if (!enabledKeywords.length){
+      lines.push("   （有効なアラートキーワードがありません／すべて停止中）");
+    }
+    enabledKeywords.forEach(function(kw){
+      var urlNotes = pw.malls.filter(function(mk){ return kw.mallUrls && kw.mallUrls[mk]; })
+        .map(function(mk){ return pwMallLabel(mk) + ": " + kw.mallUrls[mk]; });
+      lines.push("   - アラートキーワード: 「" + kw.keyword + "」" + (urlNotes.length ? "（指定URL：" + urlNotes.join(" / ") + "）" : ""));
+    });
+    lines.push("");
+    lines.push("【調査対象モール】");
+    lines.push(pw.malls.map(pwMallLabel).join("・") || "（設定画面でモールを選択してください）");
+    lines.push("");
+    lines.push("【取得する情報（検索結果1ページ目の各商品について）】");
+    lines.push("検索順位（広告・スポンサー枠は isAd:true にしてください）、商品名、内容量、販売価格、ショップ名、商品URL、送料無料/送料別、クーポン表示、ポイント表示。最低限、商品名・内容量・販売価格・検索順位・URLは取得してください。");
+    lines.push("");
+    lines.push("Amazonはbot対策やJavaScript描画のため自動調査が難しいことがあります。取得できなかった場合は status を \"unavailable\" にし、無理な推測をしないでください。");
+    pwBuildBenchmarkPromptLines([item]).forEach(function(l){ lines.push(l); });
+    lines.push("");
+    lines.push("【回答形式】");
+    lines.push("簡潔な説明のあと、最後に必ず次のJSONスキーマに沿ったJSONを ```json コードブロックで出力してください。コメント（日本語の説明）は実際のJSONに含めないでください。");
+    lines.push("");
+    lines.push(pwSchemaTemplate());
+    return lines.join("\n");
+  }
+
+  function pwBuildScheduleAddendum(){
+    var lines = [];
+    lines.push("");
+    lines.push("---");
+    lines.push("");
+    lines.push("【自動化のお願い】上記の調査を行い、JSONを出力したあと、続けて次の設定もお願いします。");
+    lines.push("今後は毎回この依頼文を貼り付けなくても済むように、次の条件で定期実行ルーティンを作成してください（同趣旨のルーティンが既にある場合は新規作成せず、そのルーティンのプロンプトを更新してください）。");
+    lines.push("- 実行タイミング: 毎日 10:00（JST）。cron表記では \"0 1 * * *\"（JSTはUTC+9のため、UTC表記では同日01:00になります。この値をそのまま使ってください）");
+    lines.push("- ルーティン名: 「価格アラート モール調査 10:00」");
+    lines.push("- ルーティンのプロンプト内容: このメッセージのうち、この【自動化のお願い】より前の部分（調査対象商品・モール・回答形式の指定を含む調査依頼本文）をそのまま使ってください。");
+    lines.push("- ルーティンの実行結果は自動でこのアプリには反映されません。実行後にセッションを開いてJSONをコピーし、アプリの「価格アラート」→「調査結果のJSONを貼り付け」欄に貼る一手間が必要である旨は、作成後に一言だけ触れてください。");
+    return lines.join("\n");
+  }
+
+  function pwBuildPrompt(){
+    return pwBuildResearchPrompt() + "\n" + pwBuildScheduleAddendum();
   }
 
   // 全商品の全キーワードを横断して、キーワード文字列が一致するものを探す
@@ -2477,12 +2908,15 @@
     var data;
     try { data = JSON.parse(raw); }
     catch(err){ return { ok:false, message:"JSONの解析に失敗しました（" + err.message + "）。" }; }
-    if (!data || !Array.isArray(data.results)) return { ok:false, message:"JSON形式が想定と異なります（results配列が見つかりません）。" };
+    // results（キーワード検索）とbenchmarks（競合ASINの定点観測）のどちらか一方だけでも受け付ける
+    if (!data || (!Array.isArray(data.results) && !Array.isArray(data.benchmarks))){
+      return { ok:false, message:"JSON形式が想定と異なります（results配列もbenchmarks配列も見つかりません）。" };
+    }
 
     var checkedAt = data.checkedAt || new Date().toISOString();
     var date = String(checkedAt).slice(0, 10);
     var applied = 0, skipped = 0;
-    data.results.forEach(function(r){
+    (data.results || []).forEach(function(r){
       if (!r || !r.mall || !r.keyword){ skipped++; return; }
       var found = pwFindKeywordByKeyword(r.keyword);
       if (!found){ skipped++; return; }
@@ -2507,31 +2941,103 @@
       pwUpsertHistory(found.kw, date, checkedAt, r.mall, mallResult);
       applied++;
     });
+
+    // ベンチマーク（競合ASINの定点観測）。追跡商品を1要素のcompetitors配列に包むことで、
+    // キーワード側と同じhistory形式になり pwEvaluateMall / pwDiffAgainstPrevious を流用できる。
+    var benchApplied = 0;
+    (data.benchmarks || []).forEach(function(b){
+      if (!b || !b.asin){ skipped++; return; }
+      var targets = pwFindBenchmarksByAsin(b.asin);
+      if (!targets.length){ skipped++; return; }
+      var ok = b.status === "ok" || (b.status == null && b.price != null && b.price !== "");
+      var mallResult = {
+        status: ok ? "ok" : (b.status || "unavailable"),
+        note: b.note || "",
+        competitors: ok ? [{
+          rank: null,
+          isAd: false,
+          name: b.name || "",
+          volume: b.volume || "",
+          price: (b.price != null && b.price !== "") ? Number(b.price) : null,
+          shop: b.shop || "",
+          url: b.url || ("https://www.amazon.co.jp/dp/" + pwNormalizeAsin(b.asin)),
+          shipping: b.shipping || "",
+          coupon: b.coupon || "",
+          points: b.points || ""
+        }] : []
+      };
+      targets.forEach(function(t){
+        pwUpsertHistory(t.bm, date, checkedAt, PW_BENCHMARK_MALL, mallResult);
+        benchApplied++;
+      });
+    });
+
     markDirty();
-    return { ok:true, applied: applied, skipped: skipped };
+    return { ok:true, applied: applied, skipped: skipped, benchApplied: benchApplied };
   }
 
+  // ASINが同じなら「同じ商品」として扱い、新規アイテムを作らず既存アイテムに
+  // キーワードを追加する（1つのASINに複数の監視キーワードがぶら下がる形）。
+  // ASINが空の登録は突き合わせようがないので、従来どおり常に新規アイテムになる。
   function pwAddItem(fields){
     var pw = pwEnsureState();
-    pw.items.push({
+    var asin = (fields.asin || "").trim();
+    var existing = asin ? pw.items.filter(function(it){ return (it.asin || "") === asin; })[0] : null;
+    if (existing){
+      // 商品共通の項目は最新の入力で上書きする（同じASINなら同じ商品なので、
+      // 内容量・自社売価の変更を兼ねた再登録として扱うのが自然）
+      existing.name = fields.name;
+      existing.volume = fields.volume;
+      existing.price = fields.price;
+      existing.keywords.push({
+        id: pwNextKeywordId(),
+        keyword: fields.keyword,
+        mallUrls: fields.mallUrls || {},
+        history: [],
+        alertEnabled: true
+      });
+      markDirty();
+      return existing;
+    }
+    var created = {
       id: pwNextId(),
       name: fields.name,
       volume: fields.volume,
       price: fields.price,
+      asin: asin,
       keywords: [{
         id: pwNextKeywordId(),
         keyword: fields.keyword,
         mallUrls: fields.mallUrls || {},
-        history: []
+        history: [],
+        alertEnabled: true
       }],
       createdAt: pwTodayDate()
-    });
+    };
+    pw.items.push(created);
     markDirty();
+    return created;
   }
 
   function pwRemoveItem(id){
     var pw = pwEnsureState();
     pw.items = pw.items.filter(function(it){ return it.id !== id; });
+    markDirty();
+  }
+
+  // マスタ一覧の「編集」から呼ばれる。商品側の共通項目（名前・内容量・自社売価）と、
+  // 対象の1キーワードのテキスト・モールURLを更新する。
+  function pwUpdateItemKeyword(itemId, kwId, fields){
+    var item = pwEnsureState().items.filter(function(x){ return x.id === itemId; })[0];
+    if (!item) return;
+    var kw = item.keywords.filter(function(k){ return k.id === kwId; })[0];
+    if (!kw) return;
+    item.name = fields.name;
+    item.volume = fields.volume;
+    item.price = fields.price;
+    item.asin = fields.asin || "";
+    kw.keyword = fields.keyword;
+    kw.mallUrls = fields.mallUrls || {};
     markDirty();
   }
 
@@ -2541,7 +3047,7 @@
     if (pwFindKeywordByKeyword(kw)) return { ok:false, message:"このキーワードは既に登録されています。" };
     var item = pwEnsureState().items.filter(function(x){ return x.id === itemId; })[0];
     if (!item) return { ok:false, message:"商品が見つかりません。" };
-    item.keywords.push({ id: pwNextKeywordId(), keyword: kw, mallUrls: {}, history: [] });
+    item.keywords.push({ id: pwNextKeywordId(), keyword: kw, mallUrls: {}, history: [], alertEnabled: true });
     markDirty();
     return { ok:true };
   }
@@ -2551,6 +3057,60 @@
     if (!item) return;
     item.keywords = item.keywords.filter(function(k){ return k.id !== kwId; });
     markDirty();
+  }
+
+  function pwToggleKeywordAlert(itemId, kwId){
+    var item = pwEnsureState().items.filter(function(x){ return x.id === itemId; })[0];
+    if (!item) return;
+    var kw = item.keywords.filter(function(k){ return k.id === kwId; })[0];
+    if (!kw) return;
+    kw.alertEnabled = !kw.alertEnabled;
+    markDirty();
+  }
+
+  function pwAddBenchmarkToItem(itemId, asinInput, label){
+    var item = pwEnsureState().items.filter(function(x){ return x.id === itemId; })[0];
+    if (!item) return { ok:false, message:"商品が見つかりません。" };
+    var raw = String(asinInput || "").trim();
+    if (!raw) return { ok:false, message:"競合の子ASINを入力してください。" };
+    var asin = pwNormalizeAsin(raw);
+    if (!asin) return { ok:false, message:"ASINの形式が正しくありません（英数10桁、またはAmazonの商品URLを貼り付けてください）。" };
+    if (asin === pwNormalizeAsin(item.asin)) return { ok:false, message:"自社商品自身のASINはベンチマークに登録できません。" };
+    if (item.benchmarks.some(function(bm){ return bm.asin === asin; })) return { ok:false, message:"このASINは既にベンチマークに登録されています。" };
+    var created = { id: pwNextBenchmarkId(), asin: asin, label: String(label || "").trim(), history: [], alertEnabled: true };
+    item.benchmarks.push(created);
+    markDirty();
+    return { ok:true, benchmark: created };
+  }
+
+  function pwRemoveBenchmark(itemId, bmId){
+    var item = pwEnsureState().items.filter(function(x){ return x.id === itemId; })[0];
+    if (!item) return;
+    item.benchmarks = item.benchmarks.filter(function(bm){ return bm.id !== bmId; });
+    markDirty();
+  }
+
+  function pwToggleBenchmarkAlert(itemId, bmId){
+    var item = pwEnsureState().items.filter(function(x){ return x.id === itemId; })[0];
+    if (!item) return;
+    var bm = item.benchmarks.filter(function(b){ return b.id === bmId; })[0];
+    if (!bm) return;
+    bm.alertEnabled = !bm.alertEnabled;
+    markDirty();
+  }
+
+  // 全商品を横断して、同じ競合ASINを持つベンチマークを全件返す
+  // （1つの競合を複数の自社商品でベンチマークしている場合、取り込み時に全部へ反映する）
+  function pwFindBenchmarksByAsin(asinInput){
+    var asin = pwNormalizeAsin(asinInput);
+    if (!asin) return [];
+    var out = [];
+    pwEnsureState().items.forEach(function(it){
+      it.benchmarks.forEach(function(bm){
+        if (bm.asin === asin) out.push({ item: it, bm: bm });
+      });
+    });
+    return out;
   }
 
   function pwSetItemPrice(id, price){
@@ -2585,51 +3145,24 @@
     });
   }
 
+  // 商品ヘッダー（名前・全体判定・自社売価・削除）＋登録キーワードのタブ切替の骨格。
+  // タブ一覧・詳細（#pwKeywordTabs / #pwKeywordFocusArea）はpwWireItemCards側で描画する。
   function pwRenderItemCard(it){
     var level = pwAggregateItemLevel(it);
     var meta = PW_LEVEL_META[level];
     var globalLowest = pwGlobalLowestPrice(it);
     var diff = globalLowest != null ? (it.price - globalLowest) : null;
-    var malls = pwEnsureState().malls;
 
-    // 最終調査＝全キーワードの最新チェック日時のうち一番新しいもの
     var lastChecked = null;
-    it.keywords.forEach(function(kw){
-      var snap = pwGetLatestSnapshot(kw);
+    // 最終調査＝キーワード・ベンチマークのスナップショットのうち一番新しいもの
+    it.keywords.concat(it.benchmarks).forEach(function(t){
+      var snap = pwGetLatestSnapshot(t);
       if (snap && (!lastChecked || snap.checkedAt > lastChecked)) lastChecked = snap.checkedAt;
     });
 
-    var keywordBlocks = it.keywords.map(function(kw){
-      var evals = pwEvaluateKeywordMalls(it, kw);
-      var mallBlocks = malls.map(function(mk){
-        var ev = evals[mk];
-        var lv = PW_LEVEL_META[ev.level];
-        var d = pwDiffAgainstPrevious(kw, mk);
-        var newBadge = (d.newCompetitors && d.newCompetitors.length) ? "<span class='pwNewBadge'>🚨 NEW</span>" : "";
-        var deltaHtml = "";
-        if (d.priceDelta != null && d.priceDelta !== 0){
-          var cls = d.priceDelta < 0 ? "down" : "up";
-          var arrow = d.priceDelta < 0 ? "🔻" : "🔺";
-          deltaHtml = "<div class='pwMallDelta " + cls + "'>" + arrow + Math.abs(d.priceDelta).toLocaleString() + "円（前回比）</div>";
-        }
-        var priceLine;
-        if (ev.status !== "ok") priceLine = "未調査／取得不可";
-        else if (ev.lowestPrice != null) priceLine = "最安 " + pwYen(ev.lowestPrice) + (ev.unitLabel ? "（" + ev.unitLabel + " " + ev.lowestUnitPrice.toFixed(1) + "）" : "");
-        else priceLine = "競合なし";
-        return "<div class='pwMallBlock'>" +
-          "<div class='pwMallName'>" + esc(pwMallLabel(mk)) + newBadge + "</div>" +
-          "<span class='confBadge " + lv.badgeClass + "'><span class='dot'></span>" + lv.icon + " " + lv.label + "</span>" +
-          "<div class='pwMallPrice'>" + priceLine + "</div>" +
-          deltaHtml +
-        "</div>";
-      }).join("");
-
-      return "<div class='pwKeywordBlock' data-kwid='" + attr(kw.id) + "'>" +
-        "<div class='pwKeywordHead'><span class='pwKeywordLabel'>🔍 " + esc(kw.keyword) + "</span>" +
-          "<button type='button' class='btn small ghost' data-act='removeKeyword' data-kwid='" + attr(kw.id) + "'>キーワードを削除</button></div>" +
-        "<div class='pwMallGrid'>" + mallBlocks + "</div>" +
-      "</div>";
-    }).join("") || "<p class='hint' style='margin:12px 0 0;'>アラートキーワードが登録されていません。下から追加してください。</p>";
+    var hasKeywords = it.keywords.length > 0;
+    // ベンチマークに下回られているときはヘッダーバッジもギラギラさせる
+    var headBadgeGlow = pwItemHasBenchmarkAlert(it) ? " pwGlowAlert" : "";
 
     return "<div class='pwItemCard' data-item-id='" + attr(it.id) + "'>" +
       "<div class='pwItemHead'>" +
@@ -2638,99 +3171,555 @@
           "<div class='pwItemMeta'>内容量: " + esc(it.volume) + "</div>" +
         "</div>" +
         "<div class='pwItemActions'>" +
-          "<span class='confBadge " + meta.badgeClass + "'><span class='dot'></span>" + meta.icon + " " + meta.label + "</span>" +
+          "<span class='confBadge " + meta.badgeClass + headBadgeGlow + "'><span class='dot'></span>" + meta.icon + " " + meta.label + "</span>" +
           "<button type='button' class='btn small ghost' data-act='remove'>削除</button>" +
         "</div>" +
       "</div>" +
       "<div class='pwItemFacts'>" +
         "<div class='pwFact'><span class='wfLabel'>自社売価</span><span class='wfValue'><input type='number' class='pwPriceInput' min='0' step='1' data-act='price' value='" + attr(it.price) + "'></span></div>" +
-        "<div class='pwFact" + (diff != null && diff > 0 ? " bad" : (diff != null && diff < 0 ? " good" : "")) + "'><span class='wfLabel'>競合最安値（全キーワード・全モール中）</span><span class='wfValue'>" + pwYen(globalLowest) + "</span></div>" +
+        "<div class='pwFact" + (diff != null && diff > 0 ? " bad" : (diff != null && diff < 0 ? " good" : "")) + "'><span class='wfLabel'>競合最安値（キーワード・ベンチマーク含む）</span><span class='wfValue'>" + pwYen(globalLowest) + "</span></div>" +
         "<div class='pwFact'><span class='wfLabel'>価格差</span><span class='wfValue'>" + (diff != null ? ((diff > 0 ? "-" : diff < 0 ? "+" : "±") + "¥" + Math.abs(diff).toLocaleString()) : "-") + "</span></div>" +
       "</div>" +
       "<p class='pwLastChecked'>最終調査: " + (lastChecked ? pwFormatChecked(lastChecked) : "まだ調査していません") + "</p>" +
       "<p class='pwMsg' data-role='msg'></p>" +
-      keywordBlocks +
-      "<div class='pwAddKeywordRow'>" +
-        "<input type='text' class='pwAddKeywordInput' placeholder='新しいアラートキーワードを追加'>" +
-        "<button type='button' class='btn small primary' data-act='addKeyword'>＋ 追加</button>" +
+      "<div class='pwKeywordTabSection'>" +
+        "<div class='pwAddKeywordRow'>" +
+          "<input type='text' class='pwAddKeywordInput' placeholder='このASINに新しいアラートキーワードを追加'>" +
+          "<button type='button' class='btn small primary' data-act='addKeyword'>＋ 追加</button>" +
+        "</div>" +
+        "<div style='margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;'>" +
+          "<button type='button' class='btn ghost' data-act='genProductPrompt'" + (hasKeywords ? "" : " disabled") + ">📝 このASINの全キーワード分の依頼文を作成</button>" +
+          "<button type='button' class='btn ghost' data-act='genSinglePrompt'" + (state.ui.selectedWatchKeywordId ? "" : " disabled") + ">📝 この1キーワードだけの依頼文を作成</button>" +
+        "</div>" +
       "</div>" +
+      "<div id='pwKeywordFocusArea'></div>" +
     "</div>";
   }
 
-  function pwWireItemCards(){
-    document.querySelectorAll("#pwProductList .pwItemCard").forEach(function(card){
-      var id = card.dataset.itemId;
-      var priceInput = card.querySelector("input[data-act='price']");
-      if (priceInput){
-        priceInput.addEventListener("change", function(){
-          var v = Number(priceInput.value);
-          var msg = card.querySelector("[data-role='msg']");
-          if (isNaN(v) || v < 0){
-            if (msg){ msg.style.color = "var(--danger)"; msg.textContent = "0以上の数値を入力してください。"; }
-            return;
-          }
-          pwSetItemPrice(id, v);
-          renderPwAll();
-          var el = document.querySelector("#pwProductList .pwItemCard[data-item-id='" + attr(id) + "'] input[data-act='price']");
-          if (el) el.focus();
-        });
+  // 登録キーワードのタブ1つ分（キーワード文言＋判定ドット）。#pwKeywordTabsに並べる。
+  function pwBuildKeywordTabHtml(it, kw){
+    var off = kw.alertEnabled === false;
+    var lvKey = pwAggregateKeywordLevel(it, kw);
+    var active = (state.ui.watchDetailMode !== "benchmark" && kw.id === state.ui.selectedWatchKeywordId) ? " active" : "";
+    return "<button type='button' class='pwKeywordTab" + active + (off ? " disabled" : "") + "' data-kwid='" + attr(kw.id) + "'>" +
+      "<span class='pwTabDot " + PW_DOT_CLASS[lvKey] + "'></span>" +
+      esc(kw.keyword) +
+    "</button>";
+  }
+
+  // 「🎯 ベンチマーク」タブ。キーワードが0件でも常に表示し、ここから登録できるようにする。
+  function pwBuildBenchmarkTabHtml(it){
+    var active = state.ui.watchDetailMode === "benchmark" ? " active" : "";
+    var glow = pwItemHasBenchmarkAlert(it) ? " pwGlowAlert" : "";
+    return "<button type='button' class='pwKeywordTab" + active + glow + "' data-role='benchmarkTab'>" +
+      "<span class='pwTabDot " + PW_DOT_CLASS[pwAggregateBenchmarkLevel(it)] + "'></span>" +
+      "🎯 ベンチマーク (" + it.benchmarks.length + ")" +
+    "</button>";
+  }
+
+  // #pwKeywordTabsを描画する。キーワードタブ＋🎯ベンチマークタブを並べ、
+  // 選択中のキーワードが無効/未設定なら先頭のキーワードへ自動フォールバックする。
+  function renderPwKeywordTabs(it){
+    var wrap = document.getElementById("pwKeywordTabs");
+    if (!wrap) return;
+    if (it.keywords.length && !it.keywords.some(function(kw){ return kw.id === state.ui.selectedWatchKeywordId; })){
+      state.ui.selectedWatchKeywordId = it.keywords[0].id;
+    }
+    // キーワードが0件ならベンチマーク側しか見るものがないので、そちらへ寄せる
+    if (!it.keywords.length) state.ui.watchDetailMode = "benchmark";
+
+    var kwHtml = it.keywords.length
+      ? it.keywords.map(function(kw){ return pwBuildKeywordTabHtml(it, kw); }).join("")
+      : "<span class='hint' style='align-self:center;'>キーワード未登録</span>";
+    wrap.innerHTML = kwHtml + pwBuildBenchmarkTabHtml(it);
+
+    wrap.querySelectorAll(".pwKeywordTab[data-kwid]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        state.ui.selectedWatchKeywordId = btn.dataset.kwid;
+        state.ui.watchDetailMode = "keyword";
+        markDirty();
+        renderPwAll();
+      });
+    });
+    var benchTab = wrap.querySelector("[data-role='benchmarkTab']");
+    if (benchTab){
+      benchTab.addEventListener("click", function(){
+        state.ui.watchDetailMode = "benchmark";
+        markDirty();
+        renderPwAll();
+      });
+    }
+  }
+
+  // 選択中の1キーワードだけのモール別詳細（既存の.pwMallGrid描画をそのまま流用）。タブ切替で即時表示する。
+  function pwBuildKeywordFocusHtml(it, kw){
+    if (!kw) return "<p class='hint' style='margin:0;'>上の「登録キーワード」からキーワードを選択してください。</p>";
+    var malls = pwEnsureState().malls;
+    var evals = pwEvaluateKeywordMalls(it, kw);
+    var snap = pwGetLatestSnapshot(kw);
+    var mallBlocks = malls.map(function(mk){
+      var ev = evals[mk];
+      var lv = PW_LEVEL_META[ev.level];
+      var d = pwDiffAgainstPrevious(kw, mk);
+      var newBadge = (d.newCompetitors && d.newCompetitors.length) ? "<span class='pwNewBadge'>🚨 NEW</span>" : "";
+      var deltaHtml = "";
+      if (d.priceDelta != null && d.priceDelta !== 0){
+        var cls = d.priceDelta < 0 ? "down" : "up";
+        var arrow = d.priceDelta < 0 ? "🔻" : "🔺";
+        deltaHtml = "<div class='pwMallDelta " + cls + "'>" + arrow + Math.abs(d.priceDelta).toLocaleString() + "円（前回比）</div>";
       }
-      var removeBtn = card.querySelector("[data-act='remove']");
-      if (removeBtn){
-        removeBtn.addEventListener("click", function(){
-          pwRemoveItem(id);
-          renderPwAll();
-        });
+      var priceLine;
+      if (ev.status !== "ok") priceLine = "未調査／取得不可";
+      else if (ev.lowestPrice != null) priceLine = "最安 " + pwYen(ev.lowestPrice) + (ev.unitLabel ? "（" + ev.unitLabel + " " + ev.lowestUnitPrice.toFixed(1) + "）" : "");
+      else priceLine = "競合なし";
+      var snapMall = snap && snap.malls ? snap.malls[mk] : null;
+      return "<div class='pwMallBlock'>" +
+        "<div class='pwMallName'>" + esc(pwMallLabel(mk)) + newBadge + "</div>" +
+        "<span class='confBadge " + lv.badgeClass + "'><span class='dot'></span>" + lv.icon + " " + lv.label + "</span>" +
+        "<div class='pwMallPrice'>" + priceLine + "</div>" +
+        deltaHtml +
+        pwBuildUndercutListHtml(it, snapMall) +
+      "</div>";
+    }).join("");
+
+    var off = kw.alertEnabled === false;
+    var offNotice = off
+      ? "<p class='hint' style='margin:0 0 8px;'>🔕 このキーワードはアラート停止中です（サマリー集計・依頼文の対象外。モール別データはこのまま確認できます）。</p>"
+      : "";
+
+    return "<div class='pwKeywordBlock' data-kwid='" + attr(kw.id) + "'>" +
+      "<div class='pwKeywordHead'>" +
+        "<span class='pwKeywordLabel'>🔍 " + esc(kw.keyword) + "</span>" +
+        "<div style='display:flex; gap:6px; flex-wrap:wrap;'>" +
+          "<button type='button' class='pwAlertToggle " + (off ? "off" : "on") + "' data-act='toggleAlert' data-kwid='" + attr(kw.id) + "'>" + (off ? "🔕 OFF" : "🔔 ON") + "</button>" +
+          "<button type='button' class='btn small ghost' data-act='removeKeyword' data-kwid='" + attr(kw.id) + "'>キーワードを削除</button>" +
+        "</div>" +
+      "</div>" +
+      offNotice +
+      "<div class='pwMallGrid'>" + mallBlocks + "</div>" +
+    "</div>";
+  }
+
+  // ベンチマーク一覧（🎯タブの中身）。1行＝1競合ASINの定点観測。
+  function pwBuildBenchmarkAreaHtml(it){
+    var addRow = "<div class='pwAddKeywordRow'>" +
+      "<input type='text' data-role='benchAsin' placeholder='競合の子ASIN（またはAmazonの商品URL）'>" +
+      "<input type='text' data-role='benchLabel' placeholder='メモ（任意）' style='flex:0 1 160px;'>" +
+      "<button type='button' class='btn small primary' data-act='addBenchmark'>＋ 追加</button>" +
+    "</div>";
+
+    if (!it.benchmarks.length){
+      return "<div class='pwKeywordBlock'>" +
+        "<div class='pwKeywordHead'><span class='pwKeywordLabel'>🎯 ベンチマーク商品</span></div>" +
+        "<p class='hint' style='margin:0;'>ベンチマーク商品が登録されていません。競合の子ASINを追加すると、その商品の価格を定点観測できます（検索結果と違って毎回同じ商品を追えるので、前回比が正確になります）。</p>" +
+        addRow +
+        "<p class='pwMsg' data-role='benchMsg'></p>" +
+      "</div>";
+    }
+
+    var rows = it.benchmarks.map(function(bm){
+      var ev = pwEvaluateBenchmark(it, bm);
+      var lv = PW_LEVEL_META[ev.level];
+      var off = bm.alertEnabled === false;
+      var d = pwDiffAgainstPrevious(bm, PW_BENCHMARK_MALL);
+      var snap = pwGetLatestSnapshot(bm);
+      var comp = (snap && snap.malls && snap.malls[PW_BENCHMARK_MALL] && snap.malls[PW_BENCHMARK_MALL].competitors || [])[0];
+
+      var deltaHtml = "";
+      if (d.priceDelta != null && d.priceDelta !== 0){
+        var cls = d.priceDelta < 0 ? "down" : "up";
+        var arrow = d.priceDelta < 0 ? "🔻" : "🔺";
+        deltaHtml = "<div class='pwMallDelta " + cls + "'>" + arrow + Math.abs(d.priceDelta).toLocaleString() + "円（前回比）</div>";
       }
-      var addKeywordBtn = card.querySelector("[data-act='addKeyword']");
-      if (addKeywordBtn){
-        addKeywordBtn.addEventListener("click", function(){
-          var input = card.querySelector(".pwAddKeywordInput");
-          var msg = card.querySelector("[data-role='msg']");
-          var res = pwAddKeywordToItem(id, input.value);
-          if (!res.ok){
-            if (msg){ msg.style.color = "var(--danger)"; msg.textContent = res.message || "追加できませんでした。"; }
-            return;
-          }
-          renderPwAll();
-          renderHomeView();
-        });
-      }
-      card.querySelectorAll("[data-act='removeKeyword']").forEach(function(btn){
-        btn.addEventListener("click", function(){
-          pwRemoveKeyword(id, btn.dataset.kwid);
-          renderPwAll();
-          renderHomeView();
-        });
+      var priceLine;
+      if (ev.status !== "ok" || ev.lowestPrice == null) priceLine = "未調査／取得不可";
+      else priceLine = pwYen(ev.lowestPrice) + (ev.unitLabel ? "（" + ev.unitLabel + " " + ev.lowestUnitPrice.toFixed(1) + "）" : "");
+
+      // 下回られている行はギラギラさせる（アラートOFFのものは対象外）
+      var glow = (!off && ev.level === "alert") ? " pwGlowAlert" : "";
+      var displayName = bm.label || (comp && comp.name) || "（商品名は調査後に表示されます）";
+
+      return "<div class='pwBenchRow" + glow + "' data-bmid='" + attr(bm.id) + "'" + (off ? " style='opacity:0.55;'" : "") + ">" +
+        "<div class='pwBenchMain'>" +
+          "<div class='pwBenchHead'>" +
+            "<span class='pwSelectedAsinCode'>" + esc(bm.asin) + "</span>" +
+            "<span class='confBadge " + lv.badgeClass + "'><span class='dot'></span>" + lv.icon + " " + lv.label + "</span>" +
+          "</div>" +
+          "<div class='pwBenchName'>" + esc(displayName) + "</div>" +
+          "<div class='pwBenchPrice'>" + priceLine + "</div>" +
+          deltaHtml +
+        "</div>" +
+        "<div class='pwBenchActions'>" +
+          "<a class='pwBenchLink' href='https://www.amazon.co.jp/dp/" + attr(bm.asin) + "' target='_blank' rel='noopener noreferrer'>Amazonで開く ↗</a>" +
+          "<button type='button' class='pwAlertToggle " + (off ? "off" : "on") + "' data-act='toggleBenchmark' data-bmid='" + attr(bm.id) + "'>" + (off ? "🔕 OFF" : "🔔 ON") + "</button>" +
+          "<button type='button' class='btn small ghost' data-act='removeBenchmark' data-bmid='" + attr(bm.id) + "'>削除</button>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+
+    return "<div class='pwKeywordBlock'>" +
+      "<div class='pwKeywordHead'><span class='pwKeywordLabel'>🎯 ベンチマーク商品（Amazonの競合ASINを定点観測）</span></div>" +
+      "<div style='margin-top:10px;'>" + rows + "</div>" +
+      addRow +
+      "<p class='pwMsg' data-role='benchMsg'></p>" +
+    "</div>";
+  }
+
+  function renderPwBenchmarkArea(it){
+    var wrap = document.getElementById("pwKeywordFocusArea");
+    if (!wrap) return;
+    wrap.innerHTML = pwBuildBenchmarkAreaHtml(it);
+    var msg = wrap.querySelector("[data-role='benchMsg']");
+    function showBenchErr(text){
+      if (!msg) return;
+      msg.style.color = "var(--danger)";
+      msg.textContent = text;
+    }
+    var addBtn = wrap.querySelector("[data-act='addBenchmark']");
+    if (addBtn){
+      addBtn.addEventListener("click", function(){
+        var asinInput = wrap.querySelector("[data-role='benchAsin']");
+        var labelInput = wrap.querySelector("[data-role='benchLabel']");
+        var res = pwAddBenchmarkToItem(it.id, asinInput.value, labelInput.value);
+        if (!res.ok){ showBenchErr(res.message); return; }
+        renderPwAll();
+      });
+    }
+    wrap.querySelectorAll("[data-act='toggleBenchmark']").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        pwToggleBenchmarkAlert(it.id, btn.dataset.bmid);
+        renderPwAll();
+      });
+    });
+    wrap.querySelectorAll("[data-act='removeBenchmark']").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        pwRemoveBenchmark(it.id, btn.dataset.bmid);
+        renderPwAll();
       });
     });
   }
 
-  function renderPwProductList(){
-    var listEl = document.getElementById("pwProductList");
+  function renderPwKeywordFocus(it){
+    var wrap = document.getElementById("pwKeywordFocusArea");
+    if (!wrap) return;
+    if (state.ui.watchDetailMode === "benchmark"){ renderPwBenchmarkArea(it); return; }
+    var kw = it.keywords.filter(function(k){ return k.id === state.ui.selectedWatchKeywordId; })[0];
+    wrap.innerHTML = pwBuildKeywordFocusHtml(it, kw);
+    var removeBtn = wrap.querySelector("[data-act='removeKeyword']");
+    if (removeBtn){
+      removeBtn.addEventListener("click", function(){
+        pwRemoveKeyword(it.id, removeBtn.dataset.kwid);
+        state.ui.selectedWatchKeywordId = null;
+        renderPwAll();
+        renderHomeView();
+      });
+    }
+    var toggleBtn = wrap.querySelector("[data-act='toggleAlert']");
+    if (toggleBtn){
+      toggleBtn.addEventListener("click", function(){
+        pwToggleKeywordAlert(it.id, toggleBtn.dataset.kwid);
+        renderPwAll();
+      });
+    }
+  }
+
+  function pwWireItemCards(it){
+    var card = document.querySelector("#pwProductDetail .pwItemCard");
+    if (!card) return;
+    var id = card.dataset.itemId;
+    var priceInput = card.querySelector("input[data-act='price']");
+    if (priceInput){
+      priceInput.addEventListener("change", function(){
+        var v = Number(priceInput.value);
+        var msg = card.querySelector("[data-role='msg']");
+        if (isNaN(v) || v < 0){
+          if (msg){ msg.style.color = "var(--danger)"; msg.textContent = "0以上の数値を入力してください。"; }
+          return;
+        }
+        pwSetItemPrice(id, v);
+        renderPwAll();
+        var el = document.querySelector("#pwProductDetail .pwItemCard[data-item-id='" + attr(id) + "'] input[data-act='price']");
+        if (el) el.focus();
+      });
+    }
+    var removeBtn = card.querySelector("[data-act='remove']");
+    if (removeBtn){
+      removeBtn.addEventListener("click", function(){
+        pwRemoveItem(id);
+        state.ui.selectedWatchItemId = null;
+        state.ui.selectedWatchKeywordId = null;
+        renderPwAll();
+      });
+    }
+    var addKeywordBtn = card.querySelector("[data-act='addKeyword']");
+    if (addKeywordBtn){
+      addKeywordBtn.addEventListener("click", function(){
+        var input = card.querySelector(".pwAddKeywordInput");
+        var msg = card.querySelector("[data-role='msg']");
+        var res = pwAddKeywordToItem(id, input.value);
+        if (!res.ok){
+          if (msg){ msg.style.color = "var(--danger)"; msg.textContent = res.message || "追加できませんでした。"; }
+          return;
+        }
+        var found = pwFindKeywordByKeyword(input.value);
+        if (found) state.ui.selectedWatchKeywordId = found.kw.id;
+        renderPwAll();
+        renderHomeView();
+      });
+    }
+    var genProductBtn = card.querySelector("[data-act='genProductPrompt']");
+    if (genProductBtn){
+      genProductBtn.addEventListener("click", function(){
+        document.getElementById("pwPromptText").value = pwBuildProductResearchPrompt(it);
+        var promptCard = document.getElementById("pwPromptCard");
+        promptCard.hidden = false;
+        promptCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+    var genSingleBtn = card.querySelector("[data-act='genSinglePrompt']");
+    if (genSingleBtn){
+      genSingleBtn.addEventListener("click", function(){
+        var kw = it.keywords.filter(function(k){ return k.id === state.ui.selectedWatchKeywordId; })[0];
+        if (!kw) return;
+        document.getElementById("pwPromptText").value = pwBuildSingleResearchPrompt(it, kw);
+        var promptCard = document.getElementById("pwPromptCard");
+        promptCard.hidden = false;
+        promptCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+    // #pwKeywordTabs は商品カードの外（#pwSelectCard内）にあり、
+    // renderPwProductPicker() 側で描画済みなのでここでは触らない。
+    renderPwKeywordFocus(it);
+  }
+
+  function pwFilteredWatchItems(){
+    var items = pwEnsureState().items;
+    return items.filter(function(it){ return !pwActiveFilter || pwAggregateItemLevel(it) === pwActiveFilter; });
+  }
+
+  // 検索文字列（ASIN・商品名）に該当する商品を返す。空なら絞り込みなし。
+  function pwSearchMatchedItems(){
+    var candidates = pwFilteredWatchItems();
+    var searchLower = pwProductSearchText.trim().toLowerCase();
+    if (!searchLower) return candidates;
+    return candidates.filter(function(it){
+      return it.name.toLowerCase().indexOf(searchLower) !== -1 || (it.asin || "").toLowerCase().indexOf(searchLower) !== -1;
+    });
+  }
+
+  // 商品（ASIN）の選択は検索欄だけで行う。入力すると該当する商品が自動選択され、
+  // 下のバーはその商品の「登録キーワード」だけを並べる（商品名のバーは持たない）。
+  function renderPwProductPicker(){
+    var selectCard = document.getElementById("pwSelectCard");
     var emptyEl = document.getElementById("pwEmptyCard");
-    if (!listEl) return;
+    var asinEl = document.getElementById("pwSelectedAsin");
+    var hintEl = document.getElementById("pwProductMatchHint");
     var items = pwEnsureState().items;
     if (!items.length){
       if (emptyEl) emptyEl.hidden = false;
-      listEl.innerHTML = "";
+      if (selectCard) selectCard.hidden = true;
       return;
     }
     if (emptyEl) emptyEl.hidden = true;
+    if (selectCard) selectCard.hidden = false;
 
-    var filtered = items.filter(function(it){ return !pwActiveFilter || pwAggregateItemLevel(it) === pwActiveFilter; });
+    var matched = pwSearchMatchedItems();
+    // 該当があればその先頭を自動選択する。該当が無いときは選択を変えず、
+    // 「該当なし」の案内だけ出す（打ち間違いで選択中の商品が消えないようにする）。
+    if (matched.length){
+      if (!matched.some(function(it){ return it.id === state.ui.selectedWatchItemId; })){
+        state.ui.selectedWatchItemId = matched[0].id;
+        state.ui.selectedWatchKeywordId = null;
+      }
+    } else if (!items.some(function(it){ return it.id === state.ui.selectedWatchItemId; })){
+      state.ui.selectedWatchItemId = items[0].id;
+      state.ui.selectedWatchKeywordId = null;
+    }
+
+    var selected = items.filter(function(it){ return it.id === state.ui.selectedWatchItemId; })[0];
+    if (asinEl){
+      asinEl.innerHTML = selected
+        ? (selected.asin ? "<span class='pwSelectedAsinCode'>" + esc(selected.asin) + "</span>" : "<span class='pwSelectedAsinCode none'>ASIN未登録</span>") +
+          "<span class='pwSelectedAsinName'>" + esc(selected.name) + "</span>"
+        : "";
+    }
+    if (hintEl){
+      var msg = "";
+      if (!matched.length) msg = "該当する商品がありません（選択中の商品を表示しています）。";
+      else if (matched.length > 1) msg = matched.length + "件が該当します。ASINを入力すると1件に絞り込めます。";
+      hintEl.textContent = msg;
+      hintEl.hidden = !msg;
+    }
+
+    if (selected) renderPwKeywordTabs(selected);
+  }
+
+  function renderPwProductDetail(){
+    var wrap = document.getElementById("pwProductDetail");
+    if (!wrap) return;
+    var it = pwEnsureState().items.filter(function(x){ return x.id === state.ui.selectedWatchItemId; })[0];
+    wrap.innerHTML = it ? pwRenderItemCard(it) : "<p class='hint' style='margin:0;'>上の「商品を選択」から商品を選んでください。</p>";
+    if (it) pwWireItemCards(it);
+  }
+
+  function pwApplyActiveTab(){
+    var tab = state.ui.activeWatchTab === "register" ? "register" : "view";
+    var registerSection = document.getElementById("pwRegisterSection");
+    var viewSection = document.getElementById("pwViewSection");
+    if (registerSection) registerSection.hidden = (tab !== "register");
+    if (viewSection) viewSection.hidden = (tab !== "view");
+    document.querySelectorAll("#pwTabs .pwTab").forEach(function(btn){
+      btn.classList.toggle("active", btn.dataset.tab === tab);
+    });
+  }
+
+  // 登録済みマスタ一覧（①登録タブ、フォームの下）。ASIN→（商品名・内容量・キーワード）の2階層ドリルダウン。
+  // ASIN未登録の商品は空文字キーの1グループにまとめ、「（ASIN未登録）」として一覧の最後に表示する。
+  function pwMasterAllAsins(){
+    var items = pwEnsureState().items;
+    var seen = {};
+    var groups = [];
+    items.forEach(function(it){
+      var key = it.asin || "";
+      if (!seen[key]){ seen[key] = true; groups.push({ asin: key, name: it.name }); }
+    });
+    groups.sort(function(a, b){
+      if (!a.asin && b.asin) return 1;
+      if (a.asin && !b.asin) return -1;
+      return 0;
+    });
+    return groups;
+  }
+
+  function pwMasterEntriesForAsin(asin){
+    var items = pwEnsureState().items.filter(function(it){ return (it.asin || "") === asin; });
+    var out = [];
+    items.forEach(function(it){
+      it.keywords.forEach(function(kw){
+        out.push({ itemId: it.id, name: it.name, volume: it.volume, price: it.price, kwId: kw.id, keyword: kw.keyword, mallUrls: kw.mallUrls });
+      });
+    });
+    return out;
+  }
+
+  function renderPwMasterAsinGroups(){
+    var wrap = document.getElementById("pwMasterRows");
+    if (!wrap) return;
+    var groups = pwMasterAllAsins();
+    var searchLower = pwMasterSearchText.trim().toLowerCase();
+    var filtered = searchLower ? groups.filter(function(g){
+      return g.asin.toLowerCase().indexOf(searchLower) !== -1 || g.name.toLowerCase().indexOf(searchLower) !== -1;
+    }) : groups;
     if (!filtered.length){
-      listEl.innerHTML = "<p class='hint' style='margin:0;'>この判定に該当する商品はありません。</p>";
+      wrap.innerHTML = "<p class='hint' style='margin:0;'>" + (groups.length ? "該当するASIN・商品名がありません。" : "まだ登録がありません。") + "</p>";
       return;
     }
-    listEl.innerHTML = filtered.map(pwRenderItemCard).join("");
-    pwWireItemCards();
+    wrap.innerHTML = filtered.map(function(g){
+      var label = g.asin ? esc(g.asin) : "（ASIN未登録）";
+      var sub = g.asin ? "<span class='pwProductRowName' style='font-weight:400; color:var(--text-secondary); margin-left:8px;'>" + esc(g.name) + "</span>" : "";
+      return "<div class='pwProductRow' data-asin='" + attr(g.asin) + "'><span class='pwProductRowName'>" + label + "</span>" + sub + "</div>";
+    }).join("");
+    wrap.querySelectorAll(".pwProductRow").forEach(function(row){
+      row.addEventListener("click", function(){
+        pwMasterSelectedAsin = row.dataset.asin;
+        pwMasterViewLevel = "entries";
+        pwMasterSearchText = "";
+        document.getElementById("pwMasterSearchInput").value = "";
+        renderPwMasterView();
+      });
+    });
+  }
+
+  function renderPwMasterEntries(){
+    var wrap = document.getElementById("pwMasterRows");
+    if (!wrap) return;
+    var entries = pwMasterEntriesForAsin(pwMasterSelectedAsin);
+    var searchLower = pwMasterSearchText.trim().toLowerCase();
+    var filtered = searchLower ? entries.filter(function(e){
+      return e.volume.toLowerCase().indexOf(searchLower) !== -1 || e.keyword.toLowerCase().indexOf(searchLower) !== -1 || e.name.toLowerCase().indexOf(searchLower) !== -1;
+    }) : entries;
+    if (!filtered.length){
+      wrap.innerHTML = "<p class='hint' style='margin:0;'>該当するデータがありません。</p>";
+      return;
+    }
+    wrap.innerHTML = filtered.map(function(e){
+      return "<div class='pwMasterEntryRow'>" +
+        "<div>" +
+          "<div class='pwMasterEntryVolume'>" + esc(e.name) + " ／ 内容量: " + esc(e.volume) + "</div>" +
+          "<div class='pwMasterEntryKeyword'>🔍 " + esc(e.keyword) + "</div>" +
+        "</div>" +
+        "<div class='pwMasterEntryActions'>" +
+          "<button type='button' class='btn small ghost' data-act='masterCopy' data-item='" + attr(e.itemId) + "' data-kw='" + attr(e.kwId) + "'>📋 コピー</button>" +
+          "<button type='button' class='btn small ghost' data-act='masterEdit' data-item='" + attr(e.itemId) + "' data-kw='" + attr(e.kwId) + "'>✏️ 編集</button>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+    wrap.querySelectorAll("[data-act='masterCopy']").forEach(function(btn){
+      btn.addEventListener("click", function(){ pwMasterLoadToForm(btn.dataset.item, btn.dataset.kw, false); });
+    });
+    wrap.querySelectorAll("[data-act='masterEdit']").forEach(function(btn){
+      btn.addEventListener("click", function(){ pwMasterLoadToForm(btn.dataset.item, btn.dataset.kw, true); });
+    });
+  }
+
+  function renderPwMasterView(){
+    var backBtn = document.getElementById("pwMasterBackBtn");
+    var searchInput = document.getElementById("pwMasterSearchInput");
+    if (!backBtn || !searchInput) return;
+    if (pwMasterViewLevel === "entries" && pwMasterSelectedAsin !== null){
+      backBtn.hidden = false;
+      searchInput.placeholder = "🔍 商品名・内容量・キーワードで検索";
+      renderPwMasterEntries();
+    } else {
+      backBtn.hidden = true;
+      searchInput.placeholder = "🔍 ASIN・商品名で検索";
+      renderPwMasterAsinGroups();
+    }
+  }
+
+  // マスタ一覧の「コピー」「編集」から呼ばれる。フォームに値を読み込み、編集の場合は
+  // 送信時に新規追加ではなく既存データの更新になるよう pwEditTarget を立てる。
+  function pwMasterLoadToForm(itemId, kwId, isEdit){
+    var item = pwEnsureState().items.filter(function(x){ return x.id === itemId; })[0];
+    if (!item) return;
+    var kw = item.keywords.filter(function(k){ return k.id === kwId; })[0];
+    if (!kw) return;
+    document.getElementById("pwFormName").value = item.name;
+    document.getElementById("pwFormVolume").value = item.volume;
+    document.getElementById("pwFormPrice").value = item.price;
+    document.getElementById("pwFormKeyword").value = kw.keyword;
+    document.getElementById("pwFormAsin").value = item.asin || "";
+    document.querySelectorAll("#pwFormMallUrls input[data-mall]").forEach(function(input){
+      input.value = (kw.mallUrls && kw.mallUrls[input.dataset.mall]) || "";
+    });
+    document.getElementById("pwFormError").style.display = "none";
+    pwEditTarget = isEdit ? { itemId: itemId, kwId: kwId } : null;
+    pwUpdateFormModeUI();
+    var nameInput = document.getElementById("pwFormName");
+    nameInput.scrollIntoView({ behavior: "smooth", block: "start" });
+    nameInput.focus();
+  }
+
+  function pwUpdateFormModeUI(){
+    var btn = document.getElementById("pwAddItemBtn");
+    var cancelBtn = document.getElementById("pwCancelEditBtn");
+    if (!btn) return;
+    if (pwEditTarget){
+      btn.textContent = "✏️ 変更を保存";
+      if (cancelBtn) cancelBtn.hidden = false;
+    } else {
+      btn.textContent = "＋ 商品を登録";
+      if (cancelBtn) cancelBtn.hidden = true;
+    }
   }
 
   function renderPwAll(){
     pwEnsureState();
+    pwApplyActiveTab();
     renderPwSummaryBar();
-    renderPwProductList();
+    renderPwProductPicker();
+    renderPwProductDetail();
+    renderPwMasterView();
   }
 
   function pwBuildMallUrlInputs(){
@@ -2769,11 +3758,48 @@
     });
   }
 
+  document.querySelectorAll("#pwTabs .pwTab").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      state.ui.activeWatchTab = btn.dataset.tab;
+      markDirty();
+      pwApplyActiveTab();
+    });
+  });
+
+  document.getElementById("pwGoRegisterBtn").addEventListener("click", function(){
+    state.ui.activeWatchTab = "register";
+    markDirty();
+    pwApplyActiveTab();
+  });
+
+  // 検索欄への入力で商品（ASIN）の選択が変わるため、キーワードバー・商品カードの
+  // 両方を描き直す必要がある。検索input自体は#pwSelectCardの静的HTMLで、
+  // ここで作り直されることはないのでフォーカスは保たれる。
+  document.getElementById("pwProductSearchInput").addEventListener("input", function(){
+    pwProductSearchText = this.value;
+    renderPwProductPicker();
+    renderPwProductDetail();
+  });
+
+  document.getElementById("pwCheckInfoBtn").addEventListener("click", function(e){
+    e.stopPropagation();
+    var pop = document.getElementById("pwCheckInfoPopover");
+    pop.hidden = !pop.hidden;
+  });
+  document.addEventListener("click", function(e){
+    var pop = document.getElementById("pwCheckInfoPopover");
+    var infoBtn = document.getElementById("pwCheckInfoBtn");
+    if (pop && !pop.hidden && e.target !== infoBtn && !pop.contains(e.target)){
+      pop.hidden = true;
+    }
+  });
+
   document.getElementById("pwAddItemBtn").addEventListener("click", function(){
     var name = document.getElementById("pwFormName").value.trim();
     var volume = document.getElementById("pwFormVolume").value.trim();
     var priceRaw = document.getElementById("pwFormPrice").value;
     var keyword = document.getElementById("pwFormKeyword").value.trim();
+    var asin = document.getElementById("pwFormAsin").value.trim();
     var errEl = document.getElementById("pwFormError");
     function showFormErr(msg){ errEl.textContent = msg; errEl.style.display = msg ? "block" : "none"; }
     if (!name || !volume || !keyword || priceRaw === ""){
@@ -2785,7 +3811,8 @@
       showFormErr("自社売価は0以上の数値で入力してください。");
       return;
     }
-    if (pwFindKeywordByKeyword(keyword)){
+    var dup = pwFindKeywordByKeyword(keyword);
+    if (dup && !(pwEditTarget && dup.kw.id === pwEditTarget.kwId)){
       showFormErr("このアラートキーワードは既に登録されています。");
       return;
     }
@@ -2793,15 +3820,46 @@
     document.querySelectorAll("#pwFormMallUrls input[data-mall]").forEach(function(input){
       if (input.value.trim()) mallUrls[input.dataset.mall] = input.value.trim();
     });
-    pwAddItem({ name:name, volume:volume, price:price, keyword:keyword, mallUrls:mallUrls });
+    if (pwEditTarget){
+      pwUpdateItemKeyword(pwEditTarget.itemId, pwEditTarget.kwId, { name:name, volume:volume, price:price, keyword:keyword, mallUrls:mallUrls, asin:asin });
+      pwEditTarget = null;
+    } else {
+      pwAddItem({ name:name, volume:volume, price:price, keyword:keyword, mallUrls:mallUrls, asin:asin });
+    }
     showFormErr("");
     document.getElementById("pwFormName").value = "";
     document.getElementById("pwFormVolume").value = "";
     document.getElementById("pwFormPrice").value = "";
     document.getElementById("pwFormKeyword").value = "";
+    document.getElementById("pwFormAsin").value = "";
     pwBuildMallUrlInputs();
+    pwUpdateFormModeUI();
     renderPwAll();
     renderHomeView();
+  });
+
+  document.getElementById("pwCancelEditBtn").addEventListener("click", function(){
+    pwEditTarget = null;
+    document.getElementById("pwFormName").value = "";
+    document.getElementById("pwFormVolume").value = "";
+    document.getElementById("pwFormPrice").value = "";
+    document.getElementById("pwFormKeyword").value = "";
+    document.getElementById("pwFormAsin").value = "";
+    document.getElementById("pwFormError").style.display = "none";
+    pwBuildMallUrlInputs();
+    pwUpdateFormModeUI();
+  });
+
+  document.getElementById("pwMasterSearchInput").addEventListener("input", function(){
+    pwMasterSearchText = this.value;
+    if (pwMasterViewLevel === "entries") renderPwMasterEntries(); else renderPwMasterAsinGroups();
+  });
+  document.getElementById("pwMasterBackBtn").addEventListener("click", function(){
+    pwMasterViewLevel = "names";
+    pwMasterSelectedAsin = null;
+    pwMasterSearchText = "";
+    document.getElementById("pwMasterSearchInput").value = "";
+    renderPwMasterView();
   });
 
   document.getElementById("pwGenPromptBtn").addEventListener("click", function(){
@@ -2836,7 +3894,9 @@
     var res = pwApplyResultJson(raw);
     if (!res.ok){ pwShowApplyError(res.message); pwShowApplyInfo(""); return; }
     pwShowApplyError("");
-    pwShowApplyInfo("反映しました（" + res.applied + "件反映" + (res.skipped ? "、" + res.skipped + "件スキップ（該当する商品が見つかりません）" : "") + "）。");
+    pwShowApplyInfo("反映しました（キーワード " + res.applied + "件" +
+      (res.benchApplied ? "、ベンチマーク " + res.benchApplied + "件" : "") +
+      (res.skipped ? "、" + res.skipped + "件スキップ（該当する登録が見つかりません）" : "") + "）。");
     renderPwAll();
     renderHomeView();
   });
@@ -2863,6 +3923,22 @@
           ]
         }
       ]};
+    }
+    // 登録済みのベンチマークがあればサンプルにも含める（自社より少し安い値を入れて
+    // 「ギラギラ」演出まで一通り確認できるようにする）
+    var benchSample = null;
+    pw.items.forEach(function(it2){
+      if (benchSample) return;
+      if (it2.benchmarks && it2.benchmarks.length) benchSample = { item: it2, bm: it2.benchmarks[0] };
+    });
+    if (benchSample){
+      sample.benchmarks = [{
+        asin: benchSample.bm.asin, status:"ok",
+        name: benchSample.item.name + "（競合ベンチマーク）", volume: benchSample.item.volume,
+        price: Math.max(0, Number(benchSample.item.price) - 120),
+        shop:"サンプルストア", url:"https://www.amazon.co.jp/dp/" + benchSample.bm.asin,
+        shipping:"free", coupon:"", points:"", note:""
+      }];
     }
     document.getElementById("pwResultInput").value = JSON.stringify(sample, null, 2);
   });
@@ -3768,6 +4844,10 @@
         if (typeof state.aiResearch === "undefined") state.aiResearch = null;
         state.aiResearchHistory = Array.isArray(loaded.aiResearchHistory) ? loaded.aiResearchHistory : [];
         if (!state.ui) state.ui = { theme:null, activeView:"home", selectedNewsDate:null, selectedAiNewsDate:null, activeNewsCategory:"food" };
+        if (typeof state.ui.activeWatchTab === "undefined") state.ui.activeWatchTab = "view";
+        if (typeof state.ui.selectedWatchItemId === "undefined") state.ui.selectedWatchItemId = null;
+        if (typeof state.ui.selectedWatchKeywordId === "undefined") state.ui.selectedWatchKeywordId = null;
+        if (typeof state.ui.watchDetailMode === "undefined") state.ui.watchDetailMode = "keyword";
         // priceWatch が無い/旧形式（{prices:{}}）のファイルでも落ちないようにする。
         // 旧形式は商品名・内容量・キーワードを持たず今回のデータ構造と非互換のため、新形式の空状態にリセットする。
         state.priceWatch = (loaded.priceWatch && typeof loaded.priceWatch === "object" && Array.isArray(loaded.priceWatch.items)) ? loaded.priceWatch : {};
