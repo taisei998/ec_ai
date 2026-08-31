@@ -1275,8 +1275,11 @@
            renderAll() が起動時に airName / airReport / summaryPreview2 等を無条件に
            getElementById しており、DOMを消すと起動時に例外でアプリ全体が動かなくなる。
            .topView は display:none するだけなのでDOMに残しておけば安全。
-         履歴モーダル →「読み込む」からは従来どおり閲覧できる（データも消えない）。
-         復活させる場合はこのコメントを外すだけでよい。 -->
+         当初は履歴モーダルの「AIリサーチ」タブ→「読み込む」を唯一の閲覧経路として
+         残していたが、そのタブ自体を「広告シミュ」タブに置き換えたため（2026-08-28、
+         ユーザーの明示的な選択）、現在はこのビューへ辿り着くUI上の経路は存在しない。
+         aiResearchHistoryのデータ自体はlocalStorageに残っており消えないが、
+         見返す・読み込む手段は無い。復活させる場合はこのコメントを外すだけでよい。 -->
     <!--
     <button class="bottomNavBtn" data-view="airesearch">
       <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8" stroke-linecap="round"/></svg>
@@ -1428,11 +1431,11 @@
     <div class="fbTitle">📜 履歴</div>
     <div class="historyTabs">
       <button type="button" class="historyTabBtn" data-tab="news">ニュース</button>
-      <button type="button" class="historyTabBtn" data-tab="airesearch">AIリサーチ</button>
+      <button type="button" class="historyTabBtn" data-tab="adsim">広告シミュ</button>
       <button type="button" class="historyTabBtn" data-tab="watch">価格アラート</button>
     </div>
     <div id="historyBodyNews" class="historyBody"></div>
-    <div id="historyBodyAirResearch" class="historyBody" hidden></div>
+    <div id="historyBodyAdSim" class="historyBody" hidden></div>
     <div id="historyBodyWatch" class="historyBody" hidden></div>
   </div>
 </div>
@@ -1577,8 +1580,13 @@
   }
 
   // ---------- TOP-LEVEL VIEWS / BOTTOM NAV ----------
-  // "airesearch" はボトムナビから外したが、履歴モーダルの「読み込む」が
-  // goToView("airesearch") を呼ぶため、ルーティング上は残しておく必要がある。
+  // "airesearch" はボトムナビ・履歴モーダルの両方から外したため、現在はUI上に
+  // goToView("airesearch") を呼ぶ経路が無い（arhLoadEntry内の呼び出しのみが残るが、
+  // arhLoadEntry自体を呼ぶボタンが無いので事実上呼ばれない）。それでも一覧からは
+  // 削除しない：renderAll()が起動時にview-airesearch内の要素を無条件参照するため、
+  // VIEW_IDSから外して"view-airesearch"のactiveクラス制御対象から除外すると、
+  // 他のビューへの遷移時にこのセクションだけdisplay:noneが外れず表示され続ける
+  // （goToViewはVIEW_IDSに列挙されたものだけを開閉するため）。
   var VIEW_IDS = ["home","news","airesearch","watch","adsim","settings"];
   var bottomNavBtns = Array.prototype.slice.call(document.querySelectorAll(".bottomNavBtn"));
   function goToView(v){
@@ -5979,7 +5987,11 @@
     document.addEventListener("keydown", function(e){ if (e.key === "Escape" && !overlay.hidden) closeModal(); });
   })();
 
-  // ---------- 履歴モーダル（ニュース／AIリサーチ／価格アラートを横断して振り返る） ----------
+  // ---------- 履歴モーダル（ニュース／広告シミュ／価格アラートを横断して振り返る） ----------
+  // 「AIリサーチ」タブは、AIリサーチをボトムナビ・ホームから外したのに合わせて
+  // 「広告シミュ」タブに置き換えた（2026年8月28日〜）。過去のAIリサーチ結果
+  // （aiResearchHistory）自体はlocalStorageに残るが、この変更以降はUIから
+  // 見返す・読み込む手段が無くなる（ユーザーの明示的な選択）。
   function closeHistoryModal(){
     document.getElementById("historyOverlay").hidden = true;
   }
@@ -5987,10 +5999,10 @@
   function showHistoryTab(tab){
     document.querySelectorAll(".historyTabBtn").forEach(function(b){ b.classList.toggle("active", b.dataset.tab === tab); });
     document.getElementById("historyBodyNews").hidden = (tab !== "news");
-    document.getElementById("historyBodyAirResearch").hidden = (tab !== "airesearch");
+    document.getElementById("historyBodyAdSim").hidden = (tab !== "adsim");
     document.getElementById("historyBodyWatch").hidden = (tab !== "watch");
     if (tab === "news") renderHistoryNewsTab();
-    if (tab === "airesearch") renderHistoryAirResearchTab();
+    if (tab === "adsim") renderHistoryAdSimTab();
     if (tab === "watch") renderHistoryWatchTab();
   }
 
@@ -6035,39 +6047,31 @@
     });
   }
 
-  var historyArhOpenId = null;
-  function renderHistoryAirResearchTab(){
-    var el = document.getElementById("historyBodyAirResearch");
-    var list = arhEnsureState();
-    if (!list.length){ el.innerHTML = "<p class='historyEmpty'>まだAIリサーチの履歴がありません。「AIリサーチ」で結果を反映すると、ここに記録されていきます。</p>"; return; }
-    el.innerHTML = list.map(function(e){
-      var opened = historyArhOpenId === e.id;
-      return "<div class='historyListRow' data-id='" + attr(e.id) + "'>" +
-        "<div class='arhEntryHead'>" +
-          "<div>" +
-            "<div class='arhEntryTitle'>" + esc(e.name || "(商品名未入力)") + "</div>" +
-            "<div class='arhEntryMeta'>" + (e.volume ? esc(e.volume) + "　／　" : "") + esc(e.savedAt.slice(0, 10)) + "</div>" +
-          "</div>" +
-          "<button type='button' class='btn small ghost' data-act='remove'>削除</button>" +
-        "</div>" +
-        "<div class='arhEntryActions'>" +
-          "<button type='button' class='btn small ghost' data-act='toggle'>" + (opened ? "プレビューを閉じる" : "プレビュー") + "</button>" +
-          "<button type='button' class='btn small primary' data-act='load'>この結果を読み込む</button>" +
-        "</div>" +
-        (opened ? "<div class='arhPreview'>" + arhBuildPreviewHTML(e) + "</div>" : "") +
-      "</div>";
+  // ポートフォリオ一覧（価格アラート履歴タブの「商品一覧」と同じ見た目・操作感）。
+  // 行をクリックするとそのポートフォリオを選択した状態で広告シミュ画面へ移動する。
+  // 広告シミュには日付ごとの履歴という概念が無いため（現在の設定と直前の計算結果
+  // ＝lastResultのみを保持する仕組み）、ここでは一覧からのジャンプに留めている。
+  function renderHistoryAdSimTab(){
+    var el = document.getElementById("historyBodyAdSim");
+    var s = adSimEnsureState();
+    if (!s.portfolios.length){
+      el.innerHTML = "<p class='historyEmpty'>まだポートフォリオが登録されていません。「広告シミュ」で親ASINを登録すると、ここに表示されます。</p>";
+      return;
+    }
+    el.innerHTML = s.portfolios.map(function(pf){
+      var label = pf.parentAsin ? (pf.parentAsin + (pf.name ? "／" + pf.name : "")) : (pf.name || "（未設定）");
+      var hint = pf.children.length + "件の子ASIN";
+      if (s.lastResult && s.lastResult.portfolioId === pf.id){
+        var base = s.lastResult.series.filter(function(x){ return x.key === "base"; })[0];
+        if (base) hint += "・" + (base.breakEven ? ("黒字化予測 Week" + base.breakEven) : "52週内に黒転せず");
+      }
+      return "<div class='pwHistProductRow' data-id='" + attr(pf.id) + "'><span>" + esc(label) + "</span><span class='hint'>" + esc(hint) + "</span></div>";
     }).join("");
-    el.querySelectorAll(".historyListRow").forEach(function(row){
-      var id = row.dataset.id;
-      row.querySelector("[data-act='toggle']").addEventListener("click", function(){
-        historyArhOpenId = (historyArhOpenId === id) ? null : id;
-        renderHistoryAirResearchTab();
-      });
-      row.querySelector("[data-act='load']").addEventListener("click", function(){ arhLoadEntry(id); });
-      row.querySelector("[data-act='remove']").addEventListener("click", function(){
-        if (historyArhOpenId === id) historyArhOpenId = null;
-        arhRemoveEntry(id);
-        renderHistoryAirResearchTab();
+    el.querySelectorAll(".pwHistProductRow").forEach(function(row){
+      row.addEventListener("click", function(){
+        adSimEnsureState().selectedPortfolioId = row.dataset.id;
+        closeHistoryModal();
+        goToView("adsim");
       });
     });
   }

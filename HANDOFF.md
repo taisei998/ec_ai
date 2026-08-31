@@ -666,11 +666,23 @@ Amazonについてはもう古い。** `scripts/rakuten_price_check.py` と `scr
 `airGrade` / `airPlatformChecks` / `airReport` を**無条件に** `getElementById` しており、
 `renderOutputView()` も `summaryPreview2` を触る。これらは全て当該セクション内にあるため、
 **セクションを削除すると起動時に例外が出てアプリ全体が動かなくなる**。
-`.topView` は `display:none` するだけでDOMには残るので、**到達経路（ナビのボタンと
-ホームタイル）だけをHTMLコメントで塞ぐのが唯一安全な方法**。
-`VIEW_IDS` から `"airesearch"` を消すのも不可（履歴モーダルの「この結果を読み込む」が
-`goToView("airesearch")` を呼ぶ）。実機で「履歴→AIリサーチ→読み込む」が従来どおり
-動作することを確認済み。復活させたい場合は2箇所のコメントを外すだけでよい。
+`.topView` は `display:none` するだけでDOMには残るので、**到達経路だけをHTMLコメントで
+塞ぐのが唯一安全な方法**。`VIEW_IDS` から `"airesearch"` を消すのは今も不可――
+`goToView()` は `VIEW_IDS` に列挙されたものだけを開閉するため、外すと他のビューに
+遷移してもこのセクションだけ非表示にならず表示され続ける（`renderAll()` の依存とは
+別の理由での必須事項）。
+
+**2026-08-28に追記：** 当初はボトムナビ・ホームタイルの2箇所だけをコメントアウトし、
+履歴モーダルの「AIリサーチ」タブ→「この結果を読み込む」を唯一の閲覧経路として
+意図的に残していたが、**ユーザーから「履歴モーダルにもAIリサーチが残っている、
+広告シミュに変更してほしい」との指摘を受け、その履歴タブ自体を「広告シミュ」タブに
+置き換えた**（`renderHistoryAdSimTab()`、ポートフォリオ一覧→クリックで
+`goToView("adsim")`）。この結果、**`view-airesearch` へ辿り着くUI上の経路は現在存在しない**
+（`arhLoadEntry()` は定義は残っているが、呼び出し元のボタンが無いので実質死んでいる）。
+`aiResearchHistory` のデータ自体はlocalStorageに残り消えないが、見返す・読み込む手段は
+アプリ上にない。復活させたい場合は、ナビ・ホームタイルのコメントを外すのに加えて、
+履歴モーダルにも「AIリサーチ」タブを別途作り直す必要がある（`renderHistoryAdSimTab()`を
+参考に、旧`renderHistoryAirResearchTab()`相当のものを復元する）。
 
 ### 採用しなかった案：Recharts
 
