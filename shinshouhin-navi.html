@@ -2644,10 +2644,21 @@
     return null;
   }
 
+  // 競合の「内容量」欄が空欄・未入力／解析できない場合、商品名からも同じパターンで
+  // 抽出を試みる（Amazonの商品名には「500ml×24本」のような表記がそのまま入っている
+  // ことが多く、AIが内容量欄に転記しなかった場合でも単価比較を諦めなくて済む）。
+  function pwCompetitorUnitPrice(c){
+    var direct = pwParseUnitPrice(c.volume, c.price);
+    if (direct) return { unit: direct, fromName: false };
+    var viaName = pwParseUnitPrice(c.name, c.price);
+    if (viaName) return { unit: viaName, fromName: true };
+    return { unit: null, fromName: false };
+  }
+
   // 1商品×1モールの判定。競合データが無ければ必ずnodataを返す（誤ってleadにしない）。
   // 自社・競合双方で同じ単位の換算単価が出せる場合は単価優先、出せなければ生値で比較する。
   function pwEvaluateMall(item, mallSnapshot){
-    var res = { level:"nodata", status: mallSnapshot ? mallSnapshot.status : "unavailable", lowestPrice:null, lowestUnitPrice:null, unitLabel:null, diff:null, diffIsUnit:false, competitor:null };
+    var res = { level:"nodata", status: mallSnapshot ? mallSnapshot.status : "unavailable", lowestPrice:null, lowestUnitPrice:null, unitLabel:null, lowestUnitFromName:false, diff:null, diffIsUnit:false, competitor:null };
     if (!mallSnapshot || mallSnapshot.status !== "ok") return res;
     var competitors = Array.isArray(mallSnapshot.competitors) ? mallSnapshot.competitors : [];
     var valid = competitors.filter(function(c){ return c && c.price != null && !isNaN(Number(c.price)) && Number(c.price) > 0; });
@@ -2656,8 +2667,8 @@
     var selfUnit = pwParseUnitPrice(item.volume, item.price);
     var unitCandidates = [];
     valid.forEach(function(c){
-      var cu = pwParseUnitPrice(c.volume, c.price);
-      if (cu && selfUnit && cu.unitLabel === selfUnit.unitLabel) unitCandidates.push({ c: c, unitPrice: cu.perUnitPrice });
+      var pu = pwCompetitorUnitPrice(c);
+      if (pu.unit && selfUnit && pu.unit.unitLabel === selfUnit.unitLabel) unitCandidates.push({ c: c, unitPrice: pu.unit.perUnitPrice, fromName: pu.fromName });
     });
 
     var lowestRaw = valid.reduce(function(a, b){ return Number(b.price) < Number(a.price) ? b : a; });
@@ -2670,6 +2681,7 @@
       var rivalRounded = Math.round(lowestUnit.unitPrice * 10) / 10;
       res.lowestUnitPrice = lowestUnit.unitPrice;
       res.unitLabel = selfUnit.unitLabel;
+      res.lowestUnitFromName = lowestUnit.fromName;
       res.competitor = lowestUnit.c;
       res.diff = selfRounded - rivalRounded;
       res.diffIsUnit = true;
@@ -2711,8 +2723,8 @@
     var selfUnit = pwParseUnitPrice(item.volume, item.price);
     var unitRows = [];
     valid.forEach(function(c){
-      var cu = pwParseUnitPrice(c.volume, c.price);
-      if (cu && selfUnit && cu.unitLabel === selfUnit.unitLabel) unitRows.push({ c: c, unitPrice: cu.perUnitPrice });
+      var pu = pwCompetitorUnitPrice(c);
+      if (pu.unit && selfUnit && pu.unit.unitLabel === selfUnit.unitLabel) unitRows.push({ c: c, unitPrice: pu.unit.perUnitPrice, fromName: pu.fromName });
     });
 
     if (unitRows.length){
@@ -2720,7 +2732,7 @@
       unitRows.forEach(function(r){
         var rivalRounded = Math.round(r.unitPrice * 10) / 10;
         if (rivalRounded < selfRounded){
-          res.push({ c: r.c, gap: selfRounded - rivalRounded, isUnit: true, unitPrice: r.unitPrice, unitLabel: selfUnit.unitLabel });
+          res.push({ c: r.c, gap: selfRounded - rivalRounded, isUnit: true, unitPrice: r.unitPrice, unitLabel: selfUnit.unitLabel, fromName: r.fromName });
         }
       });
     } else {
@@ -2744,13 +2756,16 @@
         ? "<a class='pwUnderName' href='" + attr(c.url) + "' target='_blank' rel='noopener noreferrer'>" + nameText + " ↗</a>"
         : "<span class='pwUnderName'>" + nameText + "</span>";
       var adTag = c.isAd ? "<span class='pwAdTag'>広告</span>" : "";
+      // 内容量欄が空欄で、商品名の文字列（例:「500ml×24本」）から換算単価を推定した場合は、
+      // AIが調査時に確認した値ではないことが分かるように「推定」を明示する。
+      var estTag = r.isUnit && r.fromName ? "<span class='pwAdTag' title='内容量欄が空欄のため、商品名の表記から換算単価を推定しました'>推定</span>" : "";
       var shopText = c.shop ? "<div class='pwUnderShop'>" + esc(c.shop) + "</div>" : "";
       var unitText = r.isUnit ? "<small>（" + r.unitLabel + " " + r.unitPrice.toFixed(1) + "）</small>" : "";
       var gapText = r.isUnit
         ? "単価 -" + r.gap.toFixed(1) + r.unitLabel.replace("円/", "円/")
         : "-¥" + Math.round(r.gap).toLocaleString();
       return "<div class='pwUnderRow'>" +
-        "<div class='pwUnderMain'>" + nameHtml + adTag + shopText + "</div>" +
+        "<div class='pwUnderMain'>" + nameHtml + adTag + estTag + shopText + "</div>" +
         "<div class='pwUnderRight'>" +
           "<div class='pwUnderPrice'>" + pwYen(Number(c.price)) + unitText + "</div>" +
           "<div class='pwUnderGap'>" + gapText + "</div>" +
@@ -3438,7 +3453,14 @@
       }
       var priceLine;
       if (ev.status !== "ok") priceLine = "未調査／取得不可";
-      else if (ev.lowestPrice != null) priceLine = "最安 " + pwYen(ev.lowestPrice) + (ev.unitLabel ? "（" + ev.unitLabel + " " + ev.lowestUnitPrice.toFixed(1) + "）" : "");
+      else if (ev.lowestPrice != null){
+        // 内容量欄が空欄で商品名から換算単価を推定した場合は、AI調査時に確認した値
+        // ではないと分かるよう明示する（pwCompetitorUnitPriceのfromNameを参照）。
+        var unitNote = ev.unitLabel
+          ? "（" + ev.unitLabel + " " + ev.lowestUnitPrice.toFixed(1) + (ev.lowestUnitFromName ? "・名称から推定" : "") + "）"
+          : "";
+        priceLine = "最安 " + pwYen(ev.lowestPrice) + unitNote;
+      }
       else priceLine = "競合なし";
       var snapMall = snap && snap.malls ? snap.malls[mk] : null;
       return "<div class='pwMallBlock'>" +
