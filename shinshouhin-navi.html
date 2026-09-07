@@ -665,12 +665,14 @@
     border:1px solid var(--status-warning); background: rgba(250,178,25,0.12); border-radius:10px;
     padding:10px 12px; font-size:12px; font-weight:600; margin-bottom:12px; white-space:pre-line;
   }
-  /* 単月ステータス（赤字／黄字／黒字） */
+  /* 単月ステータス（許容外／赤字／黄字／黒字） */
   .adsimStatus { display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .adsimStatus.over { color:#fff; background: var(--status-critical); border-radius:4px; padding:1px 6px; }
   .adsimStatus.loss { color: var(--status-critical); }
   .adsimStatus.thin { color: #a97400; }
   .adsimStatus.good { color: var(--status-good); }
   .adsimStatus.none { color: var(--text-muted); }
+  table.adsimTable tr.adsimRowOver td { background: rgba(208,59,59,0.18); }
   table.adsimTable tr.adsimRowLoss td { background: rgba(208,59,59,0.07); }
   table.adsimTable tr.adsimRowThin td { background: rgba(250,178,25,0.10); }
   table.adsimTable tr.adsimRowGood td { background: rgba(12,163,12,0.07); }
@@ -1212,9 +1214,9 @@
         <div><label for="adsimProductAsin">親ASIN</label><input type="text" id="adsimProductAsin" placeholder="例: B0ABCDEFGH"></div>
         <div><label for="adsimProductName">商品名</label><input type="text" id="adsimProductName" placeholder="例: 天然水シリーズ"></div>
         <div><label for="adsimTargetMargin">目標粗利率（％）</label><input type="number" id="adsimTargetMargin" min="0" max="100" step="0.1" placeholder="例: 20"></div>
-        <div><label for="adsimMaxLoss">最大許容累積赤字額（円）</label><input type="number" id="adsimMaxLoss" min="0" step="10000" placeholder="未入力なら警告なし"></div>
+        <div><label for="adsimMaxLossPct">最大許容粗利率（％）</label><input type="number" id="adsimMaxLossPct" min="-100" max="100" step="0.1" placeholder="例: -20（未入力なら警告なし）"><p class="adsimFieldErr" data-fe="maxLossPct"></p></div>
       </div>
-      <p class="hint" style="margin:8px 0 0;">目標粗利率は「黄字／黒字」の境目に使います。最大許容累積赤字額を入れると、累積損益がその赤字幅を超える見込みのパターンに⚠警告を出します。</p>
+      <p class="hint" style="margin:8px 0 0;">2つのしきい値で単月の判定を4段階に分けます。<b>最大許容粗利率</b>は「赤字をどこまで許容するか」の下限（例: -20％）、<b>目標粗利率</b>は「黄字／黒字」の境目（例: 13％）です。この例だと <b>-20％未満＝⚠許容外</b>／<b>-20〜0％未満＝🔴赤字</b>／<b>0〜13％未満＝🟡黄字</b>／<b>13％以上＝⚫黒字</b> になり、許容外のパターンには警告を出します。</p>
       <button type="button" class="btn small ghost" id="adsimDeleteProductBtn" style="margin-top:10px;">この親ASINを削除</button>
     </div>
 
@@ -1266,7 +1268,7 @@
     <!-- ③ 単月損益の推移 -->
     <div class="card" id="adsimMonthCard">
       <h3 style="margin-top:0;">③ 単月損益の推移</h3>
-      <p class="hint" style="margin:0 0 10px;">🔴 赤字＝実質粗利率がマイナス／🟡 黄字＝プラスだが目標粗利率に未達／⚫ 黒字＝目標粗利率を達成。</p>
+      <p class="hint" style="margin:0 0 10px;">⚠ 許容外＝最大許容粗利率を下回る／🔴 赤字＝許容範囲内だが実質粗利率がマイナス／🟡 黄字＝プラスだが目標粗利率に未達／⚫ 黒字＝目標粗利率を達成。</p>
       <div class="adsimWarnBox" id="adsimWarnBox" hidden></div>
       <div class="tableWrap">
         <table class="dataTable adsimTable">
@@ -4211,9 +4213,10 @@
       asin: "",
       name: "新しい親ASIN",
       targetMarginPct: 20,
-      // 0（未入力）＝ガードレール未設定＝警告しない扱い。0を「赤字を一切許さない」と
-      // 解釈すると初期状態で常に警告が出て邪魔になるため、オプトイン方式にしている。
-      maxLossYen: 0,
+      // 最大許容粗利率（％）＝「赤字をどこまで許容するか」の下限。これを下回った月は
+      // 「許容外」と判定して警告する。null＝未設定＝許容外判定をしない。
+      // ※0は「赤字を一切許容しない」という有効な設定なので、未設定は0ではなくnullで表す。
+      maxLossPct: null,
       children: [adSimDefaultChild(100)],
       patterns: [],
       draft: adSimDefaultDraft()
@@ -4238,7 +4241,14 @@
       if (typeof pd.asin !== "string") pd.asin = "";
       if (typeof pd.name !== "string") pd.name = "";
       pd.targetMarginPct = adSimNum(pd.targetMarginPct);
-      pd.maxLossYen = adSimNum(pd.maxLossYen);
+      // 「最大許容累積赤字額（円・maxLossYen）」から「最大許容粗利率（％・maxLossPct）」に
+      // 変更した際の移行。円→％は意味が変わって換算できないので未設定(null)から始める。
+      // 登録済みの親ASIN・子ASIN・パターンはそのまま残す（versionは上げない）。
+      if (typeof pd.maxLossPct === "undefined"){
+        pd.maxLossPct = null;
+        if (typeof pd.maxLossYen !== "undefined"){ delete pd.maxLossYen; markDirty(); }
+      }
+      if (pd.maxLossPct !== null) pd.maxLossPct = adSimNum(pd.maxLossPct);
       if (!Array.isArray(pd.children) || !pd.children.length) pd.children = [adSimDefaultChild(100)];
       pd.children.forEach(function(c){
         if (!c.id) c.id = adSimNextId("adc");
@@ -4296,14 +4306,26 @@
     return { avgPrice: avgPrice, avgNet: avgNet };
   }
 
-  // 単月ステータス：実質粗利率 < 0 → 赤字、0以上で目標粗利率に未達 → 黄字、目標以上 → 黒字
-  function adSimMonthStatus(marginPct, targetPct){
+  // 単月ステータス（2つのしきい値で4段階）。maxPctがnullなら許容外判定はしない。
+  //   実質粗利率 < 最大許容粗利率        → 許容外（警告対象）
+  //   最大許容粗利率 以上 かつ 0未満     → 赤字（許容範囲内の赤字）
+  //   0以上 かつ 目標粗利率未満          → 黄字
+  //   目標粗利率 以上                    → 黒字
+  // ★判定順が重要：先に「許容外」を見る。最大許容粗利率にプラス値を入れた場合
+  //   （＝最低これだけは粗利率が欲しい、という使い方）でも矛盾なく判定できる。
+  // ★実質粗利率は小数第1位までしか表示しないので、判定も同じ丸めた値で行う。
+  //   そうしないと実際の値が12.99999%のときに「表示13.0%・目標13%なのに黄字」という
+  //   表示と判定の食い違いが起きる（想定販売比率の100%判定と同じ方針）。
+  function adSimMonthStatus(marginPct, targetPct, maxPct){
     if (marginPct == null) return "none";
-    if (marginPct < 0) return "loss";
-    if (marginPct < adSimNum(targetPct)) return "thin";
+    var m = adSimRound1(marginPct);
+    if (maxPct !== null && maxPct !== undefined && m < adSimRound1(adSimNum(maxPct))) return "over";
+    if (m < 0) return "loss";
+    if (m < adSimRound1(adSimNum(targetPct))) return "thin";
     return "good";
   }
   var ADSIM_STATUS_META = {
+    over: { icon: "⚠", label: "許容外", cls: "over", rowCls: "adsimRowOver" },
     loss: { icon: "🔴", label: "赤字", cls: "loss", rowCls: "adsimRowLoss" },
     thin: { icon: "🟡", label: "黄字", cls: "thin", rowCls: "adsimRowThin" },
     good: { icon: "⚫", label: "黒字", cls: "good", rowCls: "adsimRowGood" },
@@ -4344,24 +4366,27 @@
       rows.push({
         month: i + 1, spend: spend, clicks: clicks, units: units, revenue: revenue,
         gross: gross, pl: pl, marginPct: marginPct, cum: cum,
-        status: adSimMonthStatus(marginPct, pd.targetMarginPct)
+        status: adSimMonthStatus(marginPct, pd.targetMarginPct, pd.maxLossPct)
       });
     }
-    // ガードレール：累積損益が「最大許容累積赤字額」より深く沈む月があるか。
+    // ガードレール：実質粗利率が「最大許容粗利率」を下回る月が1つでもあれば警告する。
     // 仕様書は月1・月2時点と書いているが、月3が谷になる入力もあり得るため
-    // 3ヶ月すべての最悪値で判定している（見逃しを防ぐための上位互換）。
-    var limit = adSimNum(pd.maxLossYen);
-    var worst = rows[0].cum;
-    rows.forEach(function(r){ if (r.cum < worst) worst = r.cum; });
+    // 3ヶ月すべてを見ている（見逃しを防ぐための上位互換）。
+    var worstMargin = null;
+    var worstCum = rows[0].cum;
+    rows.forEach(function(r){
+      if (r.cum < worstCum) worstCum = r.cum;
+      if (r.marginPct != null && (worstMargin === null || r.marginPct < worstMargin)) worstMargin = r.marginPct;
+    });
     var finalCum = rows[ADSIM_MONTHS - 1].cum;
     return {
       rows: rows,
       totalSpend: totalSpend,
       finalCum: finalCum,
       recovered: finalCum > 0,
-      worstCum: worst,
-      guardLimit: limit,
-      guardBreach: (limit > 0 && worst < -limit),
+      worstCum: worstCum,
+      worstMarginPct: worstMargin,
+      guardBreach: rows.some(function(r){ return r.status === "over"; }),
       avgPrice: avg.avgPrice,
       avgNet: avg.avgNet
     };
@@ -4406,7 +4431,17 @@
 
     var tgt = adSimNum(pd.targetMarginPct);
     if (tgt < 0 || tgt > 100) errs.push("目標粗利率は0〜100%の範囲で入力してください。");
-    if (adSimNum(pd.maxLossYen) < 0) errs.push("最大許容累積赤字額は0以上で入力してください。");
+    if (pd.maxLossPct !== null){
+      var mx = adSimNum(pd.maxLossPct);
+      if (mx < -100 || mx > 100){
+        errs.push("最大許容粗利率は-100〜100%の範囲で入力してください。");
+        addField("maxLossPct", "-100〜100");
+      } else if (mx > tgt){
+        // 許容下限が目標を上回っていると「目標達成なのに許容外」という矛盾が起きる
+        errs.push("最大許容粗利率（" + adSimPct(mx) + "）は目標粗利率（" + adSimPct(tgt) + "）以下にしてください。");
+        addField("maxLossPct", "目標粗利率以下に");
+      }
+    }
 
     // ① 商品マスタ（子ASIN）
     var sum = 0;
@@ -4474,7 +4509,8 @@
     document.getElementById("adsimProductAsin").value = pd.asin;
     document.getElementById("adsimProductName").value = pd.name;
     document.getElementById("adsimTargetMargin").value = pd.targetMarginPct;
-    document.getElementById("adsimMaxLoss").value = pd.maxLossYen;
+    // null（未設定）は空欄で表示する
+    document.getElementById("adsimMaxLossPct").value = (pd.maxLossPct === null ? "" : pd.maxLossPct);
   }
 
   function renderAdSimChildTable(){
@@ -4714,8 +4750,6 @@
 
     var vals = [0];
     result.series.forEach(function(sr){ sr.calc.rows.forEach(function(r){ vals.push(r.cum); }); });
-    var limit = result.guardLimit;
-    if (limit > 0) vals.push(-limit);
     var vMin = Math.min.apply(null, vals);
     var vMax = Math.max.apply(null, vals);
     if (vMin === vMax){ vMin -= 1; vMax += 1; }
@@ -4741,12 +4775,9 @@
     svg += '<line x1="' + padL + '" y1="' + zy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zy.toFixed(1) + '" stroke="var(--text-muted)" stroke-width="1.3" stroke-dasharray="5 4"/>';
     svg += '<text x="' + (W - padR) + '" y="' + (zy - 5).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--text-muted)">損益分岐（0円）</text>';
 
-    // ガードレール（最大許容累積赤字額）のライン
-    if (limit > 0){
-      var ly = yFor(-limit);
-      svg += '<line x1="' + padL + '" y1="' + ly.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + ly.toFixed(1) + '" stroke="var(--status-critical)" stroke-width="1.3" stroke-dasharray="3 3"/>';
-      svg += '<text x="' + (W - padR) + '" y="' + (ly + 13).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--status-critical)">許容赤字上限 -' + ADSIM_YEN_FMT.format(limit) + '円</text>';
-    }
+    // ガードレールが「粗利率(%)」になったので、円建ての累積損益グラフには固定の
+    // 上限ラインを引けない（率のしきい値は売上に比例した傾きのある境界になる）。
+    // 許容外の警告は下の警告ボックス・単月表の判定・サマリー表の⚠で示している。
 
     result.series.forEach(function(sr){
       var pts = sr.calc.rows.map(function(r){ return xFor(r.month).toFixed(1) + "," + yFor(r.cum).toFixed(1); }).join(" ");
@@ -4823,15 +4854,16 @@
     });
     body.innerHTML = html;
 
-    // ガードレール警告（最大許容累積赤字額を超えて沈む見込みのパターン）
+    // ガードレール警告（実質粗利率が最大許容粗利率を下回る＝許容外のパターン）
     if (warn){
       var breached = result.series.filter(function(sr){ return sr.calc.guardBreach; });
       if (!breached.length){ warn.hidden = true; warn.textContent = ""; }
       else {
         warn.hidden = false;
-        warn.textContent = "⚠ 最大許容累積赤字額（" + adSimYen(result.guardLimit) + "）を超える見込みのパターンがあります\n" +
+        warn.textContent = "⚠ 最大許容粗利率（" + adSimPct(result.guardPct) + "）を下回る見込みのパターンがあります\n" +
           breached.map(function(sr){
-            return "・" + sr.name + "：最も沈む時点の累積損益 " + adSimSignedYen(sr.calc.worstCum);
+            return "・" + sr.name + "：最も低い実質粗利率 " + adSimPct(sr.calc.worstMarginPct) +
+              "（3ヶ月目時点の累積損益 " + adSimSignedYen(sr.calc.finalCum) + "）";
           }).join("\n");
       }
     }
@@ -4846,7 +4878,7 @@
       return;
     }
     body.innerHTML = result.series.map(function(sr){
-      var warnMark = sr.calc.guardBreach ? " <span class='adsimStatus loss'>⚠上限超過</span>" : "";
+      var warnMark = sr.calc.guardBreach ? " <span class='adsimStatus over'>⚠ 許容外</span>" : "";
       return "<tr>" +
         "<td class='adsimPatName'><span class='adsimPatSwatch' style='background:" + sr.color + "; display:inline-block; margin-right:6px;'></span>" + esc(sr.name) + "</td>" +
         "<td class='adsimNum'>" + adSimYen(sr.calc.totalSpend) + "</td>" +
@@ -4866,7 +4898,7 @@
     var pd = adSimCurrentProduct();
     s.lastResult = {
       productId: pd.id,
-      guardLimit: adSimNum(pd.maxLossYen),
+      guardPct: pd.maxLossPct,
       targetMarginPct: adSimNum(pd.targetMarginPct),
       series: adSimBuildSeries(pd)
     };
@@ -4930,7 +4962,10 @@
     bindField("adsimProductAsin", function(pd, v){ pd.asin = v.trim(); }, true);
     bindField("adsimProductName", function(pd, v){ pd.name = v; }, true);
     bindField("adsimTargetMargin", function(pd, v){ pd.targetMarginPct = adSimNum(v); }, false);
-    bindField("adsimMaxLoss", function(pd, v){ pd.maxLossYen = adSimNum(v); }, false);
+    // 空欄は0ではなくnull（未設定＝許容外判定をしない）として扱う
+    bindField("adsimMaxLossPct", function(pd, v){
+      pd.maxLossPct = (String(v).trim() === "") ? null : adSimNum(v);
+    }, false);
     bindField("adsimDraftName", function(pd, v){ pd.draft.name = v; }, false);
     bindField("adsimDraftCpc", function(pd, v){ pd.draft.cpc = adSimNum(v); }, false);
     bindField("adsimDraftCvr", function(pd, v){ pd.draft.cvr = adSimNum(v); }, false);
