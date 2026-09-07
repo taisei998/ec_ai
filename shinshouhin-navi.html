@@ -647,6 +647,7 @@
   table.adsimTable th { white-space:nowrap; }
   table.adsimTable td { vertical-align:middle; }
   table.adsimTable td.adsimNum { text-align:right; white-space:nowrap; font-variant-numeric: tabular-nums; }
+  table.adsimTable td.adsimPriceList { text-align:left; font-size:12.5px; line-height:1.6; font-variant-numeric: tabular-nums; }
   table.adsimTable td.adsimPatName { font-weight:700; white-space:nowrap; }
   .adsimShareSum { font-size:12.5px; font-weight:700; margin:10px 0 0; }
   .adsimShareSum.ok { color: var(--status-good); }
@@ -4713,6 +4714,24 @@
     };
   }
 
+  // その売価区分での、子ASINごとの実際の販売価格（生の価格。加重平均ではない）。
+  // カレンダーの「各規格の販売価格」列に使う。複数の子ASINがあると加重平均1本では
+  // 「今いくらで売っているか」が分からず紛らわしい、というユーザー指摘への対応。
+  // ②の月次目標・③のシミュ計算は adSimWeightedAt() の加重平均のまま変更しない。
+  function adSimDayPriceList(pd, priceType){
+    return adSimSkuList(pd).map(function(sku){
+      var row = adSimFindRow(pd, sku, priceType);
+      return { sku: sku, price: row ? adSimNum(row.price) : null };
+    });
+  }
+  function adSimDayPricesText(pd, priceType){
+    var list = adSimDayPriceList(pd, priceType);
+    if (!list.length) return "—";
+    return list.map(function(x){
+      return esc(x.sku || "（未入力）") + " " + (x.price != null ? adSimYen(x.price) : "<span class='adsimNoMaster'>⚠未設定</span>");
+    }).join("<br>");
+  }
+
   // その月のカレンダー（売価区分の日数配分）から、加重平均単価・原価・手数料・1点純粗利を
   // 単純平均で出す（日ごとの販売数は持たないため、1日あたりの重みは均等とみなす）。
   function adSimMonthAvgUnit(pd, dates){
@@ -5341,12 +5360,12 @@
         "<td class='adsimNum'>" + p.m + "/" + p.d + "</td>" +
         "<td" + (dowCls ? " class='" + dowCls + "'" : "") + ">" + row.weekday + "</td>" +
         "<td>" + adSimPriceTypeSelect("dtype", row.priceType) + "</td>" +
-        "<td class='adsimNum' data-out='price'>" + (row.noMaster ? "<span class='adsimNoMaster'>⚠ 未設定</span>" : adSimYen(row.unitPrice)) + "</td>" +
+        "<td class='adsimPriceList' data-out='price'>" + adSimDayPricesText(pd, row.priceType) + "</td>" +
       "</tr>";
     }).join("");
 
     host.innerHTML = "<div class='tableWrap'><table class='dataTable adsimTable'>" +
-      "<thead><tr><th>日付</th><th>曜</th><th>売価区分</th><th>参考：単価</th></tr></thead>" +
+      "<thead><tr><th>日付</th><th>曜</th><th>売価区分</th><th>各規格の販売価格</th></tr></thead>" +
       "<tbody>" + rows + "</tbody></table></div>";
 
     host.querySelectorAll("[data-adsim-dtype]").forEach(function(sel){
@@ -5355,9 +5374,8 @@
         var iso = tr.dataset.iso;
         adSimDailyRow(dl, iso).priceType = sel.value;
         markDirty();
-        var row = adSimComputeDailyRow(pd, iso);
         var priceEl = tr.querySelector("[data-out='price']");
-        if (priceEl) priceEl.innerHTML = row.noMaster ? "<span class='adsimNoMaster'>⚠ 未設定</span>" : adSimYen(row.unitPrice);
+        if (priceEl) priceEl.innerHTML = adSimDayPricesText(pd, sel.value);
         renderAdSimDailySummary();
         renderAdSimMonthlyTargetTable();
         adSimUpdateMonthSummaryLabels();

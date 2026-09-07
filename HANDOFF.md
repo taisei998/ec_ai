@@ -1071,6 +1071,45 @@ if (skus.length === 1 && typeof pd.shares[skus[0]] === "undefined") pd.shares[sk
 - 既存JSは徹底してES5スタイル（`var`/`function`、アロー関数もテンプレートリテラルも
   1つも使われていない）。新規コードも揃えてある。
 
+#### 2026年9月7日：売価区分カレンダーの「参考：単価」を加重平均→規格ごとの実売価格に変更
+
+上の①②③④化のすぐ後、カレンダー画面のスクリーンショットを見たユーザーから
+
+> 「参考：単価」で規格の加重平均単価出すのではなく、規格ごとの販売価格をだしてください。
+> 今いくらで売っているのか訳がわからなくなります。
+
+という指摘。複数の子ASIN（規格）があると、加重平均1本（例：全日「2,782円」固定表示）では
+「実際どの規格がいくらで売られているか」が分からなくなる、という妥当なUX上の問題だった。
+
+- **変更したのはカレンダー（`adSimRenderMonthRows`）の表示だけ。** ②の月次目標テーブルの
+  「参考：加重平均単価」（`renderAdSimMonthlyTargetTable`、`adSimAvgPriceText`）と、
+  それが使う `adSimWeightedAt`/`adSimMonthAvgUnit`/`adSimMonthlyTargets` の**加重平均計算
+  そのものは変更していない**。②③の売上・粗利の計算は引き続き加重平均に基づく（複数規格を
+  1つの経済性にまとめて扱うのが目的の計算なので、そこは加重平均のままで正しい）。
+- 新設した2関数（`adSimComputeDailyRow` の直後）：
+  ```js
+  function adSimDayPriceList(pd, priceType){       // 子ASINごとの実売価格（生値）
+    return adSimSkuList(pd).map(function(sku){
+      var row = adSimFindRow(pd, sku, priceType);   // 通常は完全一致、無ければその子ASINの
+      return { sku: sku, price: row ? adSimNum(row.price) : null };  // 「通常」行にフォールバック
+    });
+  }
+  function adSimDayPricesText(pd, priceType){ ... }  // SKUごとに1行、<br>で連結してHTML化
+  ```
+  カレンダー列の見出しも「参考：単価」→「各規格の販売価格」に変更した。
+- セルは `<td class="adsimNum">` から `<td class="adsimPriceList">` に変更（右寄せ・改行なし
+  だった`adsimNum`は多SKUの複数行リストに合わないため、左寄せ・行間広めの専用クラスを新設）。
+  マスタ未登録は行ごとに `.adsimNoMaster`（赤字強調）を再利用してインライン表示。
+- **検証中に踏んだPlaywright特有の罠（アプリのバグではない）**：Playwrightで
+  「想定販売比率」欄を `Locator.fill()` するとき、直前の操作（別の入力欄への`fill()`）で
+  実フォーカスがまだそこに残っていると、`fill()` 先の要素を正しく解決していても実際の
+  `input`イベントが**フォーカスの残っていた別要素**（このケースでは価格欄）に対して発火し、
+  結果的に価格欄の値へ文字列連結（`"3000"+"50"+"50"` → `30005050`）が起きたように見える
+  という現象を観測した。`.fill()` の前に明示的に `.click()` を挟んで実フォーカスを移してから
+  操作すると再現しなくなった。**アプリ側のロジック（子ASIN別入力ハンドラ）に問題はない**
+  ことをステップ実行で確認済み。今後、複数の入力欄を連続して自動操作するPlaywrightテストでは、
+  `fill()` の前に必ず `click()` で対象へフォーカスを移すこと。
+
 ## ニュース機能
 
 - 下部ナビの「ニュース」から、ニュースの要約を日経新聞風レイアウトで表示します
