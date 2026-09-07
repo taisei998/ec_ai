@@ -705,6 +705,30 @@
     display:flex; align-items:center; justify-content:center; min-height:220px;
     border:1px dashed var(--border); border-radius:10px; color: var(--text-muted); font-size:13px;
   }
+  /* ---- 日別目標（PL管理＆販売スケジュール） ---- */
+  .adsimBulkBlock { padding:12px 0; border-bottom:1px dashed var(--grid); }
+  .adsimBulkBlock:last-child { border-bottom:none; padding-bottom:0; }
+  .adsimBulkTitle { font-size:12.5px; font-weight:700; color: var(--text-secondary); margin-bottom:8px; }
+  .adsimBulkRow { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+  .adsimBulkRow label { display:flex; flex-direction:column; gap:3px; margin:0; font-size:11.5px; }
+  .adsimBulkRow input, .adsimBulkRow select { width:auto; min-width:130px; }
+  .adsimModeToggle { display:flex; align-items:center; gap:6px; margin:0; font-size:12px; font-weight:600; }
+  .adsimModeToggle select { width:auto; }
+  /* 月ごとの折りたたみブロック */
+  .adsimMonthBlock { border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
+  .adsimMonthBlock > summary {
+    cursor:pointer; padding:10px 12px; background: var(--surface-2); font-size:13px; font-weight:700;
+    display:flex; gap:12px; flex-wrap:wrap; align-items:baseline;
+  }
+  .adsimMonthBlock > summary:hover { background: var(--accent-bg); }
+  .adsimMonthSum { font-size:11.5px; font-weight:400; color: var(--text-secondary); }
+  .adsimMonthBody { padding:0 10px 10px; }
+  /* 売価が価格マスタに無い日 */
+  table.adsimTable tr.adsimRowNoMaster td { background: rgba(208,59,59,0.12); }
+  .adsimNoMaster { font-size:11px; font-weight:700; color: var(--status-critical); white-space:nowrap; }
+  /* 土日を薄く色付けして週の区切りを分かりやすくする */
+  table.adsimTable td.adsimSat { color: var(--series-1); font-weight:700; }
+  table.adsimTable td.adsimSun { color: var(--status-critical); font-weight:700; }
   .pwInfoIcon {
     display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
     border-radius:50%; border:none; background:transparent; cursor:pointer; font-size:13px; padding:0; margin-left:2px;
@@ -1220,6 +1244,15 @@
       <button type="button" class="btn small ghost" id="adsimDeleteProductBtn" style="margin-top:10px;">この親ASINを削除</button>
     </div>
 
+    <!-- 月次シミュ／日別目標のタブ切替。親ASINの選択（上のカード）は両タブで共用する。
+         CSSは価格アラートの .pwTabs / .pwTab をそのまま流用している。 -->
+    <div class="pwTabs" id="adsimTabs">
+      <button type="button" class="pwTab active" data-tab="sim">📊 月次シミュ（3ヶ月）</button>
+      <button type="button" class="pwTab" data-tab="daily">📅 日別目標（PL・販売スケジュール）</button>
+    </div>
+
+    <div id="adsimSimSection">
+
     <!-- ① 商品マスタ（子ASIN） -->
     <div class="card" id="adsimChildCard">
       <div class="cardHeader">
@@ -1235,6 +1268,22 @@
       </div>
       <p class="adsimShareSum" id="adsimShareSum"></p>
       <div class="adsimAvgRow" id="adsimAvgRow"></div>
+    </div>
+
+    <!-- 価格マスタ（子ASIN × 売価 → 原価・販売手数料） -->
+    <div class="card" id="adsimPriceMasterCard">
+      <div class="cardHeader">
+        <h3 style="margin:0;">🏷 価格マスタ（売価ごとの原価・販売手数料）</h3>
+        <button type="button" class="btn small primary" id="adsimAddPmBtn">＋ 価格を追加</button>
+      </div>
+      <p class="hint" style="margin:0 0 10px;">同じ子ASINでも売価によって原価や販売手数料が変わるため、<b>売価ごとに1行</b>登録します。上の①で子ASINの売価を変えると、ここから同じ（子ASIN・売価）の行を探して<b>原価と販売手数料を自動反映</b>します。日別目標の各日の売価も、ここを参照して原価・手数料を計算します。</p>
+      <div class="tableWrap">
+        <table class="dataTable adsimTable">
+          <thead><tr><th>子ASIN</th><th>売価（円）</th><th>原価（円/個）</th><th>販売手数料（円/個）</th><th></th></tr></thead>
+          <tbody id="adsimPmBody"></tbody>
+        </table>
+      </div>
+      <p class="adsimFieldErr" data-fe="priceMaster"></p>
     </div>
 
     <!-- ② 投下パターンの入力 -->
@@ -1298,6 +1347,113 @@
         </table>
       </div>
     </div>
+
+    </div><!-- /#adsimSimSection -->
+
+    <div id="adsimDailySection" hidden>
+      <!-- 日別目標の設定 -->
+      <div class="card" id="adsimDailyCfgCard">
+        <h3 style="margin-top:0;">📅 日別目標の設定</h3>
+        <p class="hint" style="margin:0 0 10px;">スプレッドシート「PL管理＆販売スケジュール」と同じ形で、日別の目標を作ります。売価・目標個数・目標アクセス数だけを入力すれば、売上・原価・手数料・変動費・粗利は自動計算します。原価と販売手数料は上の「価格マスタ」から売価に応じて引いてきます。</p>
+        <div class="pwFormGrid">
+          <div><label for="adsimDailyChild">対象の子ASIN</label><select id="adsimDailyChild"></select></div>
+          <div><label for="adsimDailyStart">開始日</label><input type="date" id="adsimDailyStart"></div>
+          <div><label for="adsimDailyEnd">終了日</label><input type="date" id="adsimDailyEnd"><p class="adsimFieldErr" data-fe="dailyRange"></p></div>
+          <div><label for="adsimDailyConsult">コンサル手数料率（％）</label><input type="number" id="adsimDailyConsult" min="0" max="100" step="0.1"></div>
+          <div><label for="adsimDailyTax">税率（％）</label><input type="number" id="adsimDailyTax" min="0" max="100" step="0.1"></div>
+          <div><label for="adsimDailyFba">FBAコスト（円/個）</label><input type="number" id="adsimDailyFba" min="0" step="1"></div>
+        </div>
+        <p class="hint" style="margin:8px 0 0;">コンサル手数料 ＝ 売上 × 率 ×（1＋税率）で計算します（例: 1％・税率10％なら売上の1.1％）。</p>
+      </div>
+
+      <!-- 一括入力 -->
+      <div class="card" id="adsimBulkCard">
+        <h3 style="margin-top:0;">⚡ 一括入力</h3>
+        <p class="hint" style="margin:0 0 12px;">日数が多いので、まずここで大枠を埋めてから、必要な日だけ下の表で微調整するのがおすすめです。</p>
+
+        <div class="adsimBulkBlock">
+          <div class="adsimBulkTitle">売価を期間で一律入力</div>
+          <div class="adsimBulkRow">
+            <label>開始 <input type="date" id="adsimBulkPriceFrom"></label>
+            <label>終了 <input type="date" id="adsimBulkPriceTo"></label>
+            <label>売価 <select id="adsimBulkPriceVal"></select></label>
+            <button type="button" class="btn small primary" id="adsimBulkPriceBtn">この期間に反映</button>
+          </div>
+          <p class="hint" style="margin:6px 0 0;">売価は価格マスタに登録済みのものから選びます（原価・手数料が確実に紐づきます）。セール期間だけ売価を下げる、といった使い方ができます。</p>
+        </div>
+
+        <div class="adsimBulkBlock">
+          <div class="adsimBulkTitle">目標個数・目標アクセス数を期間で一括入力</div>
+          <div class="adsimBulkRow">
+            <label>開始 <input type="date" id="adsimBulkQtyFrom"></label>
+            <label>終了 <input type="date" id="adsimBulkQtyTo"></label>
+            <label>項目
+              <select id="adsimBulkQtyField">
+                <option value="units">目標個数</option>
+                <option value="pv">目標アクセス数</option>
+              </select>
+            </label>
+            <label>値 <input type="number" id="adsimBulkQtyVal" min="0" step="1"></label>
+            <button type="button" class="btn small primary" id="adsimBulkQtyBtn">この期間に反映</button>
+          </div>
+          <p class="hint" style="margin:6px 0 0;">下の「入力モード」が<b>1日あたり</b>なら各日にその値を入れ、<b>期間合計</b>なら期間の日数で均等割りします（端数は最終日で調整）。</p>
+        </div>
+
+        <div class="adsimBulkBlock">
+          <div class="adsimBulkTitle">月をコピー</div>
+          <div class="adsimBulkRow">
+            <label>コピー元 <select id="adsimCopyFrom"></select></label>
+            <label>コピー先 <select id="adsimCopyTo"></select></label>
+            <button type="button" class="btn small" id="adsimCopyBtn">売価・個数・アクセス数をコピー</button>
+          </div>
+          <p class="hint" style="margin:6px 0 0;">日数が違う月にコピーする場合は、コピー先の日数分だけ先頭から順に入ります（足りない分は元の月を繰り返します）。</p>
+        </div>
+      </div>
+
+      <!-- 月別入力 -->
+      <div class="card" id="adsimMonthlyInputCard">
+        <div class="cardHeader">
+          <h3 style="margin:0;">🗓 月別に入力</h3>
+          <label class="adsimModeToggle">入力モード
+            <select id="adsimBulkMode">
+              <option value="perDay">1日あたり</option>
+              <option value="total">月合計（日割り）</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint" style="margin:0 0 10px;">月ごとに手入力して「この月に反映」を押すと、その月の全日に書き込みます。<b>月合計</b>モードなら月の日数で均等割りします（端数は月末日で調整）。</p>
+        <div class="tableWrap">
+          <table class="dataTable adsimTable">
+            <thead><tr><th>月</th><th>日数</th><th>売価（円）</th><th>目標個数</th><th>目標アクセス数</th><th></th></tr></thead>
+            <tbody id="adsimMonthlyInputBody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn" id="adsimApplyAllMonthsBtn">全月に反映</button>
+          <button type="button" class="btn ghost" id="adsimClearDailyBtn">日別の入力をすべてクリア</button>
+        </div>
+        <p class="pwMsg" id="adsimDailyMsg"></p>
+      </div>
+
+      <!-- 月次サマリー -->
+      <div class="card" id="adsimDailySummaryCard">
+        <h3 style="margin-top:0;">📊 月次サマリー</h3>
+        <div class="adsimWarnBox" id="adsimDailyWarn" hidden></div>
+        <div class="tableWrap">
+          <table class="dataTable adsimTable">
+            <thead><tr><th>月</th><th>売上</th><th>個数</th><th>アクセス数</th><th>原価合計</th><th>販売手数料</th><th>FBA</th><th>コンサル料</th><th>VC(変動費)</th><th>MQ(粗利額)</th><th>M(粗利率)</th></tr></thead>
+            <tbody id="adsimDailySummaryBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 日別テーブル（月ごとに折りたたむ） -->
+      <div class="card" id="adsimDailyTableCard">
+        <h3 style="margin-top:0;">📋 日別の内訳</h3>
+        <p class="hint" style="margin:0 0 10px;">月の見出しをクリックすると開きます（開いたときにその月の行を作るので、初期表示が重くなりません）。<b>売価・目標個数・目標アクセス数</b>だけが入力欄で、他は自動計算です。</p>
+        <div id="adsimDailyMonthBlocks"></div>
+      </div>
+    </div><!-- /#adsimDailySection -->
   </section>
 
 </div>
@@ -1597,7 +1753,7 @@
   ];
 
   var state = {
-    ui: { theme:null, activeView:"home", selectedNewsDate:null, selectedAiNewsDate:null, activeNewsCategory:"food", activeWatchTab:"view", selectedWatchItemId:null, selectedWatchKeywordId:null, watchDetailMode:"keyword" },
+    ui: { theme:null, activeView:"home", selectedNewsDate:null, selectedAiNewsDate:null, activeNewsCategory:"food", activeWatchTab:"view", selectedWatchItemId:null, selectedWatchKeywordId:null, watchDetailMode:"keyword", activeAdsimTab:"sim" },
     aiInput: { name:"", volume:"", category:"", keyword:"", grade:"standard", platforms: PLATFORMS.map(function(p){ return p.key; }) },
     aiResearch: null,
     // 過去に反映したAIリサーチ結果の履歴（新しい順）。「読み込む」で aiResearch に復元できる。
@@ -4219,8 +4375,67 @@
       maxLossPct: null,
       children: [adSimDefaultChild(100)],
       patterns: [],
-      draft: adSimDefaultDraft()
+      draft: adSimDefaultDraft(),
+      priceMaster: [],
+      daily: adSimDefaultDaily()
     };
+  }
+
+  // 日別目標（PL管理＆販売スケジュール）の既定値。既定期間は当月1日から6ヶ月。
+  function adSimDefaultDaily(){
+    var t = new Date();
+    var start = new Date(t.getFullYear(), t.getMonth(), 1);
+    var end = new Date(t.getFullYear(), t.getMonth() + 6, 0);   // 6ヶ月後の月末
+    return {
+      childId: "",
+      startDate: adSimIsoDate(start),
+      endDate: adSimIsoDate(end),
+      consultPct: 1,     // シート1行目のパラメータ「1%」に対応
+      taxPct: 10,        // コンサル手数料の税込計算に使う
+      fbaYen: 0,         // シート1行目のパラメータ「0」に対応
+      bulkMode: "perDay",
+      rows: {}           // "YYYY-MM-DD" -> { price, units, pv }（入力値のみ保持）
+    };
+  }
+
+  // ---- 日付ユーティリティ ----
+  // カレンダー上の日付なので、必ずローカル時刻の new Date(y, m-1, d) で組み立てる。
+  // toISOString() を使うとUTCずれで前日になることがあるため使わない（pwTodayDateと同じ方針）。
+  function adSimIsoDate(d){
+    var pad = function(n){ return (n < 10 ? "0" : "") + n; };
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function adSimParseDate(iso){
+    var p = parseNewsDate(iso);   // "YYYY-MM-DD" / "YYYY/M/D" を {y,m,d} に（既存関数を再利用）
+    return p ? new Date(p.y, p.m - 1, p.d) : null;
+  }
+  // 開始日〜終了日の日付を昇順で返す。安全上限を付けて暴走を防ぐ。
+  function adSimDateSeq(startIso, endIso, limit){
+    var out = [];
+    var s = adSimParseDate(startIso), e = adSimParseDate(endIso);
+    if (!s || !e || s > e) return out;
+    var max = limit || 800;
+    var cur = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+    while (cur <= e && out.length < max){
+      out.push(adSimIsoDate(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return out;
+  }
+  // 期間を月ごとにまとめる。[{ key:"2026-07", label:"2026年7月", dates:[iso,...] }]
+  function adSimDailyMonths(daily){
+    var months = [];
+    var byKey = {};
+    adSimDateSeq(daily.startDate, daily.endDate).forEach(function(iso){
+      var key = iso.slice(0, 7);
+      if (!byKey[key]){
+        var p = parseNewsDate(iso);
+        byKey[key] = { key: key, label: p.y + "年" + p.m + "月", dates: [] };
+        months.push(byKey[key]);
+      }
+      byKey[key].dates.push(iso);
+    });
+    return months;
   }
 
   // priceWatch と同じ「欠損を既定化して返す」正規化関数。
@@ -4269,6 +4484,38 @@
         pt.m1 = adSimNum(pt.m1);
         pt.m2 = adSimNum(pt.m2);
         pt.m3 = adSimNum(pt.m3);
+      });
+      // 価格マスタ（子ASIN × 売価 → 原価・販売手数料）。既存データには無いので追加する
+      // ＝versionは上げない（上げると登録済みの親ASIN・子ASIN・パターンが全部消える）。
+      if (!Array.isArray(pd.priceMaster)) pd.priceMaster = [];
+      pd.priceMaster.forEach(function(pm){
+        if (!pm.id) pm.id = adSimNextId("adpm");
+        if (typeof pm.childId !== "string") pm.childId = "";
+        pm.price = adSimNum(pm.price);
+        pm.cost = adSimNum(pm.cost);
+        pm.amazonFee = adSimNum(pm.amazonFee);
+      });
+      // 日別目標（PL管理＆販売スケジュール）
+      if (!pd.daily || typeof pd.daily !== "object") pd.daily = adSimDefaultDaily();
+      var dl = pd.daily;
+      var dlDef = null;
+      function dlFallback(){ if (!dlDef) dlDef = adSimDefaultDaily(); return dlDef; }
+      if (typeof dl.childId !== "string") dl.childId = "";
+      // 対象子ASINが消えていたら先頭の子ASINに寄せる
+      if (!pd.children.some(function(c){ return c.id === dl.childId; })) dl.childId = pd.children[0].id;
+      if (!adSimParseDate(dl.startDate)) dl.startDate = dlFallback().startDate;
+      if (!adSimParseDate(dl.endDate)) dl.endDate = dlFallback().endDate;
+      dl.consultPct = adSimNum(dl.consultPct);
+      dl.taxPct = adSimNum(dl.taxPct);
+      dl.fbaYen = adSimNum(dl.fbaYen);
+      if (dl.bulkMode !== "total") dl.bulkMode = "perDay";
+      if (!dl.rows || typeof dl.rows !== "object") dl.rows = {};
+      Object.keys(dl.rows).forEach(function(k){
+        var r = dl.rows[k];
+        if (!r || typeof r !== "object"){ delete dl.rows[k]; return; }
+        r.price = adSimNum(r.price);
+        r.units = adSimNum(r.units);
+        r.pv = adSimNum(r.pv);
       });
       if (!pd.draft || typeof pd.draft !== "object") pd.draft = adSimDefaultDraft();
       if (typeof pd.draft.name !== "string") pd.draft.name = "";
@@ -4459,6 +4706,36 @@
     var shareOk = (sumRounded === 100);
     if (!shareOk) errs.push("想定販売比率の合計が100.0%ではありません（現在 " + sumRounded.toFixed(1) + "%）。");
 
+    // 価格マスタ（同じ子ASIN×売価の重複を禁止する。重複するとどちらを引くか決まらない）
+    var pmSeen = {};
+    (pd.priceMaster || []).forEach(function(pm, i){
+      var no = (i + 1) + "行目";
+      if (adSimNum(pm.price) < 1){ errs.push("価格マスタ" + no + "の売価は1円以上で入力してください。"); addField("priceMaster", "売価は1円以上"); }
+      if (adSimNum(pm.cost) < 0){ errs.push("価格マスタ" + no + "の原価が0未満です。"); addField("priceMaster", "0以上で入力"); }
+      if (adSimNum(pm.amazonFee) < 0){ errs.push("価格マスタ" + no + "の販売手数料が0未満です。"); addField("priceMaster", "0以上で入力"); }
+      var k = pm.childId + "@" + adSimPriceKey(pm.price);
+      if (pmSeen[k]){
+        errs.push("価格マスタに同じ子ASIN・同じ売価の行が複数あります（" + adSimYen(pm.price) + "）。どちらを使うか決まらないため1行にしてください。");
+        addField("priceMaster", "同じ子ASIN・売価の重複");
+      }
+      pmSeen[k] = true;
+    });
+
+    // 日別目標の期間
+    var dl = pd.daily;
+    if (dl){
+      var sd = adSimParseDate(dl.startDate), ed = adSimParseDate(dl.endDate);
+      if (!sd || !ed){ errs.push("日別目標の開始日・終了日を正しく入力してください。"); addField("dailyRange", "日付が不正"); }
+      else if (sd > ed){ errs.push("日別目標の開始日が終了日より後になっています。"); addField("dailyRange", "開始日＞終了日"); }
+      else if (adSimDateSeq(dl.startDate, dl.endDate, 900).length >= 800){
+        errs.push("日別目標の期間が長すぎます（800日以内にしてください）。");
+        addField("dailyRange", "800日以内に");
+      }
+      if (adSimNum(dl.consultPct) < 0 || adSimNum(dl.consultPct) > 100) errs.push("コンサル手数料率は0〜100%の範囲で入力してください。");
+      if (adSimNum(dl.taxPct) < 0 || adSimNum(dl.taxPct) > 100) errs.push("税率は0〜100%の範囲で入力してください。");
+      if (adSimNum(dl.fbaYen) < 0) errs.push("FBAコストは0以上で入力してください。");
+    }
+
     // ② 投下パターン（編集中の入力欄）
     var d = pd.draft;
     if (adSimNum(d.cpc) < 1){ errs.push("CPCは1円以上で入力してください。"); addField("cpc", "1円以上"); }
@@ -4536,6 +4813,20 @@
         if (!child) return;
         var field = inp.dataset.adsimKey.slice(("c" + cid).length);
         child[field] = (field === "sku") ? inp.value : adSimNum(inp.value);
+        // 売価を変えたら、価格マスタから同じ（子ASIN・売価）の行を探して
+        // 原価と販売手数料を自動反映する。一致する行が無ければ何もしない（手入力を尊重）。
+        if (field === "price"){
+          var pm = adSimFindPriceMaster(pd, cid, child.price);
+          if (pm){
+            child.cost = adSimNum(pm.cost);
+            child.amazonFee = adSimNum(pm.amazonFee);
+            // テーブルは作り直さず、該当セルの入力欄の値だけを書き換える（フォーカス保持）
+            var costInp = body.querySelector("input[data-adsim-key='c" + cid + "cost']");
+            var feeInp = body.querySelector("input[data-adsim-key='c" + cid + "amazonFee']");
+            if (costInp) costInp.value = child.cost;
+            if (feeInp) feeInp.value = child.amazonFee;
+          }
+        }
         markDirty();
         adSimRefreshValidationUI();   // テーブルは再描画しない（フォーカス保持）
       });
@@ -4930,15 +5221,622 @@
   function renderAdSimAll(){
     if (!document.getElementById("view-adsim")) return;
     adSimEnsureState();
+    adSimApplyActiveTab();
     renderAdSimProductTabs();
     renderAdSimProductFields();
     renderAdSimChildTable();
     renderAdSimDraftFields();
     renderAdSimPatternList();
     adSimUpdateEditingUI();
+    renderAdSimPriceMaster();
+    renderAdSimDailyAll();
     renderAdSimResult();
     adSimRefreshValidationUI();
   }
+
+  // ---------- 価格マスタ（子ASIN × 売価 → 原価・販売手数料） ----------
+  // 同じ子ASINでも売価によって原価や販売手数料が変わる（実際のスプレッドシートでも
+  // 売価 3,380/2,495/2,270/2,225 で原価と手数料が違っていた）ため、売価ごとに1行持つ。
+  // 売価は小数を持たない運用だが、念のため丸め誤差を避けて小数第2位までで突き合わせる。
+  function adSimPriceKey(n){ return String(Math.round(adSimNum(n) * 100)); }
+  function adSimFindPriceMaster(pd, childId, price){
+    var key = adSimPriceKey(price);
+    return (pd.priceMaster || []).filter(function(pm){
+      return pm.childId === childId && adSimPriceKey(pm.price) === key;
+    })[0] || null;
+  }
+  // 対象子ASINに登録されている売価の一覧（昇順）。一括入力のプルダウンに使う。
+  function adSimPriceOptions(pd, childId){
+    return (pd.priceMaster || [])
+      .filter(function(pm){ return pm.childId === childId; })
+      .map(function(pm){ return adSimNum(pm.price); })
+      .sort(function(a, b){ return a - b; });
+  }
+
+  function renderAdSimPriceMaster(){
+    var pd = adSimCurrentProduct();
+    var body = document.getElementById("adsimPmBody");
+    if (!body) return;
+    if (!pd.priceMaster.length){
+      body.innerHTML = "<tr><td colspan='5' class='hint'>まだ登録がありません。「＋ 価格を追加」で、売価ごとの原価と販売手数料を登録してください。</td></tr>";
+      return;
+    }
+    var childOpts = function(sel){
+      return pd.children.map(function(c){
+        return "<option value='" + attr(c.id) + "'" + (c.id === sel ? " selected" : "") + ">" +
+          esc(c.sku || "（未入力の子ASIN）") + "</option>";
+      }).join("");
+    };
+    body.innerHTML = pd.priceMaster.map(function(pm){
+      return "<tr data-pmid='" + attr(pm.id) + "'>" +
+        "<td><select data-adsim-pm='childId'>" + childOpts(pm.childId) + "</select></td>" +
+        "<td><input type='number' data-adsim-pm='price' value='" + attr(String(pm.price)) + "' step='1' min='0'></td>" +
+        "<td><input type='number' data-adsim-pm='cost' value='" + attr(String(pm.cost)) + "' step='0.1' min='0'></td>" +
+        "<td><input type='number' data-adsim-pm='amazonFee' value='" + attr(String(pm.amazonFee)) + "' step='1' min='0'></td>" +
+        "<td class='rmCell'><button type='button' class='btn small ghost' data-act='adsimDelPm'>削除</button></td>" +
+      "</tr>";
+    }).join("");
+
+    body.querySelectorAll("[data-adsim-pm]").forEach(function(inp){
+      inp.addEventListener("input", function(){
+        var pmid = inp.closest("tr").dataset.pmid;
+        var pm = pd.priceMaster.filter(function(x){ return x.id === pmid; })[0];
+        if (!pm) return;
+        var f = inp.dataset.adsimPm;
+        pm[f] = (f === "childId") ? inp.value : adSimNum(inp.value);
+        markDirty();
+        adSimRefreshValidationUI();      // テーブルは再描画しない（フォーカス保持）
+        renderAdSimBulkPriceOptions();   // 売価の選択肢は入力欄を含まないので更新して安全
+      });
+    });
+    body.querySelectorAll("[data-act='adsimDelPm']").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var pmid = btn.closest("tr").dataset.pmid;
+        pd.priceMaster = pd.priceMaster.filter(function(x){ return x.id !== pmid; });
+        markDirty();
+        renderAdSimPriceMaster();        // 構造が変わったので再描画してよい
+        renderAdSimBulkPriceOptions();
+        adSimRefreshValidationUI();
+      });
+    });
+  }
+
+  // ---------- 日別目標：計算 ----------
+  // 1日分の計算。スプレッドシートの数式（実データ92日で検算済み）をそのまま実装する。
+  //   P(売上)    = 売価 × 個数
+  //   原価合計   = 原価単価(価格マスタ) × 個数
+  //   販売手数料 = 販売手数料単価(価格マスタ) × 個数
+  //   FBAコスト  = FBA単価 × 個数
+  //   コンサル料 = P × コンサル率/100 × (1 + 税率/100)
+  //   VC         = 原価合計 + 販売手数料 + FBAコスト + コンサル料
+  //   MQ         = P − VC
+  //   M(粗利率)  = MQ ÷ P × 100
+  // 売価が価格マスタに無い日は原価・手数料が確定できないので noMaster:true とし、
+  // 表では「⚠ マスタ未登録」を出して集計から除外する（シートが #N/A になっていた挙動に対応）。
+  function adSimComputeDailyRow(pd, iso){
+    var dl = pd.daily;
+    var r = dl.rows[iso] || { price: 0, units: 0, pv: 0 };
+    var price = adSimNum(r.price), units = adSimNum(r.units), pv = adSimNum(r.pv);
+    var p = parseNewsDate(iso);
+    var dow = p ? new Date(p.y, p.m - 1, p.d).getDay() : 0;
+    var out = {
+      iso: iso, month: iso.slice(0, 7), dow: dow, weekday: NEWS_WEEKDAY[dow],
+      price: price, units: units, pv: pv,
+      revenue: 0, cost: 0, amazonFee: 0, fba: 0, consult: 0, vc: 0, mq: 0, marginPct: null,
+      noMaster: false, empty: (price <= 0 && units <= 0 && pv <= 0)
+    };
+    out.revenue = price * units;
+    var pm = price > 0 ? adSimFindPriceMaster(pd, dl.childId, price) : null;
+    if (price > 0 && !pm){
+      out.noMaster = true;
+      return out;   // 原価・手数料が出せないので以降は計算しない
+    }
+    if (pm){
+      out.cost = adSimNum(pm.cost) * units;
+      out.amazonFee = adSimNum(pm.amazonFee) * units;
+    }
+    out.fba = adSimNum(dl.fbaYen) * units;
+    out.consult = out.revenue * (adSimNum(dl.consultPct) / 100) * (1 + adSimNum(dl.taxPct) / 100);
+    out.vc = out.cost + out.amazonFee + out.fba + out.consult;
+    out.mq = out.revenue - out.vc;
+    out.marginPct = out.revenue > 0 ? (out.mq / out.revenue * 100) : null;
+    return out;
+  }
+
+  // 月ごと・全期間の合計。マスタ未登録の日は集計に入れず件数だけ数える。
+  function adSimDailyTotals(pd){
+    var months = adSimDailyMonths(pd.daily);
+    var blank = function(){
+      return { revenue:0, units:0, pv:0, cost:0, amazonFee:0, fba:0, consult:0, vc:0, mq:0, noMaster:0 };
+    };
+    var all = blank();
+    var perMonth = months.map(function(m){
+      var t = blank();
+      t.key = m.key; t.label = m.label; t.days = m.dates.length;
+      m.dates.forEach(function(iso){
+        var row = adSimComputeDailyRow(pd, iso);
+        if (row.noMaster){ t.noMaster++; all.noMaster++; return; }
+        ["revenue","units","pv","cost","amazonFee","fba","consult","vc","mq"].forEach(function(k){
+          t[k] += row[k]; all[k] += row[k];
+        });
+      });
+      t.marginPct = t.revenue > 0 ? (t.mq / t.revenue * 100) : null;
+      return t;
+    });
+    all.marginPct = all.revenue > 0 ? (all.mq / all.revenue * 100) : null;
+    all.days = months.reduce(function(a, m){ return a + m.dates.length; }, 0);
+    return { months: perMonth, all: all };
+  }
+
+  // ---------- 日別目標：一括入力 ----------
+  function adSimDailyRow(dl, iso){
+    if (!dl.rows[iso]) dl.rows[iso] = { price: 0, units: 0, pv: 0 };
+    return dl.rows[iso];
+  }
+  // 指定した日付群に値を書き込む。mode="total" のときは均等割りし、
+  // 端数は最終日で吸収して合計が指定値とぴったり一致するようにする。
+  function adSimFillDates(dl, dates, field, value, mode){
+    if (!dates.length) return 0;
+    if (field === "price" || mode !== "total"){
+      dates.forEach(function(iso){ adSimDailyRow(dl, iso)[field] = adSimNum(value); });
+      return dates.length;
+    }
+    var total = adSimNum(value);
+    var per = Math.floor(total / dates.length);
+    var used = 0;
+    dates.forEach(function(iso, i){
+      var v = (i === dates.length - 1) ? (total - used) : per;
+      used += v;
+      adSimDailyRow(dl, iso)[field] = v;
+    });
+    return dates.length;
+  }
+  function adSimShowDailyMsg(msg, isErr){
+    var el = document.getElementById("adsimDailyMsg");
+    if (!el) return;
+    el.style.color = isErr ? "var(--danger)" : "var(--status-good)";
+    el.textContent = msg || "";
+  }
+
+  // ---------- 日別目標：描画 ----------
+  function renderAdSimDailyCfg(){
+    var pd = adSimCurrentProduct();
+    var dl = pd.daily;
+    var sel = document.getElementById("adsimDailyChild");
+    if (sel){
+      sel.innerHTML = pd.children.map(function(c){
+        return "<option value='" + attr(c.id) + "'" + (c.id === dl.childId ? " selected" : "") + ">" +
+          esc(c.sku || "（未入力の子ASIN）") + "</option>";
+      }).join("");
+    }
+    document.getElementById("adsimDailyStart").value = dl.startDate;
+    document.getElementById("adsimDailyEnd").value = dl.endDate;
+    document.getElementById("adsimDailyConsult").value = dl.consultPct;
+    document.getElementById("adsimDailyTax").value = dl.taxPct;
+    document.getElementById("adsimDailyFba").value = dl.fbaYen;
+    document.getElementById("adsimBulkMode").value = dl.bulkMode;
+  }
+
+  // 一括入力の売価プルダウンと、月コピーのプルダウンを作り直す（入力欄を含まないので安全）
+  function renderAdSimBulkPriceOptions(){
+    var pd = adSimCurrentProduct();
+    var sel = document.getElementById("adsimBulkPriceVal");
+    if (sel){
+      var prices = adSimPriceOptions(pd, pd.daily.childId);
+      sel.innerHTML = prices.length
+        ? prices.map(function(v){ return "<option value='" + attr(String(v)) + "'>" + adSimYen(v) + "</option>"; }).join("")
+        : "<option value=''>（価格マスタに登録がありません）</option>";
+    }
+    var months = adSimDailyMonths(pd.daily);
+    var opts = months.map(function(m){ return "<option value='" + attr(m.key) + "'>" + esc(m.label) + "</option>"; }).join("");
+    ["adsimCopyFrom", "adsimCopyTo"].forEach(function(id, idx){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = opts;
+      if (months.length > 1) el.selectedIndex = idx === 0 ? 0 : 1;
+    });
+  }
+
+  function renderAdSimMonthlyInput(){
+    var pd = adSimCurrentProduct();
+    var dl = pd.daily;
+    var body = document.getElementById("adsimMonthlyInputBody");
+    if (!body) return;
+    var months = adSimDailyMonths(dl);
+    if (!months.length){
+      body.innerHTML = "<tr><td colspan='6' class='hint'>期間が正しくありません。開始日と終了日を確認してください。</td></tr>";
+      return;
+    }
+    body.innerHTML = months.map(function(m){
+      return "<tr data-mkey='" + attr(m.key) + "'>" +
+        "<td class='adsimPatName'>" + esc(m.label) + "</td>" +
+        "<td class='adsimNum'>" + m.dates.length + "日</td>" +
+        "<td><input type='number' data-mf='price' step='1' min='0' placeholder='—'></td>" +
+        "<td><input type='number' data-mf='units' step='1' min='0' placeholder='—'></td>" +
+        "<td><input type='number' data-mf='pv' step='1' min='0' placeholder='—'></td>" +
+        "<td class='rmCell'><button type='button' class='btn small primary' data-act='adsimApplyMonth'>この月に反映</button></td>" +
+      "</tr>";
+    }).join("");
+    body.querySelectorAll("[data-act='adsimApplyMonth']").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var tr = btn.closest("tr");
+        adSimApplyMonthRow(tr);
+        renderAdSimDailyResult();
+        adSimShowDailyMsg(tr.querySelector(".adsimPatName").textContent + " に反映しました。", false);
+      });
+    });
+  }
+
+  // 月別入力の1行を、その月の全日に書き込む。空欄の項目は触らない。
+  function adSimApplyMonthRow(tr){
+    var pd = adSimCurrentProduct();
+    var dl = pd.daily;
+    var mkey = tr.dataset.mkey;
+    var month = adSimDailyMonths(dl).filter(function(m){ return m.key === mkey; })[0];
+    if (!month) return 0;
+    var applied = 0;
+    ["price", "units", "pv"].forEach(function(f){
+      var inp = tr.querySelector("[data-mf='" + f + "']");
+      if (!inp || String(inp.value).trim() === "") return;   // 空欄はスキップ
+      adSimFillDates(dl, month.dates, f, inp.value, dl.bulkMode);
+      applied++;
+    });
+    if (applied) markDirty();
+    return applied;
+  }
+
+  function renderAdSimDailySummary(){
+    var pd = adSimCurrentProduct();
+    var body = document.getElementById("adsimDailySummaryBody");
+    var warn = document.getElementById("adsimDailyWarn");
+    if (!body) return;
+    var tot = adSimDailyTotals(pd);
+    if (!tot.months.length){
+      body.innerHTML = "<tr><td colspan='11' class='hint'>期間が正しくありません。</td></tr>";
+      if (warn){ warn.hidden = true; warn.textContent = ""; }
+      return;
+    }
+    var rowHtml = function(t, isTotal){
+      return "<tr" + (isTotal ? " class='adsimGroupTop'" : "") + ">" +
+        "<td class='adsimPatName'>" + esc(isTotal ? "全期間合計" : t.label) + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(t.revenue) + "</td>" +
+        "<td class='adsimNum'>" + adSimQty(t.units) + "個</td>" +
+        "<td class='adsimNum'>" + adSimQty(t.pv) + "人</td>" +
+        "<td class='adsimNum'>" + adSimYen(t.cost) + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(t.amazonFee) + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(t.fba) + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(t.consult) + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(t.vc) + "</td>" +
+        "<td class='adsimNum'>" + adSimSignedYen(t.mq) + "</td>" +
+        "<td class='adsimNum'>" + adSimPct(t.marginPct) + "</td>" +
+      "</tr>";
+    };
+    body.innerHTML = tot.months.map(function(t){ return rowHtml(t, false); }).join("") + rowHtml(tot.all, true);
+
+    if (warn){
+      if (!tot.all.noMaster){ warn.hidden = true; warn.textContent = ""; }
+      else {
+        warn.hidden = false;
+        warn.textContent = "⚠ 売価が価格マスタに無い日が " + tot.all.noMaster + "日あります\n" +
+          "その日は原価・販売手数料が計算できないため、上の集計から除外しています。「価格マスタ」にその売価を登録するか、日別の売価を登録済みの値に直してください。";
+      }
+    }
+  }
+
+  // 日別テーブル：月ごとに<details>で折りたたむ。開いたときに中身を作る（遅延描画）ので、
+  // 184日×3入力＝552個の入力欄を一度に生成しない。
+  function renderAdSimDailyTable(){
+    var pd = adSimCurrentProduct();
+    var wrap = document.getElementById("adsimDailyMonthBlocks");
+    if (!wrap) return;
+    var months = adSimDailyMonths(pd.daily);
+    if (!months.length){
+      wrap.innerHTML = "<p class='hint' style='margin:0;'>期間が正しくありません。開始日と終了日を確認してください。</p>";
+      return;
+    }
+    var tot = adSimDailyTotals(pd);
+    var byKey = {};
+    tot.months.forEach(function(t){ byKey[t.key] = t; });
+
+    wrap.innerHTML = months.map(function(m){
+      var t = byKey[m.key] || {};
+      var sum = "売上 " + adSimYen(t.revenue || 0) + "／" + adSimQty(t.units || 0) + "個／MQ " + adSimSignedYen(t.mq || 0) +
+        (t.noMaster ? "／⚠ マスタ未登録 " + t.noMaster + "日" : "");
+      return "<details class='adsimMonthBlock' data-mkey='" + attr(m.key) + "'>" +
+        "<summary>" + esc(m.label) + "（" + m.dates.length + "日）<span class='adsimMonthSum'>" + esc(sum) + "</span></summary>" +
+        "<div class='adsimMonthBody'></div>" +
+      "</details>";
+    }).join("");
+
+    wrap.querySelectorAll(".adsimMonthBlock").forEach(function(det){
+      det.addEventListener("toggle", function(){
+        if (det.open) adSimRenderMonthRows(det);
+      });
+    });
+  }
+
+  function adSimRenderMonthRows(det){
+    var pd = adSimCurrentProduct();
+    var dl = pd.daily;
+    var mkey = det.dataset.mkey;
+    var month = adSimDailyMonths(dl).filter(function(m){ return m.key === mkey; })[0];
+    var host = det.querySelector(".adsimMonthBody");
+    if (!month || !host) return;
+
+    var rows = month.dates.map(function(iso){
+      var row = adSimComputeDailyRow(pd, iso);
+      var r = dl.rows[iso] || { price: 0, units: 0, pv: 0 };
+      var p = parseNewsDate(iso);
+      var dowCls = row.dow === 6 ? " adsimSat" : (row.dow === 0 ? " adsimSun" : "");
+      var trCls = row.noMaster ? " class='adsimRowNoMaster'" : "";
+      var calc = row.noMaster
+        ? "<td colspan='7' class='adsimNoMaster'>⚠ 売価 " + adSimYen(row.price) + " が価格マスタに未登録です</td>"
+        : "<td class='adsimNum'>" + adSimYen(row.cost) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(row.amazonFee) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(row.fba) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(row.consult) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(row.vc) + "</td>" +
+          "<td class='adsimNum'>" + adSimSignedYen(row.mq) + "</td>" +
+          "<td class='adsimNum'>" + adSimPct(row.marginPct) + "</td>";
+      return "<tr" + trCls + " data-iso='" + attr(iso) + "'>" +
+        "<td class='adsimNum'>" + p.m + "/" + p.d + "</td>" +
+        "<td" + (dowCls ? " class='" + dowCls.replace(/^ /, "") + "'" : "") + ">" + row.weekday + "</td>" +
+        "<td><input type='number' data-df='price' value='" + attr(String(r.price)) + "' step='1' min='0'></td>" +
+        "<td class='adsimNum' data-out='revenue'>" + adSimYen(row.revenue) + "</td>" +
+        "<td><input type='number' data-df='units' value='" + attr(String(r.units)) + "' step='1' min='0'></td>" +
+        "<td><input type='number' data-df='pv' value='" + attr(String(r.pv)) + "' step='1' min='0'></td>" +
+        calc +
+      "</tr>";
+    }).join("");
+
+    host.innerHTML = "<div class='tableWrap'><table class='dataTable adsimTable'>" +
+      "<thead><tr><th>日付</th><th>曜</th><th>売価</th><th>P(売上)</th><th>VQ(個数)</th><th>PV(アクセス)</th>" +
+      "<th>原価合計</th><th>販売手数料</th><th>FBA</th><th>コンサル料</th><th>VC(変動費)</th><th>MQ(粗利額)</th><th>M(粗利率)</th></tr></thead>" +
+      "<tbody>" + rows + "</tbody></table></div>";
+
+    // 入力中はテーブルを作り直さない。値を書き換えたら、その行の計算セルだけを更新する。
+    host.querySelectorAll("input[data-df]").forEach(function(inp){
+      inp.addEventListener("input", function(){
+        var tr = inp.closest("tr");
+        var iso = tr.dataset.iso;
+        adSimDailyRow(dl, iso)[inp.dataset.df] = adSimNum(inp.value);
+        markDirty();
+        adSimUpdateDailyRowCells(tr, iso);
+      });
+      // 入力を終えたタイミングでだけ、月サマリーと月次サマリーを更新する
+      inp.addEventListener("change", function(){
+        renderAdSimDailySummary();
+        adSimUpdateMonthSummaryLabels();
+      });
+    });
+  }
+
+  // 1行分の計算セルだけを書き換える（行を作り直さないのでフォーカスが飛ばない）
+  function adSimUpdateDailyRowCells(tr, iso){
+    var pd = adSimCurrentProduct();
+    var row = adSimComputeDailyRow(pd, iso);
+    var tds = tr.children;
+    var setTd = function(i, txt){ if (tds[i]) tds[i].textContent = txt; };
+    setTd(3, adSimYen(row.revenue));
+    // マスタ未登録⇔通常でセル構成が変わる場合だけ、その行を作り直す
+    var isNoMasterRow = tr.classList.contains("adsimRowNoMaster");
+    if (isNoMasterRow !== row.noMaster){
+      var det = tr.closest(".adsimMonthBlock");
+      var active = document.activeElement;
+      var key = active && active.dataset ? active.dataset.df : null;
+      adSimRenderMonthRows(det);
+      // 作り直したので、同じ日・同じ項目の入力欄にフォーカスを戻す
+      if (key){
+        var back = det.querySelector("tr[data-iso='" + iso + "'] input[data-df='" + key + "']");
+        if (back){ back.focus(); back.select && back.select(); }
+      }
+      return;
+    }
+    if (row.noMaster) return;
+    setTd(6, adSimYen(row.cost));
+    setTd(7, adSimYen(row.amazonFee));
+    setTd(8, adSimYen(row.fba));
+    setTd(9, adSimYen(row.consult));
+    setTd(10, adSimYen(row.vc));
+    setTd(11, adSimSignedYen(row.mq));
+    setTd(12, adSimPct(row.marginPct));
+  }
+
+  // 折りたたみ見出しの月サマリー文言だけを更新する（開いている月の行は作り直さない）
+  function adSimUpdateMonthSummaryLabels(){
+    var pd = adSimCurrentProduct();
+    var tot = adSimDailyTotals(pd);
+    var byKey = {};
+    tot.months.forEach(function(t){ byKey[t.key] = t; });
+    document.querySelectorAll("#adsimDailyMonthBlocks .adsimMonthBlock").forEach(function(det){
+      var t = byKey[det.dataset.mkey];
+      var span = det.querySelector(".adsimMonthSum");
+      if (!t || !span) return;
+      span.textContent = "売上 " + adSimYen(t.revenue) + "／" + adSimQty(t.units) + "個／MQ " + adSimSignedYen(t.mq) +
+        (t.noMaster ? "／⚠ マスタ未登録 " + t.noMaster + "日" : "");
+    });
+  }
+
+  // 一括入力・月別反映のあとに呼ぶ。開いている月は行を作り直し、閉じている月はそのまま。
+  function renderAdSimDailyResult(){
+    renderAdSimDailySummary();
+    document.querySelectorAll("#adsimDailyMonthBlocks .adsimMonthBlock").forEach(function(det){
+      if (det.open) adSimRenderMonthRows(det);
+    });
+    adSimUpdateMonthSummaryLabels();
+  }
+
+  function renderAdSimDailyAll(){
+    if (!document.getElementById("adsimDailySection")) return;
+    renderAdSimDailyCfg();
+    renderAdSimBulkPriceOptions();
+    renderAdSimMonthlyInput();
+    renderAdSimDailyTable();
+    renderAdSimDailySummary();
+  }
+
+  // ---------- 月次シミュ／日別目標のタブ切替 ----------
+  // 価格アラートの pwApplyActiveTab() と同じ idiom。
+  function adSimApplyActiveTab(){
+    var tab = state.ui.activeAdsimTab === "daily" ? "daily" : "sim";
+    var simSection = document.getElementById("adsimSimSection");
+    var dailySection = document.getElementById("adsimDailySection");
+    if (simSection) simSection.hidden = (tab !== "sim");
+    if (dailySection) dailySection.hidden = (tab !== "daily");
+    document.querySelectorAll("#adsimTabs .pwTab").forEach(function(btn){
+      btn.classList.toggle("active", btn.dataset.tab === tab);
+    });
+  }
+
+  // ---------- 日別目標：イベント配線（起動時に1回だけ） ----------
+  (function adSimDailyWire(){
+    if (!document.getElementById("adsimDailySection")) return;
+
+    document.querySelectorAll("#adsimTabs .pwTab").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        state.ui.activeAdsimTab = btn.dataset.tab;
+        markDirty();
+        adSimApplyActiveTab();
+        if (btn.dataset.tab === "daily") renderAdSimDailyAll();
+      });
+    });
+
+    // 設定欄。入力中はテーブルを作り直さない（期間・対象は変更確定時に作り直す）。
+    function bindCfg(id, apply, rebuild){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", function(){
+        apply(adSimCurrentProduct().daily, el.value);
+        markDirty();
+        adSimRefreshValidationUI();
+        if (!rebuild) renderAdSimDailyResult();
+      });
+      if (rebuild){
+        el.addEventListener("change", function(){
+          adSimEnsureState();
+          renderAdSimDailyAll();
+        });
+      }
+    }
+    bindCfg("adsimDailyChild", function(dl, v){ dl.childId = v; }, true);
+    bindCfg("adsimDailyStart", function(dl, v){ dl.startDate = v; }, true);
+    bindCfg("adsimDailyEnd", function(dl, v){ dl.endDate = v; }, true);
+    bindCfg("adsimDailyConsult", function(dl, v){ dl.consultPct = adSimNum(v); }, false);
+    bindCfg("adsimDailyTax", function(dl, v){ dl.taxPct = adSimNum(v); }, false);
+    bindCfg("adsimDailyFba", function(dl, v){ dl.fbaYen = adSimNum(v); }, false);
+
+    document.getElementById("adsimBulkMode").addEventListener("change", function(){
+      adSimCurrentProduct().daily.bulkMode = this.value === "total" ? "total" : "perDay";
+      markDirty();
+    });
+
+    document.getElementById("adsimAddPmBtn").addEventListener("click", function(){
+      var pd = adSimCurrentProduct();
+      var first = pd.children[0];
+      pd.priceMaster.push({
+        id: adSimNextId("adpm"), childId: (pd.daily.childId || (first ? first.id : "")),
+        price: first ? adSimNum(first.price) : 0,
+        cost: first ? adSimNum(first.cost) : 0,
+        amazonFee: first ? adSimNum(first.amazonFee) : 0
+      });
+      markDirty();
+      renderAdSimPriceMaster();
+      renderAdSimBulkPriceOptions();
+      adSimRefreshValidationUI();
+    });
+
+    // 売価を期間で一律入力
+    document.getElementById("adsimBulkPriceBtn").addEventListener("click", function(){
+      var dl = adSimCurrentProduct().daily;
+      var from = document.getElementById("adsimBulkPriceFrom").value || dl.startDate;
+      var to = document.getElementById("adsimBulkPriceTo").value || dl.endDate;
+      var val = document.getElementById("adsimBulkPriceVal").value;
+      if (String(val).trim() === ""){
+        adSimShowDailyMsg("先に「価格マスタ」に売価を登録してください。", true);
+        return;
+      }
+      var dates = adSimDateSeq(from, to).filter(function(iso){ return iso >= dl.startDate && iso <= dl.endDate; });
+      if (!dates.length){
+        adSimShowDailyMsg("対象の日がありません。期間（開始日・終了日）を確認してください。", true);
+        return;
+      }
+      adSimFillDates(dl, dates, "price", val, "perDay");
+      markDirty();
+      renderAdSimDailyResult();
+      adSimShowDailyMsg(dates.length + "日分の売価を " + adSimYen(adSimNum(val)) + " にしました。", false);
+    });
+
+    // 目標個数・目標アクセス数を期間で一括入力
+    document.getElementById("adsimBulkQtyBtn").addEventListener("click", function(){
+      var dl = adSimCurrentProduct().daily;
+      var from = document.getElementById("adsimBulkQtyFrom").value || dl.startDate;
+      var to = document.getElementById("adsimBulkQtyTo").value || dl.endDate;
+      var field = document.getElementById("adsimBulkQtyField").value;
+      var raw = document.getElementById("adsimBulkQtyVal").value;
+      if (String(raw).trim() === ""){
+        adSimShowDailyMsg("値を入力してください。", true);
+        return;
+      }
+      var dates = adSimDateSeq(from, to).filter(function(iso){ return iso >= dl.startDate && iso <= dl.endDate; });
+      if (!dates.length){
+        adSimShowDailyMsg("対象の日がありません。期間（開始日・終了日）を確認してください。", true);
+        return;
+      }
+      adSimFillDates(dl, dates, field, raw, dl.bulkMode);
+      markDirty();
+      renderAdSimDailyResult();
+      var label = field === "units" ? "目標個数" : "目標アクセス数";
+      var how = dl.bulkMode === "total"
+        ? "期間合計 " + adSimQty(adSimNum(raw)) + " を " + dates.length + "日で日割り"
+        : dates.length + "日すべてに 1日あたり " + adSimQty(adSimNum(raw));
+      adSimShowDailyMsg(label + "：" + how + "で反映しました。", false);
+    });
+
+    // 月をコピー
+    document.getElementById("adsimCopyBtn").addEventListener("click", function(){
+      var dl = adSimCurrentProduct().daily;
+      var fromKey = document.getElementById("adsimCopyFrom").value;
+      var toKey = document.getElementById("adsimCopyTo").value;
+      if (!fromKey || !toKey || fromKey === toKey){
+        adSimShowDailyMsg("コピー元とコピー先に違う月を選んでください。", true);
+        return;
+      }
+      var months = adSimDailyMonths(dl);
+      var src = months.filter(function(m){ return m.key === fromKey; })[0];
+      var dst = months.filter(function(m){ return m.key === toKey; })[0];
+      if (!src || !dst) return;
+      dst.dates.forEach(function(iso, i){
+        // 日数が違う場合は元の月を先頭から繰り返して埋める
+        var sIso = src.dates[i % src.dates.length];
+        var s = dl.rows[sIso] || { price: 0, units: 0, pv: 0 };
+        var d = adSimDailyRow(dl, iso);
+        d.price = adSimNum(s.price); d.units = adSimNum(s.units); d.pv = adSimNum(s.pv);
+      });
+      markDirty();
+      renderAdSimDailyResult();
+      adSimShowDailyMsg(src.label + " を " + dst.label + " にコピーしました（" + dst.dates.length + "日分）。", false);
+    });
+
+    document.getElementById("adsimApplyAllMonthsBtn").addEventListener("click", function(){
+      var rows = document.querySelectorAll("#adsimMonthlyInputBody tr[data-mkey]");
+      var n = 0;
+      rows.forEach(function(tr){ if (adSimApplyMonthRow(tr)) n++; });
+      if (!n){
+        adSimShowDailyMsg("反映する値が入っていません。月別の欄に売価・目標個数・目標アクセス数を入力してください。", true);
+        return;
+      }
+      renderAdSimDailyResult();
+      adSimShowDailyMsg(n + "ヶ月分を反映しました。", false);
+    });
+
+    document.getElementById("adsimClearDailyBtn").addEventListener("click", function(){
+      var dl = adSimCurrentProduct().daily;
+      dl.rows = {};
+      markDirty();
+      renderAdSimDailyResult();
+      adSimShowDailyMsg("日別の入力をすべてクリアしました。", false);
+    });
+  })();
 
   // ---------- 広告投資回収シミュレーター：イベント配線（起動時に1回だけ） ----------
   (function adSimWire(){
@@ -5984,6 +6882,7 @@
         if (typeof state.ui.selectedWatchItemId === "undefined") state.ui.selectedWatchItemId = null;
         if (typeof state.ui.selectedWatchKeywordId === "undefined") state.ui.selectedWatchKeywordId = null;
         if (typeof state.ui.watchDetailMode === "undefined") state.ui.watchDetailMode = "keyword";
+        if (typeof state.ui.activeAdsimTab === "undefined") state.ui.activeAdsimTab = "sim";
         // priceWatch が無い/旧形式（{prices:{}}）のファイルでも落ちないようにする。
         // 旧形式は商品名・内容量・キーワードを持たず今回のデータ構造と非互換のため、新形式の空状態にリセットする。
         state.priceWatch = (loaded.priceWatch && typeof loaded.priceWatch === "object" && Array.isArray(loaded.priceWatch.items)) ? loaded.priceWatch : {};
@@ -6241,6 +7140,7 @@
     el.querySelectorAll(".pwHistProductRow").forEach(function(row){
       row.addEventListener("click", function(){
         adSimEnsureState().selectedProductId = row.dataset.id;
+        state.ui.activeAdsimTab = "sim";   // 履歴からは月次シミュ側に着地させる
         closeHistoryModal();
         goToView("adsim");
       });
