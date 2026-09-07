@@ -739,18 +739,20 @@ products[] : {                 // 親ASIN（複数登録可）
   id, asin, name,
   targetMarginPct,             // 目標粗利率(%)。黄字/黒字の境目。親ASINごとに個別
   maxLossPct,                  // 最大許容粗利率(%)。赤字/許容外の境目。null＝未設定
-  children[]: { id, sku, price, cost, amazonFee, consultFee, sharePct },
+  children[]: { id, sku, price, cost, amazonFee, sharePct },
+                               // ★1行＝「子ASIN × 売価」。同じskuの行が売価ごとに複数あってよい
+  consultPct, taxPct, fbaYen,  // 月次シミュと日別目標で共通（親ASIN単位）
                                // 金額はすべて1点あたりの「円」固定（％不可）
   patterns[]: { id, name, cpc, cvr, m1, m2, m3 },   // 保存済みwhat-ifパターン（最大3件）
   draft:      { name, cpc, cvr, m1, m2, m3 },       // 入力欄の内容（親ASINごとに保持）
-  priceMaster[]: { id, childId, price, cost, amazonFee },  // 売価→原価・販売手数料
-  daily:      { childId, startDate, endDate, consultPct, taxPct, fbaYen, bulkMode, rows{} }
+  daily:      { sku, startDate, endDate, bulkMode, rows{} }   // 対象はSKU。売価は日ごと
 }
 selectedProductId, lastResult
 ```
 
-- **`consultPct`（％・ポートフォリオ単位）は廃止**し、子ASINごとの
-  `consultFee`（円/点の固定額）に統一した（仕様書§3）。
+- 当初は `consultPct`（％）を廃止して子ASINごとの `consultFee`（円/点）に統一したが
+  （仕様書§3）、**2026-09-07に率方式へ戻した**（下の「コンサル料率・税率・FBAコストは
+  親ASIN単位で1箇所」参照）。二重管理を解消するためのユーザー指摘による。
 - **`maxLossYen`（最大許容累積赤字額・円）は `maxLossPct`（最大許容粗利率・％）に変更**
   （2026年9月7日、ユーザー依頼）。詳細は下の「単月判定は2つのしきい値で4段階」参照。
   円→％は意味が変わって換算できないので、移行時は**未設定(null)から始める**
@@ -853,29 +855,49 @@ selectedProductId, lastResult
   **仕様として揃えている**（永続化したい場合は `syncBuildPayload()` に `ui` を足す必要があるが、
   `selectedNewsDate` 等も一緒に永続化されてしまうので影響範囲が広い）。
 
-#### 価格マスタ `pd.priceMaster[]`（`{id, childId, price, cost, amazonFee}`）
+#### ⚠ 商品マスタと価格マスタは合体済み（2026年9月7日）— 1行＝「子ASIN × 売価」
 
-**同じ子ASINでも売価によって原価・販売手数料が変わる**（実シートでも売価
-3,380/2,495/2,270/2,225 で原価1,625⇔1,640.1・手数料386/285/259/254 と違っていた）ため、
-**売価ごとに1行**持つ。
+当初は `children[]`（1行＝子ASIN）と `priceMaster[]`（1行＝子ASIN×売価）に分かれていたが、
+**原価・販売手数料が両方にあって食い違える状態**だった（実際にユーザー環境で、商品マスタの
+原価1,640円に対し価格マスタ側が0のまま、という不整合が発生していた）。ユーザー指摘で合体した。
 
-- **`(childId, 売価)` をキーに引く**（`adSimFindPriceMaster`）。売価は小数第2位まで整数化して
-  突き合わせるので浮動小数点で外れない。
-- **①商品マスタで子ASINの売価を変えると、マスタから原価と販売手数料を自動反映する。**
-  このとき**テーブルは再描画せず、該当セルの`<input>`のvalueだけを書き換える**
-  （再描画するとフォーカスとカーソルが飛ぶ）。一致行が無ければ何もしない（手入力を尊重）。
-- 同じ `(childId, 売価)` の重複はバリデーションエラー（どちらを引くか決まらないため）。
+**現在は `pd.children[]` の1行が「子ASIN × 売価」**：`{id, sku, price, cost, amazonFee, sharePct}`。
+同じ `sku` の行が売価ごとに複数あってよい（セール価格は別行）。
+
+- **`(sku, 売価)` をキーに引く**（`adSimFindPriceRow`）。売価は小数第2位まで整数化して
+  突き合わせるので浮動小数点で外れない。日別目標が各日の売価から原価・手数料を引くのに使う。
+- **同じ `(sku, 売価)` の重複はバリデーションエラー**（どちらを引くか決まらないため）。
+- 合体したので**①内での「売価を変えたら原価・手数料を自動反映」は不要になった**
+  （行そのものがマスタなので）。旧 `adSimFindPriceMaster` は削除済み。
+- **想定販売比率（`sharePct`）の入力欄は②「投下パターンを入力」に移した**。
+  1行＝子ASIN×売価になったため①に置くと「どの行に比率を入れるのか」が分からなくなる。
+  ②では**①の全行を一覧して比率を割り当てる**（売らない売価は0のまま）。合計100.0%必須。
+  **比率は全パターン共通**で、パターンごとには保存されない（`draft`/`patterns`に入れていない）。
+  加重平均チップ（`#adsimAvgRow`）と合計判定（`#adsimShareSum`）も②に移動。
+
+#### コンサル料率・税率・FBAコストは親ASIN単位で1箇所（月次シミュと日別目標で共通）
+
+- 旧実装では**行ごとの `consultFee`（円/点）と `daily.consultPct/taxPct/fbaYen` が二重に存在**していた。
+  ユーザーの入力値がちょうど売価の1.0%だったことから率方式に統一し、
+  `pd.consultPct` / `pd.taxPct` / `pd.fbaYen` に一本化した（親ASINカードで入力）。
+- **1点純粗利 ＝ 売価 − 原価 − 販売手数料 − FBAコスト − 売価×料率×(1+税率)**
+  （`adSimUnitNet`）。月次シミュの加重平均も日別目標も**まったく同じコスト構造**を使う。
+  ※月次シミュにFBAとコンサルの税込計算が入ったのは合体時から（それ以前はFBAを見ていなかった）。
+- 移行は**旧 `consultFee ÷ 売価 × 100` を逆算して `consultPct` に引き継ぐ**（実データは1.0%）。
+  `daily.fbaYen` があればそれを `pd.fbaYen` に引き継ぐ。`daily.childId`（行ID）は
+  `daily.sku`（SKU文字列）に読み替える。**versionは上げないので登録済みデータは消えない。**
 
 #### 日別目標 `pd.daily`
 
 ```
-{ childId, startDate, endDate, consultPct, taxPct, fbaYen, bulkMode,
+{ sku, startDate, endDate, bulkMode,
   rows: { "2026-07-01": { price, units, pv } } }   // 入力値のみ保持。計算値は持たない
 ```
 
 - 入力は**売価・目標個数・目標アクセス数の3つだけ**。他は全部計算（数式は解析メモ参照）。
 - **コンサル手数料は率(%)＋税率(%)** ＝ `売上 × 率/100 × (1 + 税率/100)`。
-  月次シミュ側の子ASINが持つ `consultFee`（円/点）とは**別物**なので混同しないこと。
+  率・税率・FBAは**親ASIN単位（`pd.consultPct`/`pd.taxPct`/`pd.fbaYen`）で月次シミュと共通**。
+  合体前は日別目標が独自に持っていたが、二重管理だったので一本化した。
 - **売価が価格マスタに無い日は `noMaster:true`** とし、行に「⚠ マスタ未登録」を出して
   **集計から除外**する（シートが `#N/A` になっていた挙動に対応した明示的なエラー表示）。
 - **日付はローカル時刻の `new Date(y, m-1, d)` で組み立てる。`toISOString()` は使わない**

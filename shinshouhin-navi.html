@@ -705,6 +705,7 @@
     display:flex; align-items:center; justify-content:center; min-height:220px;
     border:1px dashed var(--border); border-radius:10px; color: var(--text-muted); font-size:13px;
   }
+  .adsimShareBlock { padding-bottom:12px; border-bottom:1px dashed var(--grid); }
   /* ---- 日別目標（PL管理＆販売スケジュール） ---- */
   .adsimBulkBlock { padding:12px 0; border-bottom:1px dashed var(--grid); }
   .adsimBulkBlock:last-child { border-bottom:none; padding-bottom:0; }
@@ -1239,7 +1240,11 @@
         <div><label for="adsimProductName">商品名</label><input type="text" id="adsimProductName" placeholder="例: 天然水シリーズ"></div>
         <div><label for="adsimTargetMargin">目標粗利率（％）</label><input type="number" id="adsimTargetMargin" min="0" max="100" step="0.1" placeholder="例: 20"></div>
         <div><label for="adsimMaxLossPct">最大許容粗利率（％）</label><input type="number" id="adsimMaxLossPct" min="-100" max="100" step="0.1" placeholder="例: -20（未入力なら警告なし）"><p class="adsimFieldErr" data-fe="maxLossPct"></p></div>
+        <div><label for="adsimConsultPct">コンサル料率（％）</label><input type="number" id="adsimConsultPct" min="0" max="100" step="0.1" placeholder="例: 1"></div>
+        <div><label for="adsimTaxPct">税率（％）</label><input type="number" id="adsimTaxPct" min="0" max="100" step="0.1" placeholder="例: 10"></div>
+        <div><label for="adsimFbaYen">FBAコスト（円/個）</label><input type="number" id="adsimFbaYen" min="0" step="1" placeholder="例: 0"></div>
       </div>
+      <p class="hint" style="margin:8px 0 0;">コンサル料率・税率・FBAコストは<b>月次シミュと日別目標の両方で共通</b>に使います。コンサル手数料 ＝ 売価 × 料率 ×（1＋税率）です（例: 1％・税率10％なら売価の1.1％）。</p>
       <p class="hint" style="margin:8px 0 0;">2つのしきい値で単月の判定を4段階に分けます。<b>最大許容粗利率</b>は「赤字をどこまで許容するか」の下限（例: -20％）、<b>目標粗利率</b>は「黄字／黒字」の境目（例: 13％）です。この例だと <b>-20％未満＝⚠許容外</b>／<b>-20〜0％未満＝🔴赤字</b>／<b>0〜13％未満＝🟡黄字</b>／<b>13％以上＝⚫黒字</b> になり、許容外のパターンには警告を出します。</p>
       <button type="button" class="btn small ghost" id="adsimDeleteProductBtn" style="margin-top:10px;">この親ASINを削除</button>
     </div>
@@ -1256,40 +1261,37 @@
     <!-- ① 商品マスタ（子ASIN） -->
     <div class="card" id="adsimChildCard">
       <div class="cardHeader">
-        <h3 style="margin:0;">① 商品マスタ（子ASINごと）</h3>
-        <button type="button" class="btn small primary" id="adsimAddChildBtn">＋ 子ASINを追加</button>
+        <h3 style="margin:0;">① 商品マスタ（子ASIN × 売価）</h3>
+        <button type="button" class="btn small primary" id="adsimAddChildBtn">＋ 行を追加</button>
       </div>
-      <p class="hint" style="margin:0 0 10px;">金額はすべて<b>1点あたりの円</b>で入力してください（％不可）。想定販売比率の合計はちょうど 100.0% にしてください。複数の子ASINは比率で加重平均して1つの経済性にまとめて扱います。</p>
+      <p class="hint" style="margin:0 0 10px;"><b>1行＝「子ASIN × 売価」</b>です。同じ子ASINでも売価によって原価や販売手数料が変わるため、売価ごとに1行登録してください（例: セール価格の行を別に作る）。金額はすべて<b>1点あたりの円</b>です。<b>日別目標の各日の売価も、ここから同じ（子ASIN・売価）の行を探して原価・手数料を計算します。</b>コンサル手数料は上の「コンサル料率」から自動計算するので、ここには入力しません。</p>
       <div class="tableWrap">
         <table class="dataTable adsimTable">
-          <thead><tr><th>商品名 / SKU</th><th>売価（円）</th><th>原価（円）</th><th>Amazon手数料（円）</th><th>コンサル手数料（円）</th><th>想定販売比率（％）</th><th></th></tr></thead>
+          <thead><tr><th>子ASIN / SKU</th><th>売価（円）</th><th>原価（円/個）</th><th>販売手数料（円/個）</th><th>1点純粗利</th><th></th></tr></thead>
           <tbody id="adsimChildBody"></tbody>
         </table>
       </div>
-      <p class="adsimShareSum" id="adsimShareSum"></p>
-      <div class="adsimAvgRow" id="adsimAvgRow"></div>
-    </div>
-
-    <!-- 価格マスタ（子ASIN × 売価 → 原価・販売手数料） -->
-    <div class="card" id="adsimPriceMasterCard">
-      <div class="cardHeader">
-        <h3 style="margin:0;">🏷 価格マスタ（売価ごとの原価・販売手数料）</h3>
-        <button type="button" class="btn small primary" id="adsimAddPmBtn">＋ 価格を追加</button>
-      </div>
-      <p class="hint" style="margin:0 0 10px;">同じ子ASINでも売価によって原価や販売手数料が変わるため、<b>売価ごとに1行</b>登録します。上の①で子ASINの売価を変えると、ここから同じ（子ASIN・売価）の行を探して<b>原価と販売手数料を自動反映</b>します。日別目標の各日の売価も、ここを参照して原価・手数料を計算します。</p>
-      <div class="tableWrap">
-        <table class="dataTable adsimTable">
-          <thead><tr><th>子ASIN</th><th>売価（円）</th><th>原価（円/個）</th><th>販売手数料（円/個）</th><th></th></tr></thead>
-          <tbody id="adsimPmBody"></tbody>
-        </table>
-      </div>
-      <p class="adsimFieldErr" data-fe="priceMaster"></p>
+      <p class="adsimFieldErr" data-fe="childRows"></p>
     </div>
 
     <!-- ② 投下パターンの入力 -->
     <div class="card" id="adsimDraftCard">
       <h3 style="margin-top:0;">② 投下パターンを入力</h3>
-      <p class="hint" style="margin:0 0 10px;">CPC・CVRはAmazon広告の管理画面の実績値を手入力してください（3ヶ月を通じて固定値として扱います）。月別の投下額は自由入力です（月1・2を厚め、月3で絞る「逓減型」を想定していますが、配分は毎回自由に決められます）。</p>
+
+      <div class="adsimShareBlock">
+        <div class="adsimBulkTitle">想定販売比率（全パターン共通・合計100.0％）</div>
+        <p class="hint" style="margin:0 0 8px;">①で登録した「子ASIN × 売価」のうち、<b>実際に売る想定のものに比率を入れてください</b>（売らない売価は0のままでOK）。この比率で加重平均して1つの経済性にまとめ、月次シミュの計算に使います。※比率は全パターン共通で、パターンごとには保存されません。</p>
+        <div class="tableWrap">
+          <table class="dataTable adsimTable">
+            <thead><tr><th>子ASIN / SKU</th><th>売価</th><th>1点純粗利</th><th>想定販売比率（％）</th></tr></thead>
+            <tbody id="adsimShareBody"></tbody>
+          </table>
+        </div>
+        <p class="adsimShareSum" id="adsimShareSum"></p>
+        <div class="adsimAvgRow" id="adsimAvgRow"></div>
+      </div>
+
+      <p class="hint" style="margin:14px 0 10px;">CPC・CVRはAmazon広告の管理画面の実績値を手入力してください（3ヶ月を通じて固定値として扱います）。月別の投下額は自由入力です（月1・2を厚め、月3で絞る「逓減型」を想定していますが、配分は毎回自由に決められます）。</p>
       <div class="pwFormGrid">
         <div><label for="adsimDraftName">パターン名</label><input type="text" id="adsimDraftName" placeholder="例: 積極型"></div>
         <div><label for="adsimDraftCpc">CPC（円）</label><input type="number" id="adsimDraftCpc" min="1" step="1" placeholder="例: 45"><p class="adsimFieldErr" data-fe="cpc"></p></div>
@@ -1359,11 +1361,9 @@
           <div><label for="adsimDailyChild">対象の子ASIN</label><select id="adsimDailyChild"></select></div>
           <div><label for="adsimDailyStart">開始日</label><input type="date" id="adsimDailyStart"></div>
           <div><label for="adsimDailyEnd">終了日</label><input type="date" id="adsimDailyEnd"><p class="adsimFieldErr" data-fe="dailyRange"></p></div>
-          <div><label for="adsimDailyConsult">コンサル手数料率（％）</label><input type="number" id="adsimDailyConsult" min="0" max="100" step="0.1"></div>
-          <div><label for="adsimDailyTax">税率（％）</label><input type="number" id="adsimDailyTax" min="0" max="100" step="0.1"></div>
-          <div><label for="adsimDailyFba">FBAコスト（円/個）</label><input type="number" id="adsimDailyFba" min="0" step="1"></div>
         </div>
-        <p class="hint" style="margin:8px 0 0;">コンサル手数料 ＝ 売上 × 率 ×（1＋税率）で計算します（例: 1％・税率10％なら売上の1.1％）。</p>
+        <div class="adsimAvgRow" id="adsimDailyParamRow" style="margin-top:12px;"></div>
+        <p class="hint" style="margin:8px 0 0;">コンサル料率・税率・FBAコストは上の「🗂 親ASIN」で設定した値を使います（月次シミュと共通）。</p>
       </div>
 
       <!-- 一括入力 -->
@@ -4354,10 +4354,12 @@
   // 価格アラート登録フォームの pwEditTarget と同じ「新規／編集」idiom。
   var adSimEditingPatternId = null;
 
+  // 1行＝「子ASIN × 売価」。同じskuの行が売価ごとに複数あってよい。
+  // コンサル手数料は行ごとに持たず、親ASINの consultPct（率）から計算する。
   function adSimDefaultChild(share){
     return {
       id: adSimNextId("adc"), sku: "", price: 0, cost: 0,
-      amazonFee: 0, consultFee: 0, sharePct: (share == null ? 100 : share)
+      amazonFee: 0, sharePct: (share == null ? 100 : share)
     };
   }
   function adSimDefaultDraft(){
@@ -4376,7 +4378,10 @@
       children: [adSimDefaultChild(100)],
       patterns: [],
       draft: adSimDefaultDraft(),
-      priceMaster: [],
+      // コンサル料率・税率・FBAコストは月次シミュと日別目標で共通に使う
+      consultPct: 1,
+      taxPct: 10,
+      fbaYen: 0,
       daily: adSimDefaultDaily()
     };
   }
@@ -4387,12 +4392,9 @@
     var start = new Date(t.getFullYear(), t.getMonth(), 1);
     var end = new Date(t.getFullYear(), t.getMonth() + 6, 0);   // 6ヶ月後の月末
     return {
-      childId: "",
+      sku: "",           // 対象の子ASIN（SKU文字列）。売価は日ごとに持つ
       startDate: adSimIsoDate(start),
       endDate: adSimIsoDate(end),
-      consultPct: 1,     // シート1行目のパラメータ「1%」に対応
-      taxPct: 10,        // コンサル手数料の税込計算に使う
-      fbaYen: 0,         // シート1行目のパラメータ「0」に対応
       bulkMode: "perDay",
       rows: {}           // "YYYY-MM-DD" -> { price, units, pv }（入力値のみ保持）
     };
@@ -4471,9 +4473,54 @@
         c.price = adSimNum(c.price);
         c.cost = adSimNum(c.cost);
         c.amazonFee = adSimNum(c.amazonFee);
-        c.consultFee = adSimNum(c.consultFee);
         c.sharePct = adSimNum(c.sharePct);
       });
+
+      // ---- 「商品マスタ」と「価格マスタ」の合体（2026-09-07）----
+      // 元は children（1行＝子ASIN）と priceMaster（1行＝子ASIN×売価）に分かれており、
+      // 原価・販売手数料が両方にあって食い違えた。1行＝「子ASIN×売価」の children に統合する。
+      // ・行の consultFee（円/点）は廃止し、親ASINの consultPct（率）に寄せる。
+      //   既存値は売価に対する率を逆算して引き継ぐ（実データはちょうど1%だった）。
+      // ・priceMaster の行のうち children に無い（sku, 売価）の組み合わせは children に足す。
+      // versionは上げない（上げると登録済みデータが全部消える）。
+      if (typeof pd.consultPct === "undefined"){
+        var rate = null;
+        pd.children.forEach(function(c){
+          if (rate === null && adSimNum(c.consultFee) > 0 && adSimNum(c.price) > 0){
+            rate = adSimRound1(adSimNum(c.consultFee) / adSimNum(c.price) * 100);
+          }
+        });
+        pd.consultPct = (rate === null ? 1 : rate);
+        markDirty();
+      }
+      if (typeof pd.taxPct === "undefined") pd.taxPct = 10;
+      if (typeof pd.fbaYen === "undefined"){
+        // 旧 daily 側に入っていた値があれば引き継ぐ
+        pd.fbaYen = (pd.daily && typeof pd.daily.fbaYen !== "undefined") ? adSimNum(pd.daily.fbaYen) : 0;
+      }
+      pd.consultPct = adSimNum(pd.consultPct);
+      pd.taxPct = adSimNum(pd.taxPct);
+      pd.fbaYen = adSimNum(pd.fbaYen);
+      if (Array.isArray(pd.priceMaster)){
+        pd.priceMaster.forEach(function(pm){
+          var sku = "";
+          var owner = pd.children.filter(function(c){ return c.id === pm.childId; })[0];
+          if (owner) sku = owner.sku;
+          else if (typeof pm.childId === "string") sku = pm.childId;
+          if (adSimNum(pm.price) <= 0) return;   // 未入力の行は捨てる
+          var dup = pd.children.filter(function(c){
+            return c.sku === sku && adSimPriceKey(c.price) === adSimPriceKey(pm.price);
+          })[0];
+          if (dup) return;                        // 同じ(子ASIN,売価)が既にあれば足さない
+          pd.children.push({
+            id: adSimNextId("adc"), sku: sku, price: adSimNum(pm.price),
+            cost: adSimNum(pm.cost), amazonFee: adSimNum(pm.amazonFee), sharePct: 0
+          });
+        });
+        delete pd.priceMaster;
+        markDirty();
+      }
+      pd.children.forEach(function(c){ if (typeof c.consultFee !== "undefined") delete c.consultFee; });
       if (!Array.isArray(pd.patterns)) pd.patterns = [];
       if (pd.patterns.length > ADSIM_MAX_PATTERNS) pd.patterns = pd.patterns.slice(0, ADSIM_MAX_PATTERNS);
       pd.patterns.forEach(function(pt){
@@ -4485,29 +4532,26 @@
         pt.m2 = adSimNum(pt.m2);
         pt.m3 = adSimNum(pt.m3);
       });
-      // 価格マスタ（子ASIN × 売価 → 原価・販売手数料）。既存データには無いので追加する
-      // ＝versionは上げない（上げると登録済みの親ASIN・子ASIN・パターンが全部消える）。
-      if (!Array.isArray(pd.priceMaster)) pd.priceMaster = [];
-      pd.priceMaster.forEach(function(pm){
-        if (!pm.id) pm.id = adSimNextId("adpm");
-        if (typeof pm.childId !== "string") pm.childId = "";
-        pm.price = adSimNum(pm.price);
-        pm.cost = adSimNum(pm.cost);
-        pm.amazonFee = adSimNum(pm.amazonFee);
-      });
       // 日別目標（PL管理＆販売スケジュール）
       if (!pd.daily || typeof pd.daily !== "object") pd.daily = adSimDefaultDaily();
       var dl = pd.daily;
       var dlDef = null;
       function dlFallback(){ if (!dlDef) dlDef = adSimDefaultDaily(); return dlDef; }
-      if (typeof dl.childId !== "string") dl.childId = "";
-      // 対象子ASINが消えていたら先頭の子ASINに寄せる
-      if (!pd.children.some(function(c){ return c.id === dl.childId; })) dl.childId = pd.children[0].id;
+      // 旧形式では行ID（childId）で対象を指していたが、合体後は1行＝子ASIN×売価なので
+      // 「どのSKUの日別目標か」を指す必要がある。旧IDが残っていればそのSKUに読み替える。
+      if (typeof dl.sku !== "string"){
+        var oldOwner = dl.childId ? pd.children.filter(function(c){ return c.id === dl.childId; })[0] : null;
+        dl.sku = oldOwner ? oldOwner.sku : "";
+        markDirty();
+      }
+      if (typeof dl.childId !== "undefined") delete dl.childId;
+      if (typeof dl.consultPct !== "undefined") delete dl.consultPct;
+      if (typeof dl.taxPct !== "undefined") delete dl.taxPct;
+      if (typeof dl.fbaYen !== "undefined") delete dl.fbaYen;
+      var skus = adSimSkuList(pd);
+      if (skus.indexOf(dl.sku) === -1) dl.sku = skus.length ? skus[0] : "";
       if (!adSimParseDate(dl.startDate)) dl.startDate = dlFallback().startDate;
       if (!adSimParseDate(dl.endDate)) dl.endDate = dlFallback().endDate;
-      dl.consultPct = adSimNum(dl.consultPct);
-      dl.taxPct = adSimNum(dl.taxPct);
-      dl.fbaYen = adSimNum(dl.fbaYen);
       if (dl.bulkMode !== "total") dl.bulkMode = "perDay";
       if (!dl.rows || typeof dl.rows !== "object") dl.rows = {};
       Object.keys(dl.rows).forEach(function(k){
@@ -4538,19 +4582,38 @@
   }
   function adSimPatternColor(idx){ return ADSIM_PAT_COLORS[idx % ADSIM_PAT_COLORS.length]; }
 
-  // 加重平均（親ASIN選択時に自動計算）
-  //   加重平均単価      = Σ( 子ASINの売価 × 想定販売比率 )
-  //   加重平均1点純粗利 = Σ( (売価 − 原価 − Amazon手数料 − コンサル手数料) × 想定販売比率 )
-  // 子ASINが複数ある場合は、これで1つの経済性にまとめてから月次計算に入る。
+  // 1行（子ASIN×売価）の1点純粗利。コンサル手数料は率×税込で計算し、FBAコストも引く。
+  // 日別目標側とまったく同じコスト構造にしてある（片方だけ違う、を防ぐため）。
+  function adSimUnitConsult(pd, price){
+    return adSimNum(price) * (adSimNum(pd.consultPct) / 100) * (1 + adSimNum(pd.taxPct) / 100);
+  }
+  function adSimUnitNet(pd, c){
+    return adSimNum(c.price) - adSimNum(c.cost) - adSimNum(c.amazonFee)
+      - adSimNum(pd.fbaYen) - adSimUnitConsult(pd, c.price);
+  }
+  // 加重平均（想定販売比率は②で入力する）
+  //   加重平均単価      = Σ( 売価 × 想定販売比率 )
+  //   加重平均1点純粗利 = Σ( 1点純粗利 × 想定販売比率 )
+  // 複数の（子ASIN×売価）を、これで1つの経済性にまとめてから月次計算に入る。
   function adSimWeightedAverages(pd){
     var avgPrice = 0, avgNet = 0;
     (pd.children || []).forEach(function(c){
       var w = adSimNum(c.sharePct) / 100;
-      var price = adSimNum(c.price);
-      avgPrice += price * w;
-      avgNet += (price - adSimNum(c.cost) - adSimNum(c.amazonFee) - adSimNum(c.consultFee)) * w;
+      avgPrice += adSimNum(c.price) * w;
+      avgNet += adSimUnitNet(pd, c) * w;
     });
     return { avgPrice: avgPrice, avgNet: avgNet };
+  }
+  // 登録されている子ASIN（SKU）の一覧。重複を除き、登録順を保つ。
+  function adSimSkuList(pd){
+    var out = [], seen = {};
+    (pd.children || []).forEach(function(c){
+      var k = c.sku || "";
+      if (seen[k]) return;
+      seen[k] = true;
+      out.push(k);
+    });
+    return out;
   }
 
   // 単月ステータス（2つのしきい値で4段階）。maxPctがnullなら許容外判定はしない。
@@ -4698,7 +4761,6 @@
       if (adSimNum(c.price) < 1){ errs.push(no + "の売価は1円以上で入力してください。"); addField("c" + c.id + "price", "1円以上"); }
       if (adSimNum(c.cost) < 0){ errs.push(no + "の原価が0未満です。"); addField("c" + c.id + "cost", "0以上"); }
       if (adSimNum(c.amazonFee) < 0){ errs.push(no + "のAmazon手数料が0未満です。"); addField("c" + c.id + "amazonFee", "0以上"); }
-      if (adSimNum(c.consultFee) < 0){ errs.push(no + "のコンサル手数料が0未満です。"); addField("c" + c.id + "consultFee", "0以上"); }
       if (adSimNum(c.sharePct) < 0){ errs.push(no + "の想定販売比率が0未満です。"); addField("c" + c.id + "sharePct", "0以上"); }
     });
     // 判定と表示のときだけ小数第1位に丸める（内部値は丸めない）
@@ -4706,20 +4768,20 @@
     var shareOk = (sumRounded === 100);
     if (!shareOk) errs.push("想定販売比率の合計が100.0%ではありません（現在 " + sumRounded.toFixed(1) + "%）。");
 
-    // 価格マスタ（同じ子ASIN×売価の重複を禁止する。重複するとどちらを引くか決まらない）
+    // 商品マスタ（同じ子ASIN×売価の重複を禁止する。重複するとどちらを引くか決まらない）
     var pmSeen = {};
-    (pd.priceMaster || []).forEach(function(pm, i){
-      var no = (i + 1) + "行目";
-      if (adSimNum(pm.price) < 1){ errs.push("価格マスタ" + no + "の売価は1円以上で入力してください。"); addField("priceMaster", "売価は1円以上"); }
-      if (adSimNum(pm.cost) < 0){ errs.push("価格マスタ" + no + "の原価が0未満です。"); addField("priceMaster", "0以上で入力"); }
-      if (adSimNum(pm.amazonFee) < 0){ errs.push("価格マスタ" + no + "の販売手数料が0未満です。"); addField("priceMaster", "0以上で入力"); }
-      var k = pm.childId + "@" + adSimPriceKey(pm.price);
+    pd.children.forEach(function(c){
+      var k = (c.sku || "") + "@" + adSimPriceKey(c.price);
       if (pmSeen[k]){
-        errs.push("価格マスタに同じ子ASIN・同じ売価の行が複数あります（" + adSimYen(pm.price) + "）。どちらを使うか決まらないため1行にしてください。");
-        addField("priceMaster", "同じ子ASIN・売価の重複");
+        errs.push("商品マスタに同じ子ASIN・同じ売価の行が複数あります（" + (c.sku || "未入力") + " / " + adSimYen(c.price) + "）。日別目標でどちらを引くか決まらないため1行にしてください。");
+        addField("childRows", "同じ子ASIN・売価の重複");
       }
       pmSeen[k] = true;
     });
+    // コンサル料率・税率・FBAコスト（月次シミュと日別目標の共通パラメータ）
+    if (adSimNum(pd.consultPct) < 0 || adSimNum(pd.consultPct) > 100) errs.push("コンサル料率は0〜100%の範囲で入力してください。");
+    if (adSimNum(pd.taxPct) < 0 || adSimNum(pd.taxPct) > 100) errs.push("税率は0〜100%の範囲で入力してください。");
+    if (adSimNum(pd.fbaYen) < 0) errs.push("FBAコストは0以上で入力してください。");
 
     // 日別目標の期間
     var dl = pd.daily;
@@ -4731,9 +4793,6 @@
         errs.push("日別目標の期間が長すぎます（800日以内にしてください）。");
         addField("dailyRange", "800日以内に");
       }
-      if (adSimNum(dl.consultPct) < 0 || adSimNum(dl.consultPct) > 100) errs.push("コンサル手数料率は0〜100%の範囲で入力してください。");
-      if (adSimNum(dl.taxPct) < 0 || adSimNum(dl.taxPct) > 100) errs.push("税率は0〜100%の範囲で入力してください。");
-      if (adSimNum(dl.fbaYen) < 0) errs.push("FBAコストは0以上で入力してください。");
     }
 
     // ② 投下パターン（編集中の入力欄）
@@ -4788,6 +4847,9 @@
     document.getElementById("adsimTargetMargin").value = pd.targetMarginPct;
     // null（未設定）は空欄で表示する
     document.getElementById("adsimMaxLossPct").value = (pd.maxLossPct === null ? "" : pd.maxLossPct);
+    document.getElementById("adsimConsultPct").value = pd.consultPct;
+    document.getElementById("adsimTaxPct").value = pd.taxPct;
+    document.getElementById("adsimFbaYen").value = pd.fbaYen;
   }
 
   function renderAdSimChildTable(){
@@ -4796,52 +4858,75 @@
     if (!body) return;
     body.innerHTML = pd.children.map(function(c){
       return "<tr data-cid='" + attr(c.id) + "'>" +
-        "<td><input type='text' data-adsim-key='c" + attr(c.id) + "sku' value='" + attr(c.sku) + "' placeholder='例: B0XXXXXXXX / SKU名'></td>" +
+        "<td><input type='text' data-adsim-key='c" + attr(c.id) + "sku' value='" + attr(c.sku) + "' placeholder='例: B0XXXXXXXX'></td>" +
         adSimNumCell("c" + c.id + "price", c.price, "1", "0") +
-        adSimNumCell("c" + c.id + "cost", c.cost, "1", "0") +
+        adSimNumCell("c" + c.id + "cost", c.cost, "0.1", "0") +
         adSimNumCell("c" + c.id + "amazonFee", c.amazonFee, "1", "0") +
-        adSimNumCell("c" + c.id + "consultFee", c.consultFee, "1", "0") +
-        adSimNumCell("c" + c.id + "sharePct", c.sharePct, "0.1", "0") +
+        "<td class='adsimNum' data-out='net'>" + adSimYen(adSimUnitNet(pd, c)) + "</td>" +
         "<td class='rmCell'><button type='button' class='btn small ghost' data-act='adsimDelChild' data-cid='" + attr(c.id) + "'>削除</button></td>" +
       "</tr>";
     }).join("");
 
     body.querySelectorAll("input[data-adsim-key]").forEach(function(inp){
       inp.addEventListener("input", function(){
-        var cid = inp.closest("tr").dataset.cid;
+        var tr = inp.closest("tr");
+        var cid = tr.dataset.cid;
         var child = pd.children.filter(function(x){ return x.id === cid; })[0];
         if (!child) return;
         var field = inp.dataset.adsimKey.slice(("c" + cid).length);
         child[field] = (field === "sku") ? inp.value : adSimNum(inp.value);
-        // 売価を変えたら、価格マスタから同じ（子ASIN・売価）の行を探して
-        // 原価と販売手数料を自動反映する。一致する行が無ければ何もしない（手入力を尊重）。
-        if (field === "price"){
-          var pm = adSimFindPriceMaster(pd, cid, child.price);
-          if (pm){
-            child.cost = adSimNum(pm.cost);
-            child.amazonFee = adSimNum(pm.amazonFee);
-            // テーブルは作り直さず、該当セルの入力欄の値だけを書き換える（フォーカス保持）
-            var costInp = body.querySelector("input[data-adsim-key='c" + cid + "cost']");
-            var feeInp = body.querySelector("input[data-adsim-key='c" + cid + "amazonFee']");
-            if (costInp) costInp.value = child.cost;
-            if (feeInp) feeInp.value = child.amazonFee;
-          }
-        }
         markDirty();
-        adSimRefreshValidationUI();   // テーブルは再描画しない（フォーカス保持）
+        // その行の「1点純粗利」だけを書き換える（テーブルは再描画しない＝フォーカス保持）
+        var netTd = tr.querySelector("[data-out='net']");
+        if (netTd) netTd.textContent = adSimYen(adSimUnitNet(pd, child));
+        adSimRefreshValidationUI();
+      });
+      // 入力を終えた時点で、②の比率表と日別目標の選択肢を作り直す
+      inp.addEventListener("change", function(){
+        renderAdSimShareTable();
+        renderAdSimBulkPriceOptions();
+        renderAdSimDailyCfg();
       });
     });
     body.querySelectorAll("[data-act='adsimDelChild']").forEach(function(btn){
       btn.addEventListener("click", function(){
         if (pd.children.length <= 1){
-          adSimShowSaveMsg("子ASINは最低1件必要です。", true);
+          adSimShowSaveMsg("商品マスタは最低1行必要です。", true);
           return;
         }
         pd.children = pd.children.filter(function(x){ return x.id !== btn.dataset.cid; });
         markDirty();
         renderAdSimChildTable();      // 構造が変わったので再描画してよい
+        renderAdSimShareTable();
+        renderAdSimBulkPriceOptions();
+        renderAdSimDailyCfg();
         adSimResyncIfComputed();
         adSimRefreshValidationUI();
+      });
+    });
+  }
+
+  // ② 想定販売比率（全パターン共通）。①の各行に比率を割り当てる。
+  function renderAdSimShareTable(){
+    var pd = adSimCurrentProduct();
+    var body = document.getElementById("adsimShareBody");
+    if (!body) return;
+    body.innerHTML = pd.children.map(function(c){
+      return "<tr data-cid='" + attr(c.id) + "'>" +
+        "<td>" + esc(c.sku || "（未入力）") + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(c.price) + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(adSimUnitNet(pd, c)) + "</td>" +
+        adSimNumCell("s" + c.id + "sharePct", c.sharePct, "0.1", "0") +
+      "</tr>";
+    }).join("");
+    body.querySelectorAll("input[data-adsim-key]").forEach(function(inp){
+      inp.addEventListener("input", function(){
+        var cid = inp.closest("tr").dataset.cid;
+        var child = pd.children.filter(function(x){ return x.id === cid; })[0];
+        if (!child) return;
+        child.sharePct = adSimNum(inp.value);
+        markDirty();
+        adSimRefreshValidationUI();   // テーブルは再描画しない（フォーカス保持）
       });
     });
   }
@@ -5228,77 +5313,29 @@
     renderAdSimDraftFields();
     renderAdSimPatternList();
     adSimUpdateEditingUI();
-    renderAdSimPriceMaster();
+    renderAdSimShareTable();
     renderAdSimDailyAll();
     renderAdSimResult();
     adSimRefreshValidationUI();
   }
 
-  // ---------- 価格マスタ（子ASIN × 売価 → 原価・販売手数料） ----------
-  // 同じ子ASINでも売価によって原価や販売手数料が変わる（実際のスプレッドシートでも
-  // 売価 3,380/2,495/2,270/2,225 で原価と手数料が違っていた）ため、売価ごとに1行持つ。
+  // ---------- 商品マスタの売価引き（1行＝子ASIN × 売価） ----------
+  // 同じ子ASINでも売価によって原価や販売手数料が変わるため、①商品マスタは
+  // 売価ごとに1行持つ。日別目標は各日の売価から (sku, 売価) で該当行を引く。
   // 売価は小数を持たない運用だが、念のため丸め誤差を避けて小数第2位までで突き合わせる。
   function adSimPriceKey(n){ return String(Math.round(adSimNum(n) * 100)); }
-  function adSimFindPriceMaster(pd, childId, price){
+  function adSimFindPriceRow(pd, sku, price){
     var key = adSimPriceKey(price);
-    return (pd.priceMaster || []).filter(function(pm){
-      return pm.childId === childId && adSimPriceKey(pm.price) === key;
+    return (pd.children || []).filter(function(c){
+      return (c.sku || "") === (sku || "") && adSimPriceKey(c.price) === key;
     })[0] || null;
   }
   // 対象子ASINに登録されている売価の一覧（昇順）。一括入力のプルダウンに使う。
-  function adSimPriceOptions(pd, childId){
-    return (pd.priceMaster || [])
-      .filter(function(pm){ return pm.childId === childId; })
-      .map(function(pm){ return adSimNum(pm.price); })
+  function adSimPriceOptions(pd, sku){
+    return (pd.children || [])
+      .filter(function(c){ return (c.sku || "") === (sku || "") && adSimNum(c.price) > 0; })
+      .map(function(c){ return adSimNum(c.price); })
       .sort(function(a, b){ return a - b; });
-  }
-
-  function renderAdSimPriceMaster(){
-    var pd = adSimCurrentProduct();
-    var body = document.getElementById("adsimPmBody");
-    if (!body) return;
-    if (!pd.priceMaster.length){
-      body.innerHTML = "<tr><td colspan='5' class='hint'>まだ登録がありません。「＋ 価格を追加」で、売価ごとの原価と販売手数料を登録してください。</td></tr>";
-      return;
-    }
-    var childOpts = function(sel){
-      return pd.children.map(function(c){
-        return "<option value='" + attr(c.id) + "'" + (c.id === sel ? " selected" : "") + ">" +
-          esc(c.sku || "（未入力の子ASIN）") + "</option>";
-      }).join("");
-    };
-    body.innerHTML = pd.priceMaster.map(function(pm){
-      return "<tr data-pmid='" + attr(pm.id) + "'>" +
-        "<td><select data-adsim-pm='childId'>" + childOpts(pm.childId) + "</select></td>" +
-        "<td><input type='number' data-adsim-pm='price' value='" + attr(String(pm.price)) + "' step='1' min='0'></td>" +
-        "<td><input type='number' data-adsim-pm='cost' value='" + attr(String(pm.cost)) + "' step='0.1' min='0'></td>" +
-        "<td><input type='number' data-adsim-pm='amazonFee' value='" + attr(String(pm.amazonFee)) + "' step='1' min='0'></td>" +
-        "<td class='rmCell'><button type='button' class='btn small ghost' data-act='adsimDelPm'>削除</button></td>" +
-      "</tr>";
-    }).join("");
-
-    body.querySelectorAll("[data-adsim-pm]").forEach(function(inp){
-      inp.addEventListener("input", function(){
-        var pmid = inp.closest("tr").dataset.pmid;
-        var pm = pd.priceMaster.filter(function(x){ return x.id === pmid; })[0];
-        if (!pm) return;
-        var f = inp.dataset.adsimPm;
-        pm[f] = (f === "childId") ? inp.value : adSimNum(inp.value);
-        markDirty();
-        adSimRefreshValidationUI();      // テーブルは再描画しない（フォーカス保持）
-        renderAdSimBulkPriceOptions();   // 売価の選択肢は入力欄を含まないので更新して安全
-      });
-    });
-    body.querySelectorAll("[data-act='adsimDelPm']").forEach(function(btn){
-      btn.addEventListener("click", function(){
-        var pmid = btn.closest("tr").dataset.pmid;
-        pd.priceMaster = pd.priceMaster.filter(function(x){ return x.id !== pmid; });
-        markDirty();
-        renderAdSimPriceMaster();        // 構造が変わったので再描画してよい
-        renderAdSimBulkPriceOptions();
-        adSimRefreshValidationUI();
-      });
-    });
   }
 
   // ---------- 日別目標：計算 ----------
@@ -5326,7 +5363,7 @@
       noMaster: false, empty: (price <= 0 && units <= 0 && pv <= 0)
     };
     out.revenue = price * units;
-    var pm = price > 0 ? adSimFindPriceMaster(pd, dl.childId, price) : null;
+    var pm = price > 0 ? adSimFindPriceRow(pd, dl.sku, price) : null;
     if (price > 0 && !pm){
       out.noMaster = true;
       return out;   // 原価・手数料が出せないので以降は計算しない
@@ -5335,8 +5372,8 @@
       out.cost = adSimNum(pm.cost) * units;
       out.amazonFee = adSimNum(pm.amazonFee) * units;
     }
-    out.fba = adSimNum(dl.fbaYen) * units;
-    out.consult = out.revenue * (adSimNum(dl.consultPct) / 100) * (1 + adSimNum(dl.taxPct) / 100);
+    out.fba = adSimNum(pd.fbaYen) * units;
+    out.consult = out.revenue * (adSimNum(pd.consultPct) / 100) * (1 + adSimNum(pd.taxPct) / 100);
     out.vc = out.cost + out.amazonFee + out.fba + out.consult;
     out.mq = out.revenue - out.vc;
     out.marginPct = out.revenue > 0 ? (out.mq / out.revenue * 100) : null;
@@ -5404,17 +5441,23 @@
     var dl = pd.daily;
     var sel = document.getElementById("adsimDailyChild");
     if (sel){
-      sel.innerHTML = pd.children.map(function(c){
-        return "<option value='" + attr(c.id) + "'" + (c.id === dl.childId ? " selected" : "") + ">" +
-          esc(c.sku || "（未入力の子ASIN）") + "</option>";
+      var skus = adSimSkuList(pd);
+      sel.innerHTML = skus.map(function(sk){
+        return "<option value='" + attr(sk) + "'" + (sk === dl.sku ? " selected" : "") + ">" +
+          esc(sk || "（未入力の子ASIN）") + "</option>";
       }).join("");
     }
     document.getElementById("adsimDailyStart").value = dl.startDate;
     document.getElementById("adsimDailyEnd").value = dl.endDate;
-    document.getElementById("adsimDailyConsult").value = dl.consultPct;
-    document.getElementById("adsimDailyTax").value = dl.taxPct;
-    document.getElementById("adsimDailyFba").value = dl.fbaYen;
     document.getElementById("adsimBulkMode").value = dl.bulkMode;
+    // 親ASIN側で設定した共通パラメータを、日別目標タブでも確認できるように表示する
+    var prm = document.getElementById("adsimDailyParamRow");
+    if (prm){
+      prm.innerHTML =
+        "<span class='adsimAvgChip'>コンサル料率 <b>" + adSimPct(pd.consultPct) + "</b></span>" +
+        "<span class='adsimAvgChip'>税率 <b>" + adSimPct(pd.taxPct) + "</b></span>" +
+        "<span class='adsimAvgChip'>FBAコスト <b>" + adSimYen(pd.fbaYen) + "/個</b></span>";
+    }
   }
 
   // 一括入力の売価プルダウンと、月コピーのプルダウンを作り直す（入力欄を含まないので安全）
@@ -5422,7 +5465,7 @@
     var pd = adSimCurrentProduct();
     var sel = document.getElementById("adsimBulkPriceVal");
     if (sel){
-      var prices = adSimPriceOptions(pd, pd.daily.childId);
+      var prices = adSimPriceOptions(pd, pd.daily.sku);
       sel.innerHTML = prices.length
         ? prices.map(function(v){ return "<option value='" + attr(String(v)) + "'>" + adSimYen(v) + "</option>"; }).join("")
         : "<option value=''>（価格マスタに登録がありません）</option>";
@@ -5718,31 +5761,13 @@
         });
       }
     }
-    bindCfg("adsimDailyChild", function(dl, v){ dl.childId = v; }, true);
+    bindCfg("adsimDailyChild", function(dl, v){ dl.sku = v; }, true);
     bindCfg("adsimDailyStart", function(dl, v){ dl.startDate = v; }, true);
     bindCfg("adsimDailyEnd", function(dl, v){ dl.endDate = v; }, true);
-    bindCfg("adsimDailyConsult", function(dl, v){ dl.consultPct = adSimNum(v); }, false);
-    bindCfg("adsimDailyTax", function(dl, v){ dl.taxPct = adSimNum(v); }, false);
-    bindCfg("adsimDailyFba", function(dl, v){ dl.fbaYen = adSimNum(v); }, false);
 
     document.getElementById("adsimBulkMode").addEventListener("change", function(){
       adSimCurrentProduct().daily.bulkMode = this.value === "total" ? "total" : "perDay";
       markDirty();
-    });
-
-    document.getElementById("adsimAddPmBtn").addEventListener("click", function(){
-      var pd = adSimCurrentProduct();
-      var first = pd.children[0];
-      pd.priceMaster.push({
-        id: adSimNextId("adpm"), childId: (pd.daily.childId || (first ? first.id : "")),
-        price: first ? adSimNum(first.price) : 0,
-        cost: first ? adSimNum(first.cost) : 0,
-        amazonFee: first ? adSimNum(first.amazonFee) : 0
-      });
-      markDirty();
-      renderAdSimPriceMaster();
-      renderAdSimBulkPriceOptions();
-      adSimRefreshValidationUI();
     });
 
     // 売価を期間で一律入力
@@ -5864,6 +5889,26 @@
     bindField("adsimMaxLossPct", function(pd, v){
       pd.maxLossPct = (String(v).trim() === "") ? null : adSimNum(v);
     }, false);
+    // コンサル料率・税率・FBAは1点純粗利に影響するので、確定時に関連表示を作り直す
+    function bindShared(id, apply){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", function(){
+        apply(adSimCurrentProduct(), el.value);
+        markDirty();
+        adSimRefreshValidationUI();
+      });
+      el.addEventListener("change", function(){
+        renderAdSimChildTable();
+        renderAdSimShareTable();
+        renderAdSimDailyCfg();
+        adSimResyncIfComputed();
+        renderAdSimDailyResult();
+      });
+    }
+    bindShared("adsimConsultPct", function(pd, v){ pd.consultPct = adSimNum(v); });
+    bindShared("adsimTaxPct", function(pd, v){ pd.taxPct = adSimNum(v); });
+    bindShared("adsimFbaYen", function(pd, v){ pd.fbaYen = adSimNum(v); });
     bindField("adsimDraftName", function(pd, v){ pd.draft.name = v; }, false);
     bindField("adsimDraftCpc", function(pd, v){ pd.draft.cpc = adSimNum(v); }, false);
     bindField("adsimDraftCvr", function(pd, v){ pd.draft.cvr = adSimNum(v); }, false);
@@ -5903,9 +5948,16 @@
 
     document.getElementById("adsimAddChildBtn").addEventListener("click", function(){
       var pd = adSimCurrentProduct();
-      pd.children.push(adSimDefaultChild(0));
+      // 直前の行のSKUを引き継ぐ（同じ子ASINの別売価を足すのが一番多い使い方のため）
+      var last = pd.children[pd.children.length - 1];
+      var row = adSimDefaultChild(0);
+      if (last) row.sku = last.sku;
+      pd.children.push(row);
       markDirty();
       renderAdSimChildTable();
+      renderAdSimShareTable();
+      renderAdSimBulkPriceOptions();
+      renderAdSimDailyCfg();
       adSimResyncIfComputed();
       adSimRefreshValidationUI();
     });
