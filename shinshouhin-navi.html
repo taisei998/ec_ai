@@ -143,6 +143,7 @@
   .tooltip {
     position: fixed; z-index: 50; background: var(--text-primary); color: var(--surface-1);
     font-size: 12px; padding: 6px 10px; border-radius: 6px; pointer-events:none; max-width: 220px;
+    white-space: pre-line;
   }
 
   .summaryDoc { background: var(--surface-1); border:1px solid var(--border); border-radius:12px; padding: 24px 28px; font-size:13.5px; line-height:1.7; }
@@ -648,6 +649,8 @@
   table.adsimTable td { vertical-align:middle; }
   table.adsimTable td.adsimNum { text-align:right; white-space:nowrap; font-variant-numeric: tabular-nums; }
   table.adsimTable td.adsimPriceList { text-align:left; font-size:12.5px; line-height:1.6; font-variant-numeric: tabular-nums; }
+  table.adsimTable td[data-tip] { cursor: help; }
+  table.adsimTable th[title] { cursor: help; text-decoration: underline dotted; text-underline-offset: 2px; }
   table.adsimTable td.adsimPatName { font-weight:700; white-space:nowrap; }
   .adsimShareSum { font-size:12.5px; font-weight:700; margin:10px 0 0; }
   .adsimShareSum.ok { color: var(--status-good); }
@@ -1342,7 +1345,7 @@
         <div class="adsimWarnBox" id="adsimDailyWarn" hidden></div>
         <div class="tableWrap">
           <table class="dataTable adsimTable">
-            <thead><tr><th>月</th><th>広告流入売上</th><th>広告流入個数</th><th>原価合計</th><th>販売手数料</th><th>FBA</th><th>コンサル料</th><th>VC(変動費)</th><th>粗利(MQ)</th><th>粗利率</th></tr></thead>
+            <thead><tr><th>月</th><th>広告流入売上</th><th>広告流入個数</th><th>原価合計</th><th>販売手数料</th><th>FBA</th><th>コンサル料</th><th title="VC(変動費) = 原価合計 + 販売手数料 + FBA + コンサル料&#10;（売上に比例して増減する費用の合計です）">VC(変動費)</th><th>粗利(MQ)</th><th>粗利率</th></tr></thead>
             <tbody id="adsimDailySummaryBody"></tbody>
           </table>
         </div>
@@ -4801,6 +4804,75 @@
     return { months: perMonth, all: all };
   }
 
+  // ②月次サマリーの数値にカーソルを合わせたときの「規格ごとの内訳」用。
+  // adSimMonthAvgUnit と同じ日集合・同じ考え方で、規格(sku)単体の平均売価・原価・
+  // 手数料を単純平均で出す。ある日にその規格だけ売価未設定でも、全体の加重平均が
+  // 出せている日（totalShare>0）である限り「その日は0円」として同じ日数で割るので、
+  // 規格ごとの値を合算すると必ず月次サマリーの合計と一致する（想定販売比率の合計が
+  // 100%になっている通常時）。
+  function adSimMonthAvgUnitForSku(pd, dates, sku){
+    var acc = { price: 0, cost: 0, amazonFee: 0, n: 0 };
+    dates.forEach(function(iso){
+      var r = pd.daily.rows[iso];
+      var ptype = (r && adSimIsPriceType(r.priceType)) ? r.priceType : "normal";
+      var wAgg = adSimWeightedAt(pd, ptype);
+      if (wAgg.totalShare <= 0) return;
+      acc.n++;
+      var row = adSimFindRow(pd, sku, ptype);
+      if (!row || adSimNum(row.price) <= 0) return;
+      acc.price += adSimNum(row.price);
+      acc.cost += adSimNum(row.cost);
+      acc.amazonFee += adSimNum(row.amazonFee);
+    });
+    if (!acc.n) return null;
+    return { price: acc.price / acc.n, cost: acc.cost / acc.n, amazonFee: acc.amazonFee / acc.n };
+  }
+
+  // adSimMonthlyTargets の月ごとの値（広告流入個数・売上・原価・手数料・VC・MQ）を
+  // 想定販売比率で規格ごとに配分したもの。②月次サマリーのツールチップ専用（③の
+  // 計算には使わない）。
+  function adSimMonthlyTargetsBySku(pd){
+    var tot = adSimMonthlyTargets(pd);
+    var months = adSimDailyMonths(pd.daily);
+    var skus = adSimSkuList(pd);
+    function computeForMonth(t, dates){
+      return skus.map(function(sku){
+        var share = adSimNum(pd.shares[sku]) / 100;
+        var avg = dates.length ? adSimMonthAvgUnitForSku(pd, dates, sku) : null;
+        var units = t.units * share;
+        var price = avg ? avg.price : 0;
+        var cost = units * (avg ? avg.cost : 0);
+        var amazonFee = units * (avg ? avg.amazonFee : 0);
+        var revenue = units * price;
+        var fba = units * adSimNum(pd.fbaYen);
+        var consult = revenue * (adSimNum(pd.consultPct) / 100) * (1 + adSimNum(pd.taxPct) / 100);
+        var vc = cost + amazonFee + fba + consult;
+        var mq = revenue - vc;
+        return {
+          sku: sku, units: units, revenue: revenue, cost: cost, amazonFee: amazonFee,
+          fba: fba, consult: consult, vc: vc, mq: mq,
+          marginPct: revenue > 0 ? (mq / revenue * 100) : null
+        };
+      });
+    }
+    var byMonth = {};
+    tot.months.forEach(function(t){
+      var m = months.filter(function(mm){ return mm.key === t.key; })[0];
+      byMonth[t.key] = computeForMonth(t, m ? m.dates : []);
+    });
+    var all = skus.map(function(sku){
+      var acc = { sku: sku, units: 0, revenue: 0, cost: 0, amazonFee: 0, fba: 0, consult: 0, vc: 0, mq: 0 };
+      Object.keys(byMonth).forEach(function(k){
+        var row = byMonth[k].filter(function(r){ return r.sku === sku; })[0];
+        if (!row) return;
+        ["units", "revenue", "cost", "amazonFee", "fba", "consult", "vc", "mq"].forEach(function(f){ acc[f] += row[f]; });
+      });
+      acc.marginPct = acc.revenue > 0 ? (acc.mq / acc.revenue * 100) : null;
+      return acc;
+    });
+    return { byMonth: byMonth, all: all };
+  }
+
   // ---------- ③ 月次シミュ：日別の合算 − 月別の広告費 ----------
   // 単月ステータス（2つのしきい値で4段階）。maxPctがnullなら許容外判定はしない。
   // 判定は表示と同じ小数第1位に丸めた値で行う（表示13.0%なのに黄字、を防ぐ）。
@@ -5283,21 +5355,44 @@
       if (warn){ warn.hidden = true; warn.textContent = ""; }
       return;
     }
+    var bySku = adSimMonthlyTargetsBySku(pd);
+    // 規格ごとの内訳をツールチップ文字列にする（\nはCSSのwhite-space:pre-lineで改行表示）
+    var skuTip = function(rows, field, fmt){
+      if (!rows || !rows.length) return "";
+      return "規格ごとの内訳\n" + rows.map(function(r){
+        return (r.sku || "（未入力）") + "：" + fmt(r[field]);
+      }).join("\n");
+    };
+    var numTd = function(value, fmt, rows, field){
+      var tip = skuTip(rows, field, fmt);
+      return "<td class='adsimNum'" + (tip ? " data-tip=\"" + attr(tip) + "\"" : "") + ">" + fmt(value) + "</td>";
+    };
+    var qtyFmt = function(n){ return adSimQty(n) + "個"; };
     var rowHtml = function(t, isTotal){
+      var rows = isTotal ? bySku.all : (bySku.byMonth[t.key] || []);
       return "<tr" + (isTotal ? " class='adsimGroupTop'" : "") + ">" +
         "<td class='adsimPatName'>" + esc(isTotal ? "全期間合計" : t.label) + "</td>" +
-        "<td class='adsimNum'>" + adSimYen(t.revenue) + "</td>" +
-        "<td class='adsimNum'>" + adSimQty(t.units) + "個</td>" +
-        "<td class='adsimNum'>" + adSimYen(t.cost) + "</td>" +
-        "<td class='adsimNum'>" + adSimYen(t.amazonFee) + "</td>" +
-        "<td class='adsimNum'>" + adSimYen(t.fba) + "</td>" +
-        "<td class='adsimNum'>" + adSimYen(t.consult) + "</td>" +
-        "<td class='adsimNum'>" + adSimYen(t.vc) + "</td>" +
-        "<td class='adsimNum'>" + adSimSignedYen(t.mq) + "</td>" +
-        "<td class='adsimNum'>" + adSimPct(t.marginPct) + "</td>" +
+        numTd(t.revenue, adSimYen, rows, "revenue") +
+        numTd(t.units, qtyFmt, rows, "units") +
+        numTd(t.cost, adSimYen, rows, "cost") +
+        numTd(t.amazonFee, adSimYen, rows, "amazonFee") +
+        numTd(t.fba, adSimYen, rows, "fba") +
+        numTd(t.consult, adSimYen, rows, "consult") +
+        numTd(t.vc, adSimYen, rows, "vc") +
+        numTd(t.mq, adSimSignedYen, rows, "mq") +
+        numTd(t.marginPct, adSimPct, rows, "marginPct") +
       "</tr>";
     };
     body.innerHTML = tot.months.map(function(t){ return rowHtml(t, false); }).join("") + rowHtml(tot.all, true);
+    body.querySelectorAll("[data-tip]").forEach(function(td){
+      td.addEventListener("mousemove", function(e){
+        tooltipEl.hidden = false;
+        tooltipEl.textContent = td.dataset.tip;
+        tooltipEl.style.left = (e.clientX + 12) + "px";
+        tooltipEl.style.top = (e.clientY + 12) + "px";
+      });
+      td.addEventListener("mouseleave", function(){ tooltipEl.hidden = true; });
+    });
 
     if (warn){
       if (!tot.all.noMaster){ warn.hidden = true; warn.textContent = ""; }
