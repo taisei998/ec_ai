@@ -635,31 +635,61 @@
   @media (prefers-reduced-motion: reduce) {
     .pwGlowAlert { animation: none; box-shadow: 0 0 0 3px rgba(220,38,38,0.55); }
   }
-  /* ---- 広告シミュレーター ---- */
-  .adsimPfTabs { display:flex; gap:8px; flex-wrap:wrap; }
-  .adsimPfTab {
+  /* ---- 広告投資回収シミュレーター ---- */
+  .adsimProductTabs { display:flex; gap:8px; flex-wrap:wrap; }
+  .adsimProductTab {
     display:inline-flex; align-items:center; padding:6px 12px; border-radius:999px; border:1px solid var(--border);
     background: var(--surface-1); font-size:12.5px; font-weight:600; cursor:pointer; color: var(--text-secondary); font-family:inherit;
   }
-  .adsimPfTab:hover { background: var(--surface-2); }
-  .adsimPfTab.active { background: var(--series-1); border-color: var(--series-1); color:#fff; }
+  .adsimProductTab:hover { background: var(--surface-2); }
+  .adsimProductTab.active { background: var(--series-1); border-color: var(--series-1); color:#fff; }
   table.adsimTable td input { min-width:0; width:100%; }
   table.adsimTable th { white-space:nowrap; }
   table.adsimTable td { vertical-align:middle; }
-  table.adsimTable tr.adsimPinned td { background: var(--accent-bg); }
-  .adsimColWeek { white-space:nowrap; font-weight:600; }
+  table.adsimTable td.adsimNum { text-align:right; white-space:nowrap; font-variant-numeric: tabular-nums; }
+  table.adsimTable td.adsimPatName { font-weight:700; white-space:nowrap; }
   .adsimShareSum { font-size:12.5px; font-weight:700; margin:10px 0 0; }
   .adsimShareSum.ok { color: var(--status-good); }
   .adsimShareSum.ng { color: var(--danger); }
-  .adsimFieldErr { font-size:11.5px; color: var(--danger); margin:8px 0 0; display:none; }
+  .adsimAvgRow { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .adsimAvgChip {
+    display:inline-flex; align-items:baseline; gap:6px; padding:6px 12px; border-radius:10px;
+    border:1px solid var(--border); background: var(--surface-2); font-size:12px;
+  }
+  .adsimAvgChip b { font-size:14px; font-weight:800; }
+  .adsimFieldErr { font-size:11.5px; color: var(--danger); margin:4px 0 0; display:none; }
   .adsimFieldErr.show { display:block; }
   .adsimErrSummary { font-size:12px; color: var(--danger); margin:10px 0 0; white-space:pre-line; }
-  .adsimToggle { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; margin:0; }
-  .adsimToggle input { width:auto; margin:0; }
-  .adsimBreakEven { font-size:17px; font-weight:800; line-height:1.5; margin-bottom:4px; }
-  .adsimBreakEven .adsimBeNote { display:block; font-size:11.5px; font-weight:400; color: var(--text-muted); }
+  .adsimEditingNote { font-size:12px; font-weight:700; color: var(--series-1); margin:10px 0 0; }
+  .adsimWarnBox {
+    border:1px solid var(--status-warning); background: rgba(250,178,25,0.12); border-radius:10px;
+    padding:10px 12px; font-size:12px; font-weight:600; margin-bottom:12px; white-space:pre-line;
+  }
+  /* 単月ステータス（赤字／黄字／黒字） */
+  .adsimStatus { display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .adsimStatus.loss { color: var(--status-critical); }
+  .adsimStatus.thin { color: #a97400; }
+  .adsimStatus.good { color: var(--status-good); }
+  .adsimStatus.none { color: var(--text-muted); }
+  table.adsimTable tr.adsimRowLoss td { background: rgba(208,59,59,0.07); }
+  table.adsimTable tr.adsimRowThin td { background: rgba(250,178,25,0.10); }
+  table.adsimTable tr.adsimRowGood td { background: rgba(12,163,12,0.07); }
+  table.adsimTable tr.adsimGroupTop td { border-top:2px solid var(--baseline); }
+  /* 保存済みパターン一覧 */
+  .adsimPatRow {
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 0; border-bottom:1px solid var(--grid);
+  }
+  .adsimPatRow:last-child { border-bottom:none; }
+  .adsimPatRow.editing { background: var(--accent-bg); }
+  .adsimPatSwatch { width:12px; height:12px; border-radius:3px; flex:0 0 auto; }
+  .adsimPatName { font-size:13px; font-weight:700; }
+  .adsimPatMeta { font-size:11.5px; color: var(--text-secondary); }
+  .adsimPatActions { margin-left:auto; display:flex; gap:6px; }
+  .adsimVerdict { font-size:15px; font-weight:800; line-height:1.6; margin-bottom:4px; }
+  .adsimVerdict .adsimVerdictNote { display:block; font-size:11.5px; font-weight:400; color: var(--text-muted); }
   /* エラーで凍結表示しているときは、最新値でないことが一目で分かるようグレーアウトする */
-  .adsimBreakEven.stale { color: var(--text-muted); }
+  .adsimVerdict.stale { color: var(--text-muted); }
   .adsimChartWrap { position:relative; }
   .adsimOverlay {
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
@@ -813,8 +843,8 @@
       -->
       <button type="button" class="homeCard" data-goto="adsim">
         <span class="hcIcon">📈</span>
-        <h3>広告シミュレーターで黒転時期を試算</h3>
-        <p>親ASIN単位で初期広告投資の回収タイミング（黒字転換）を予測し、上長提案用に可視化します</p>
+        <h3>広告投資の回収時期を試算</h3>
+        <p>親ASIN単位で先行広告投資が3ヶ月で回収できるかを月次で試算し、投下パターンを比較して上長提案用に可視化します</p>
       </button>
       <button type="button" class="homeCard" data-goto="watch">
         <span class="hcIcon">🔔</span>
@@ -1168,89 +1198,87 @@
   </section>
 
   <section id="view-adsim" class="topView">
-    <h2>📈 広告シミュレーター</h2>
-    <p class="hint">親ASIN（ポートフォリオ）単位で、初期の広告投資がいつ黒字転換するかを試算します。上長への提案資料としてお使いください。</p>
+    <h2>📈 広告投資回収シミュレーター</h2>
+    <p class="hint">注力商品（親ASIN単位）に、赤字を出してでも先行して広告投資を行う際の「どこまで投下し、いつ回収できるか」を月次3ヶ月で試算します。上長への特別枠投資の説明・承認用。対象はAmazonのみです。</p>
 
-    <!-- ポートフォリオ選択 -->
-    <div class="card" id="adsimPfCard">
+    <!-- 親ASINの選択 -->
+    <div class="card" id="adsimProductCard">
       <div class="cardHeader">
-        <h3 style="margin:0;">🗂 ポートフォリオ（親ASIN）</h3>
-        <button type="button" class="btn small primary" id="adsimAddPfBtn">＋ 新規追加</button>
+        <h3 style="margin:0;">🗂 親ASIN</h3>
+        <button type="button" class="btn small primary" id="adsimAddProductBtn">＋ 新規追加</button>
       </div>
-      <div class="adsimPfTabs" id="adsimPfTabs"></div>
+      <div class="adsimProductTabs" id="adsimProductTabs"></div>
       <div class="pwFormGrid" style="margin-top:12px;">
-        <div><label for="adsimPfParentAsin">親ASIN</label><input type="text" id="adsimPfParentAsin" placeholder="例: B0ABCDEFGH"></div>
-        <div><label for="adsimPfName">ポートフォリオ名（任意）</label><input type="text" id="adsimPfName" placeholder="例: 天然水シリーズ"></div>
-        <div><label for="adsimConsultPct">コンサル料（％・売上金額に対して）</label><input type="number" id="adsimConsultPct" min="0" max="100" step="0.1" placeholder="例: 5"></div>
+        <div><label for="adsimProductAsin">親ASIN</label><input type="text" id="adsimProductAsin" placeholder="例: B0ABCDEFGH"></div>
+        <div><label for="adsimProductName">商品名</label><input type="text" id="adsimProductName" placeholder="例: 天然水シリーズ"></div>
+        <div><label for="adsimTargetMargin">目標粗利率（％）</label><input type="number" id="adsimTargetMargin" min="0" max="100" step="0.1" placeholder="例: 20"></div>
+        <div><label for="adsimMaxLoss">最大許容累積赤字額（円）</label><input type="number" id="adsimMaxLoss" min="0" step="10000" placeholder="未入力なら警告なし"></div>
       </div>
-      <p class="adsimFieldErr" data-err="pf"></p>
-      <button type="button" class="btn small ghost" id="adsimDeletePfBtn" style="margin-top:10px;">このポートフォリオを削除</button>
+      <p class="hint" style="margin:8px 0 0;">目標粗利率は「黄字／黒字」の境目に使います。最大許容累積赤字額を入れると、累積損益がその赤字幅を超える見込みのパターンに⚠警告を出します。</p>
+      <button type="button" class="btn small ghost" id="adsimDeleteProductBtn" style="margin-top:10px;">この親ASINを削除</button>
     </div>
 
-    <!-- ① 商品マスタ -->
+    <!-- ① 商品マスタ（子ASIN） -->
     <div class="card" id="adsimChildCard">
       <div class="cardHeader">
         <h3 style="margin:0;">① 商品マスタ（子ASINごと）</h3>
         <button type="button" class="btn small primary" id="adsimAddChildBtn">＋ 子ASINを追加</button>
       </div>
-      <p class="hint" style="margin:0 0 10px;">金額はすべて<b>1個あたり</b>の円で入力してください（％不可）。売上占有率の合計はちょうど 100.0% にしてください。</p>
+      <p class="hint" style="margin:0 0 10px;">金額はすべて<b>1点あたりの円</b>で入力してください（％不可）。想定販売比率の合計はちょうど 100.0% にしてください。複数の子ASINは比率で加重平均して1つの経済性にまとめて扱います。</p>
       <div class="tableWrap">
         <table class="dataTable adsimTable">
-          <thead><tr><th>子ASIN / SKU</th><th>原価（円/個）</th><th>販売手数料＋FBA（円/個）</th><th>売上占有率（％）</th><th></th></tr></thead>
+          <thead><tr><th>商品名 / SKU</th><th>売価（円）</th><th>原価（円）</th><th>Amazon手数料（円）</th><th>コンサル手数料（円）</th><th>想定販売比率（％）</th><th></th></tr></thead>
           <tbody id="adsimChildBody"></tbody>
         </table>
       </div>
       <p class="adsimShareSum" id="adsimShareSum"></p>
+      <div class="adsimAvgRow" id="adsimAvgRow"></div>
     </div>
 
-    <!-- ② 広告マスタ＆シミュレーション変数 -->
-    <div class="card" id="adsimVarCard">
-      <h3 style="margin-top:0;">② 広告マスタ＆シミュレーション変数</h3>
-      <p class="hint" style="margin:0 0 10px;">月次（4週ごと・全13ブロック）で設定します。特定の週だけ変えたい場合は下の「週次で個別に上書き」から編集してください。<b>一度上書きした週は、あとで月次を変更しても影響を受けません。</b></p>
-      <div class="tableWrap">
-        <table class="dataTable adsimTable">
-          <thead><tr><th>期間</th><th>週間広告費（円）</th><th>想定CPC（円）</th><th>想定CVR（％）</th><th>想定客単価（円/個）</th><th>週間自然流入売上（円）</th></tr></thead>
-          <tbody id="adsimMonthlyBody"></tbody>
-        </table>
-      </div>
-      <details style="margin-top:14px;">
-        <summary style="cursor:pointer; font-size:12.5px; font-weight:600;">週次で個別に上書き（Week1〜52）</summary>
-        <p class="hint" style="margin:8px 0;">値を編集するとその週が「上書き済み」になり、月次テンプレートの変更を受けなくなります。「月次に戻す」で解除できます。</p>
-        <div class="tableWrap">
-          <table class="dataTable adsimTable">
-            <thead><tr><th>週</th><th>広告費（円）</th><th>CPC（円）</th><th>CVR（％）</th><th>客単価（円）</th><th>自然流入（円）</th><th></th></tr></thead>
-            <tbody id="adsimWeeklyBody"></tbody>
-          </table>
-        </div>
-      </details>
-    </div>
-
-    <!-- シナリオ倍率 -->
-    <div class="card" id="adsimScenarioCard">
-      <h3 style="margin-top:0;">シナリオ倍率（標準の週間広告費に対する％）</h3>
-      <p class="hint" style="margin:0 0 10px;">①②の設定はすべて共通で、シナリオ間の差分は<b>週間広告費の倍率のみ</b>です。倍率を変えるだけで3本とも自動で再計算されます。</p>
+    <!-- ② 投下パターンの入力 -->
+    <div class="card" id="adsimDraftCard">
+      <h3 style="margin-top:0;">② 投下パターンを入力</h3>
+      <p class="hint" style="margin:0 0 10px;">CPC・CVRはAmazon広告の管理画面の実績値を手入力してください（3ヶ月を通じて固定値として扱います）。月別の投下額は自由入力です（月1・2を厚め、月3で絞る「逓減型」を想定していますが、配分は毎回自由に決められます）。</p>
       <div class="pwFormGrid">
-        <div><label for="adsimMulBull">強気（％）</label><input type="number" id="adsimMulBull" min="0" max="1000" step="1"></div>
-        <div><label for="adsimMulBase">標準（％）</label><input type="number" id="adsimMulBase" min="0" max="1000" step="1"></div>
-        <div><label for="adsimMulBear">保守（％）</label><input type="number" id="adsimMulBear" min="0" max="1000" step="1"></div>
+        <div><label for="adsimDraftName">パターン名</label><input type="text" id="adsimDraftName" placeholder="例: 積極型"></div>
+        <div><label for="adsimDraftCpc">CPC（円）</label><input type="number" id="adsimDraftCpc" min="1" step="1" placeholder="例: 45"><p class="adsimFieldErr" data-fe="cpc"></p></div>
+        <div><label for="adsimDraftCvr">CVR（％）</label><input type="number" id="adsimDraftCvr" min="0.01" max="100" step="0.01" placeholder="例: 8"><p class="adsimFieldErr" data-fe="cvr"></p></div>
+        <div><label for="adsimDraftM1">月1 投下広告費（円）</label><input type="number" id="adsimDraftM1" min="0" step="10000" placeholder="例: 500000"><p class="adsimFieldErr" data-fe="m1"></p></div>
+        <div><label for="adsimDraftM2">月2 投下広告費（円）</label><input type="number" id="adsimDraftM2" min="0" step="10000" placeholder="例: 300000"><p class="adsimFieldErr" data-fe="m2"></p></div>
+        <div><label for="adsimDraftM3">月3 投下広告費（円）</label><input type="number" id="adsimDraftM3" min="0" step="10000" placeholder="例: 150000"><p class="adsimFieldErr" data-fe="m3"></p></div>
       </div>
-      <p class="adsimFieldErr" data-err="scenario"></p>
-    </div>
-
-    <!-- 実行 -->
-    <div class="card" id="adsimRunCard">
-      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <p class="adsimEditingNote" id="adsimEditingNote" hidden></p>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <button type="button" class="btn primary" id="adsimCalcBtn">▶ 計算実行</button>
-        <button type="button" class="btn" id="adsimSaveBtn">💾 シナリオを保存</button>
-        <label class="adsimToggle"><input type="checkbox" id="adsimCompareToggle"> シナリオ比較モード</label>
+        <button type="button" class="btn" id="adsimSaveBtn">💾 パターンを保存</button>
+        <button type="button" class="btn ghost" id="adsimCancelEditBtn" hidden>編集をキャンセル</button>
       </div>
       <p class="adsimErrSummary" id="adsimErrSummary" hidden></p>
       <p class="pwMsg" id="adsimSaveMsg"></p>
     </div>
 
-    <!-- ④ グラフ -->
+    <!-- 保存済みパターン -->
+    <div class="card" id="adsimPatternCard">
+      <h3 style="margin-top:0;">保存済みパターン（最大3件）</h3>
+      <div id="adsimPatternList"></div>
+    </div>
+
+    <!-- ③ 単月損益の推移 -->
+    <div class="card" id="adsimMonthCard">
+      <h3 style="margin-top:0;">③ 単月損益の推移</h3>
+      <p class="hint" style="margin:0 0 10px;">🔴 赤字＝実質粗利率がマイナス／🟡 黄字＝プラスだが目標粗利率に未達／⚫ 黒字＝目標粗利率を達成。</p>
+      <div class="adsimWarnBox" id="adsimWarnBox" hidden></div>
+      <div class="tableWrap">
+        <table class="dataTable adsimTable">
+          <thead><tr><th>パターン</th><th>月</th><th>広告費</th><th>クリック数</th><th>販売点数</th><th>売上</th><th>粗利</th><th>月次損益</th><th>実質粗利率</th><th>判定</th><th>累積損益</th></tr></thead>
+          <tbody id="adsimMonthBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ④ 累積損益グラフ -->
     <div class="card" id="adsimChartCard">
-      <div id="adsimBreakEven" class="adsimBreakEven"></div>
+      <div id="adsimVerdict" class="adsimVerdict"></div>
       <div class="legendRow" id="adsimLegend"></div>
       <div class="adsimChartWrap">
         <div id="adsimChartArea"></div>
@@ -1258,13 +1286,13 @@
       </div>
     </div>
 
-    <!-- 週次明細 -->
-    <div class="card" id="adsimDetailCard">
-      <h3 style="margin-top:0;">週次明細（標準シナリオ）</h3>
-      <div class="tableWrap" style="max-height:340px; overflow-y:auto;">
+    <!-- ⑤ パターン別サマリー -->
+    <div class="card" id="adsimSummaryCard">
+      <h3 style="margin-top:0;">⑤ パターン別サマリー</h3>
+      <div class="tableWrap">
         <table class="dataTable adsimTable">
-          <thead><tr><th>週</th><th>広告費</th><th>全体売上</th><th>原価</th><th>手数料</th><th>コンサル料</th><th>週間利益</th><th>累積利益</th></tr></thead>
-          <tbody id="adsimDetailBody"></tbody>
+          <thead><tr><th>パターン</th><th>総投下額</th><th>3ヶ月目時点の累積損益</th><th>黒字転換</th></tr></thead>
+          <tbody id="adsimSummaryBody"></tbody>
         </table>
       </div>
     </div>
@@ -4121,18 +4149,22 @@
     document.getElementById("pwResultInput").value = JSON.stringify(sample, null, 2);
   });
 
-  // ---------- 広告シミュレーター（親ASIN単位の黒字転換予測） ----------
-  // 親ASIN（ポートフォリオ）に投じた初期広告費が何週目で回収できるか（黒転するか）を
-  // 週次52週で試算する。事業全体ではなく「対象ポートフォリオの収益化」だけを見る。
-  var ADSIM_WEEKS = 52;
-  var ADSIM_BLOCKS = 13;            // 4週 × 13ブロック = 52週
-  var ADSIM_WEEKS_PER_BLOCK = 4;
-  var ADSIM_FIELDS = ["adSpend", "cpc", "cvr", "aov", "organic"];
-  var ADSIM_SCENARIOS = [
-    { key: "bull", label: "強気", color: "var(--status-critical)" },
-    { key: "base", label: "標準", color: "var(--series-1)" },
-    { key: "bear", label: "保守", color: "var(--status-good)" }
-  ];
+  // ---------- 広告投資回収シミュレーター（親ASIN単位・月次3ヶ月） ----------
+  // 注力商品（親ASIN単位）に、赤字を出してでも先行して広告投資を行う際、
+  // 「どこまで投下し、いつ回収できるか」を月次3ヶ月で試算する。上長への
+  // 特別枠投資（通常の運用予算を超える先行投資）の判断材料として使う。
+  //
+  // ★旧実装（週次52週・weekOverridesの週次ピン留め・強気/標準/保守の3シナリオ・
+  //   自然流入売上の直接加算）は仕様変更により全面的に置き換えた。旧データは
+  //   本仕様と非互換なので、adSimEnsureState() の version チェックでリセットする
+  //   （移行はしない＝仕様書「既存の登録データは移行不要」に従う）。
+  var ADSIM_VERSION = 2;
+  var ADSIM_MONTHS = 3;
+  var ADSIM_MAX_PATTERNS = 3;
+  // 保存済みパターンの折れ線色。pd.patterns内のindexで固定的に割り当てるので、
+  // 一覧のスウォッチ・凡例・グラフの色が常に一致する。
+  var ADSIM_PAT_COLORS = ["var(--series-1)", "var(--status-critical)", "var(--status-good)"];
+  var ADSIM_DRAFT_COLOR = "var(--series-4)";
 
   // 仕様どおり「1,000円」形式。既存の fmtYen/pwYen は「¥1,000」形式なので別に用意する。
   var ADSIM_YEN_FMT = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 });
@@ -4140,205 +4172,275 @@
     if (n == null || isNaN(n)) return "-";
     return ADSIM_YEN_FMT.format(Math.round(n)) + "円";
   }
-  function adSimPct(n){
+  function adSimSignedYen(n){
     if (n == null || isNaN(n)) return "-";
+    return (n > 0 ? "+" : n < 0 ? "-" : "±") + ADSIM_YEN_FMT.format(Math.abs(Math.round(n))) + "円";
+  }
+  function adSimPct(n){
+    if (n == null || isNaN(n)) return "—";
     return (Math.round(n * 10) / 10).toFixed(1) + "%";
   }
-  // 小数第1位に丸める。占有率の100%判定と表示にだけ使い、内部の入力値は丸めない
-  // （0.1刻みの入力を足すと 99.99999999 のような誤差が出て弾かれてしまうため）。
+  function adSimQty(n){
+    if (n == null || isNaN(n)) return "-";
+    return Number(n).toLocaleString("ja-JP", { maximumFractionDigits: 1 });
+  }
+  // 小数第1位に丸める。想定販売比率の100%判定と表示のときだけ使い、内部の入力値は
+  // 丸めない（0.1刻みの入力を足すと 99.99999999 のような誤差が出て正しい入力が弾かれるため）。
   function adSimRound1(n){ return Math.round(n * 10) / 10; }
   function adSimNum(v){ var n = Number(v); return isNaN(n) ? 0 : n; }
 
   var adSimIdCounter = 0;
   function adSimNextId(pre){ adSimIdCounter++; return pre + "_" + Date.now().toString(36) + "_" + adSimIdCounter; }
 
-  function adSimDefaultMonthlyRow(){
-    return { adSpend: 30000, cpc: 40, cvr: 8, aov: 2500, organic: 0 };
+  // 編集中の保存済みパターンID（null＝新規パターンとして入力中）。
+  // 価格アラート登録フォームの pwEditTarget と同じ「新規／編集」idiom。
+  var adSimEditingPatternId = null;
+
+  function adSimDefaultChild(share){
+    return {
+      id: adSimNextId("adc"), sku: "", price: 0, cost: 0,
+      amazonFee: 0, consultFee: 0, sharePct: (share == null ? 100 : share)
+    };
   }
-  function adSimDefaultChild(){
-    return { id: adSimNextId("adc"), sku: "", cost: 0, feeYen: 0, sharePct: 100 };
+  function adSimDefaultDraft(){
+    return { name: "", cpc: 0, cvr: 0, m1: 0, m2: 0, m3: 0 };
   }
-  function adSimDefaultPortfolio(){
-    var monthly = [];
-    for (var i = 0; i < ADSIM_BLOCKS; i++) monthly.push(adSimDefaultMonthlyRow());
+  function adSimDefaultProduct(){
     return {
       id: adSimNextId("adp"),
-      parentAsin: "",
-      name: "新しいポートフォリオ",
-      consultPct: 0,
-      children: [adSimDefaultChild()],
-      monthly: monthly,
-      weekOverrides: {},
-      scenarios: { bull: 120, base: 100, bear: 80 }
+      asin: "",
+      name: "新しい親ASIN",
+      targetMarginPct: 20,
+      // 0（未入力）＝ガードレール未設定＝警告しない扱い。0を「赤字を一切許さない」と
+      // 解釈すると初期状態で常に警告が出て邪魔になるため、オプトイン方式にしている。
+      maxLossYen: 0,
+      children: [adSimDefaultChild(100)],
+      patterns: [],
+      draft: adSimDefaultDraft()
     };
   }
 
-  // priceWatch と同じ「欠損を既定化して返す」正規化関数。古いエクスポートJSONでも落ちない。
+  // priceWatch と同じ「欠損を既定化して返す」正規化関数。
   function adSimEnsureState(){
     if (!state.adSim || typeof state.adSim !== "object") state.adSim = {};
     var s = state.adSim;
-    if (!Array.isArray(s.portfolios)) s.portfolios = [];
-    if (!s.portfolios.length) s.portfolios.push(adSimDefaultPortfolio());
-    s.portfolios.forEach(function(pf){
-      if (!pf.id) pf.id = adSimNextId("adp");
-      if (typeof pf.parentAsin !== "string") pf.parentAsin = "";
-      if (typeof pf.name !== "string") pf.name = "";
-      pf.consultPct = adSimNum(pf.consultPct);
-      if (!Array.isArray(pf.children) || !pf.children.length) pf.children = [adSimDefaultChild()];
-      pf.children.forEach(function(c){
+    // 旧形式（portfolios[]・週次52週・bull/base/bear）は本仕様と非互換なのでリセットする。
+    // priceWatchの旧 {prices:{}} 形式と同じ扱い（クラッシュさせず新形式の空状態にする）。
+    if (s.version !== ADSIM_VERSION || !Array.isArray(s.products)){
+      var hadOldData = !!(s.portfolios || s.products);
+      state.adSim = { version: ADSIM_VERSION, products: [], selectedProductId: null, lastResult: null };
+      s = state.adSim;
+      if (hadOldData) markDirty();
+    }
+    if (!s.products.length) s.products.push(adSimDefaultProduct());
+    s.products.forEach(function(pd){
+      if (!pd.id) pd.id = adSimNextId("adp");
+      if (typeof pd.asin !== "string") pd.asin = "";
+      if (typeof pd.name !== "string") pd.name = "";
+      pd.targetMarginPct = adSimNum(pd.targetMarginPct);
+      pd.maxLossYen = adSimNum(pd.maxLossYen);
+      if (!Array.isArray(pd.children) || !pd.children.length) pd.children = [adSimDefaultChild(100)];
+      pd.children.forEach(function(c){
         if (!c.id) c.id = adSimNextId("adc");
         if (typeof c.sku !== "string") c.sku = "";
+        c.price = adSimNum(c.price);
         c.cost = adSimNum(c.cost);
-        c.feeYen = adSimNum(c.feeYen);
+        c.amazonFee = adSimNum(c.amazonFee);
+        c.consultFee = adSimNum(c.consultFee);
         c.sharePct = adSimNum(c.sharePct);
       });
-      if (!Array.isArray(pf.monthly)) pf.monthly = [];
-      while (pf.monthly.length < ADSIM_BLOCKS) pf.monthly.push(adSimDefaultMonthlyRow());
-      pf.monthly.length = ADSIM_BLOCKS;
-      pf.monthly.forEach(function(m){
-        ADSIM_FIELDS.forEach(function(f){ m[f] = adSimNum(m[f]); });
+      if (!Array.isArray(pd.patterns)) pd.patterns = [];
+      if (pd.patterns.length > ADSIM_MAX_PATTERNS) pd.patterns = pd.patterns.slice(0, ADSIM_MAX_PATTERNS);
+      pd.patterns.forEach(function(pt){
+        if (!pt.id) pt.id = adSimNextId("adpt");
+        if (typeof pt.name !== "string") pt.name = "";
+        pt.cpc = adSimNum(pt.cpc);
+        pt.cvr = adSimNum(pt.cvr);
+        pt.m1 = adSimNum(pt.m1);
+        pt.m2 = adSimNum(pt.m2);
+        pt.m3 = adSimNum(pt.m3);
       });
-      if (!pf.weekOverrides || typeof pf.weekOverrides !== "object") pf.weekOverrides = {};
-      Object.keys(pf.weekOverrides).forEach(function(k){
-        var o = pf.weekOverrides[k];
-        if (!o || typeof o !== "object"){ delete pf.weekOverrides[k]; return; }
-        ADSIM_FIELDS.forEach(function(f){ o[f] = adSimNum(o[f]); });
-      });
-      if (!pf.scenarios || typeof pf.scenarios !== "object") pf.scenarios = {};
-      if (typeof pf.scenarios.bull !== "number") pf.scenarios.bull = 120;
-      if (typeof pf.scenarios.base !== "number") pf.scenarios.base = 100;
-      if (typeof pf.scenarios.bear !== "number") pf.scenarios.bear = 80;
+      if (!pd.draft || typeof pd.draft !== "object") pd.draft = adSimDefaultDraft();
+      if (typeof pd.draft.name !== "string") pd.draft.name = "";
+      pd.draft.cpc = adSimNum(pd.draft.cpc);
+      pd.draft.cvr = adSimNum(pd.draft.cvr);
+      pd.draft.m1 = adSimNum(pd.draft.m1);
+      pd.draft.m2 = adSimNum(pd.draft.m2);
+      pd.draft.m3 = adSimNum(pd.draft.m3);
     });
-    if (!s.portfolios.some(function(p){ return p.id === s.selectedPortfolioId; })){
-      s.selectedPortfolioId = s.portfolios[0].id;
+    if (!s.products.some(function(p){ return p.id === s.selectedProductId; })){
+      s.selectedProductId = s.products[0].id;
     }
-    s.compareMode = !!s.compareMode;
     if (typeof s.lastResult === "undefined") s.lastResult = null;
     return s;
   }
 
-  function adSimCurrentPortfolio(){
+  function adSimCurrentProduct(){
     var s = adSimEnsureState();
-    return s.portfolios.filter(function(p){ return p.id === s.selectedPortfolioId; })[0] || s.portfolios[0];
+    return s.products.filter(function(p){ return p.id === s.selectedProductId; })[0] || s.products[0];
+  }
+  function adSimPatternColor(idx){ return ADSIM_PAT_COLORS[idx % ADSIM_PAT_COLORS.length]; }
+
+  // 加重平均（親ASIN選択時に自動計算）
+  //   加重平均単価      = Σ( 子ASINの売価 × 想定販売比率 )
+  //   加重平均1点純粗利 = Σ( (売価 − 原価 − Amazon手数料 − コンサル手数料) × 想定販売比率 )
+  // 子ASINが複数ある場合は、これで1つの経済性にまとめてから月次計算に入る。
+  function adSimWeightedAverages(pd){
+    var avgPrice = 0, avgNet = 0;
+    (pd.children || []).forEach(function(c){
+      var w = adSimNum(c.sharePct) / 100;
+      var price = adSimNum(c.price);
+      avgPrice += price * w;
+      avgNet += (price - adSimNum(c.cost) - adSimNum(c.amazonFee) - adSimNum(c.consultFee)) * w;
+    });
+    return { avgPrice: avgPrice, avgNet: avgNet };
   }
 
-  // 週w（1始まり）に実際に適用されるパラメータ。週次上書きがあればそちらが優先。
-  function adSimEffectiveWeek(pf, w){
-    var ov = pf.weekOverrides[String(w)];
-    if (ov) return ov;
-    return pf.monthly[Math.floor((w - 1) / ADSIM_WEEKS_PER_BLOCK)] || adSimDefaultMonthlyRow();
+  // 単月ステータス：実質粗利率 < 0 → 赤字、0以上で目標粗利率に未達 → 黄字、目標以上 → 黒字
+  function adSimMonthStatus(marginPct, targetPct){
+    if (marginPct == null) return "none";
+    if (marginPct < 0) return "loss";
+    if (marginPct < adSimNum(targetPct)) return "thin";
+    return "good";
   }
-  function adSimIsPinned(pf, w){ return !!pf.weekOverrides[String(w)]; }
+  var ADSIM_STATUS_META = {
+    loss: { icon: "🔴", label: "赤字", cls: "loss", rowCls: "adsimRowLoss" },
+    thin: { icon: "🟡", label: "黄字", cls: "thin", rowCls: "adsimRowThin" },
+    good: { icon: "⚫", label: "黒字", cls: "good", rowCls: "adsimRowGood" },
+    none: { icon: "—", label: "判定不可", cls: "none", rowCls: "" }
+  };
 
-  // ③ 計算ロジック：1シナリオ分（倍率%）の52週シリーズを返す。
-  function adSimComputeSeries(pf, multiplierPct){
+  // 1パターン分の3ヶ月シミュレーション。
+  //   ① クリック数     = 広告費 ÷ CPC
+  //   ② 販売点数       = クリック数 × CVR
+  //   ③ 売上           = 販売点数 × 加重平均単価
+  //   ④ 月次粗利       = 販売点数 × 加重平均1点純粗利
+  //   ⑤ 月次損益       = 月次粗利 − 広告費
+  //   ⑥ 月次実質粗利率 = 月次損益 ÷ 売上 × 100
+  //   ⑦ 累積損益       = 当月までの月次損益の合計
+  // ※クリック数は「広告費 ÷ CPC」で機械的に出した簡易モデルで、Amazon広告管理画面の
+  //   セッション数とは異なる。CPCの上振れ（投下額を増やすとCPCが上がる）はv1では扱わない。
+  function adSimComputePattern(pd, pat){
+    var avg = adSimWeightedAverages(pd);
+    var spends = [adSimNum(pat.m1), adSimNum(pat.m2), adSimNum(pat.m3)];
+    var cpc = adSimNum(pat.cpc);
+    var cvr = adSimNum(pat.cvr);
     var rows = [];
     var cum = 0;
-    var mul = adSimNum(multiplierPct) / 100;
-    for (var w = 1; w <= ADSIM_WEEKS; w++){
-      var p = adSimEffectiveWeek(pf, w);
-      var adSpend = adSimNum(p.adSpend) * mul;
-      var cpc = adSimNum(p.cpc);
-      var aov = adSimNum(p.aov);
-
-      // ※これは「広告費 ÷ CPC」で機械的に出した簡易モデルであり、Amazon管理画面の
-      //   セッション数（実際にページを訪れたユーザー数）とは異なる値になる点に注意。
-      //   自然流入は割合ではなく「週間自然流入売上」として直接加算しており、
-      //   広告クリックが0でもゼロ除算・0売上にならないモデルにしている。
-      var clicks = cpc > 0 ? (adSpend / cpc) : 0;
-      var adRevenue = clicks * (adSimNum(p.cvr) / 100) * aov;
-      var totalRevenue = adRevenue + adSimNum(p.organic);
-      var consultFee = totalRevenue * (adSimNum(pf.consultPct) / 100);
-
-      var costTotal = 0, feeTotal = 0;
-      if (aov > 0){
-        pf.children.forEach(function(c){
-          var childRevenue = totalRevenue * (adSimNum(c.sharePct) / 100);
-          // 販売個数は想定客単価ベース。端数は丸めない——52週積み上げると
-          // 丸め誤差が無視できない大きさになるため。
-          var units = childRevenue / aov;
-          costTotal += units * adSimNum(c.cost);
-          feeTotal += units * adSimNum(c.feeYen);
-        });
-      }
-
-      var profit = totalRevenue - (costTotal + feeTotal + consultFee + adSpend);
-      cum += profit;
+    var totalSpend = 0;
+    for (var i = 0; i < ADSIM_MONTHS; i++){
+      var spend = spends[i];
+      totalSpend += spend;
+      // CPCはバリデーションで1円以上を強制しているが、計算側でもゼロ除算を防いでおく
+      var clicks = cpc > 0 ? (spend / cpc) : 0;
+      // 販売点数の端数は丸めない（丸めると売上・粗利がずれて実質粗利率の判定が揺れるため）
+      var units = clicks * (cvr / 100);
+      var revenue = units * avg.avgPrice;
+      var gross = units * avg.avgNet;
+      var pl = gross - spend;
+      cum += pl;
+      // 売上0（広告費0など）のときは実質粗利率が定義できないのでnull＝「—」表示にする
+      var marginPct = revenue > 0 ? (pl / revenue * 100) : null;
       rows.push({
-        week: w, adSpend: adSpend, revenue: totalRevenue, cost: costTotal,
-        fee: feeTotal, consult: consultFee, profit: profit, cum: cum
+        month: i + 1, spend: spend, clicks: clicks, units: units, revenue: revenue,
+        gross: gross, pl: pl, marginPct: marginPct, cum: cum,
+        status: adSimMonthStatus(marginPct, pd.targetMarginPct)
       });
     }
-    return rows;
+    // ガードレール：累積損益が「最大許容累積赤字額」より深く沈む月があるか。
+    // 仕様書は月1・月2時点と書いているが、月3が谷になる入力もあり得るため
+    // 3ヶ月すべての最悪値で判定している（見逃しを防ぐための上位互換）。
+    var limit = adSimNum(pd.maxLossYen);
+    var worst = rows[0].cum;
+    rows.forEach(function(r){ if (r.cum < worst) worst = r.cum; });
+    var finalCum = rows[ADSIM_MONTHS - 1].cum;
+    return {
+      rows: rows,
+      totalSpend: totalSpend,
+      finalCum: finalCum,
+      recovered: finalCum > 0,
+      worstCum: worst,
+      guardLimit: limit,
+      guardBreach: (limit > 0 && worst < -limit),
+      avgPrice: avg.avgPrice,
+      avgNet: avg.avgNet
+    };
   }
 
-  // 累積利益が負→0以上に交差する最初の週。交差しなければ null。
-  function adSimFindBreakEven(rows){
-    for (var i = 0; i < rows.length; i++){
-      if (rows[i].cum >= 0) return rows[i].week;
-    }
-    return null;
+  // 編集中の入力欄＋保存済みパターンを、グラフ・表で使う共通の系列配列にまとめる。
+  function adSimBuildSeries(pd){
+    var out = [];
+    var editing = adSimEditingPatternId
+      ? pd.patterns.filter(function(p){ return p.id === adSimEditingPatternId; })[0]
+      : null;
+    var draftName = (pd.draft.name || "").trim();
+    out.push({
+      key: "draft",
+      name: editing
+        ? ((draftName || editing.name || "パターン") + "（編集中）")
+        : (draftName ? (draftName + "（未保存）") : "編集中の入力"),
+      color: ADSIM_DRAFT_COLOR,
+      isDraft: true,
+      calc: adSimComputePattern(pd, pd.draft)
+    });
+    pd.patterns.forEach(function(pt, idx){
+      // 編集中のパターンは上のdraftとして描いているので、二重に重ねない
+      if (editing && pt.id === editing.id) return;
+      out.push({
+        key: pt.id,
+        name: pt.name || "（無名パターン）",
+        color: adSimPatternColor(idx),
+        isDraft: false,
+        calc: adSimComputePattern(pd, pt)
+      });
+    });
+    return out;
   }
 
-  // ---------- 広告シミュレーター：バリデーション ----------
+  // ---------- 広告投資回収シミュレーター：バリデーション ----------
   function adSimValidate(){
-    var pf = adSimCurrentPortfolio();
+    var pd = adSimCurrentProduct();
     var errs = [];
-    var fieldErrs = {};   // key -> message（テーブルセル直下に出す用）
-
+    var fieldErrs = {};
     function addField(key, msg){ if (!fieldErrs[key]) fieldErrs[key] = msg; }
 
-    // ① 子ASIN
+    var tgt = adSimNum(pd.targetMarginPct);
+    if (tgt < 0 || tgt > 100) errs.push("目標粗利率は0〜100%の範囲で入力してください。");
+    if (adSimNum(pd.maxLossYen) < 0) errs.push("最大許容累積赤字額は0以上で入力してください。");
+
+    // ① 商品マスタ（子ASIN）
     var sum = 0;
-    pf.children.forEach(function(c, i){
+    pd.children.forEach(function(c, i){
       sum += adSimNum(c.sharePct);
-      if (adSimNum(c.cost) < 0) { errs.push((i+1) + "行目の原価が0未満です。"); addField("c" + c.id + "cost", "0以上"); }
-      if (adSimNum(c.feeYen) < 0) { errs.push((i+1) + "行目の手数料が0未満です。"); addField("c" + c.id + "feeYen", "0以上"); }
-      if (adSimNum(c.sharePct) < 0) { errs.push((i+1) + "行目の売上占有率が0未満です。"); addField("c" + c.id + "sharePct", "0以上"); }
+      var no = (i + 1) + "行目";
+      if (adSimNum(c.price) < 1){ errs.push(no + "の売価は1円以上で入力してください。"); addField("c" + c.id + "price", "1円以上"); }
+      if (adSimNum(c.cost) < 0){ errs.push(no + "の原価が0未満です。"); addField("c" + c.id + "cost", "0以上"); }
+      if (adSimNum(c.amazonFee) < 0){ errs.push(no + "のAmazon手数料が0未満です。"); addField("c" + c.id + "amazonFee", "0以上"); }
+      if (adSimNum(c.consultFee) < 0){ errs.push(no + "のコンサル手数料が0未満です。"); addField("c" + c.id + "consultFee", "0以上"); }
+      if (adSimNum(c.sharePct) < 0){ errs.push(no + "の想定販売比率が0未満です。"); addField("c" + c.id + "sharePct", "0以上"); }
     });
     // 判定と表示のときだけ小数第1位に丸める（内部値は丸めない）
     var sumRounded = adSimRound1(sum);
-    var shareOk = sumRounded === 100;
-    if (!shareOk) errs.push("売上占有率の合計が100.0%ではありません（現在 " + sumRounded.toFixed(1) + "%）。");
+    var shareOk = (sumRounded === 100);
+    if (!shareOk) errs.push("想定販売比率の合計が100.0%ではありません（現在 " + sumRounded.toFixed(1) + "%）。");
 
-    // コンサル料
-    var cp = adSimNum(pf.consultPct);
-    if (cp < 0 || cp > 100) errs.push("コンサル料は0〜100%の範囲で入力してください。");
-
-    // シナリオ倍率
-    ADSIM_SCENARIOS.forEach(function(sc){
-      var v = adSimNum(pf.scenarios[sc.key]);
-      if (v < 0 || v > 1000) errs.push(sc.label + "シナリオの倍率は0〜1000%の範囲で入力してください。");
+    // ② 投下パターン（編集中の入力欄）
+    var d = pd.draft;
+    if (adSimNum(d.cpc) < 1){ errs.push("CPCは1円以上で入力してください。"); addField("cpc", "1円以上"); }
+    var cvr = adSimNum(d.cvr);
+    if (cvr < 0.01 || cvr > 100){ errs.push("CVRは0.01〜100%の範囲で入力してください。"); addField("cvr", "0.01〜100"); }
+    ["m1", "m2", "m3"].forEach(function(k, i){
+      if (adSimNum(d[k]) < 0){ errs.push("月" + (i + 1) + "の投下広告費が0未満です。"); addField(k, "0以上"); }
     });
 
-    // ② 月次・週次（実際に計算に使われる52週分だけを検証する）
-    var seenBlocks = {};
-    for (var w = 1; w <= ADSIM_WEEKS; w++){
-      var pinned = adSimIsPinned(pf, w);
-      var p = adSimEffectiveWeek(pf, w);
-      var blockIdx = Math.floor((w - 1) / ADSIM_WEEKS_PER_BLOCK);
-      // 月次テンプレート由来のエラーはブロックにつき1回だけ報告する（同じ内容が4回出ないように）
-      var tag = pinned ? ("w" + w) : ("m" + blockIdx);
-      if (!pinned && seenBlocks[tag]) continue;
-      seenBlocks[tag] = true;
-      var where = pinned ? ("Week" + w) : ("第" + (blockIdx + 1) + "ブロック（Week" + (blockIdx*4+1) + "-" + (blockIdx*4+4) + "）");
-
-      if (adSimNum(p.cpc) < 1){ errs.push(where + "の想定CPCは1円以上にしてください。"); addField(tag + "cpc", "1円以上"); }
-      if (adSimNum(p.aov) < 1){ errs.push(where + "の想定客単価は1円以上にしてください。"); addField(tag + "aov", "1円以上"); }
-      var cvr = adSimNum(p.cvr);
-      if (cvr < 0.01 || cvr > 100){ errs.push(where + "の想定CVRは0.01〜100%の範囲にしてください。"); addField(tag + "cvr", "0.01〜100"); }
-      if (adSimNum(p.adSpend) < 0){ errs.push(where + "の週間広告費が0未満です。"); addField(tag + "adSpend", "0以上"); }
-      if (adSimNum(p.organic) < 0){ errs.push(where + "の週間自然流入売上が0未満です。"); addField(tag + "organic", "0以上"); }
-    }
-
-    return { ok: errs.length === 0, errors: errs, fieldErrs: fieldErrs, shareSum: sumRounded, shareOk: shareOk };
+    return { ok: (errs.length === 0), errors: errs, fieldErrs: fieldErrs, shareSum: sumRounded, shareOk: shareOk };
   }
 
-  // ---------- 広告シミュレーター：描画 ----------
+  // ---------- 広告投資回収シミュレーター：描画 ----------
   // 【再描画の方針】テーブルのinnerHTML再構築は「構造が変わったとき」だけに限定する
-  // （ポートフォリオ切替・行の追加削除・週次のピン留め/解除）。値の入力中に再描画すると
-  // 入力欄が作り直されてフォーカスとカーソル位置が飛ぶため、inputイベントでは
-  // バリデーション表示とボタンのdisabledだけを更新し、テーブルには触らない。
+  // （親ASIN切替・子ASIN行の追加削除・パターンの保存/削除/読み込み）。値の入力中に
+  // 再描画すると入力欄が作り直されてフォーカスとカーソル位置が飛ぶため、inputイベントでは
+  // バリデーション表示・加重平均チップ・ボタンのdisabledだけを更新し、テーブルには触らない。
 
   // 既存の attr() は attr(0) が "" を返す（v||"" のため）ので、数値は String() を通す。
   // そうしないと 0 の項目が空欄でレンダリングされてしまう。
@@ -4348,43 +4450,44 @@
       "><p class='adsimFieldErr' data-fe='" + attr(key) + "'></p></td>";
   }
 
-  function renderAdSimPfTabs(){
+  function renderAdSimProductTabs(){
     var s = adSimEnsureState();
-    var wrap = document.getElementById("adsimPfTabs");
+    var wrap = document.getElementById("adsimProductTabs");
     if (!wrap) return;
-    wrap.innerHTML = s.portfolios.map(function(pf){
-      var active = pf.id === s.selectedPortfolioId ? " active" : "";
-      var label = pf.parentAsin ? (pf.parentAsin + (pf.name ? "／" + pf.name : "")) : (pf.name || "（未設定）");
-      return "<button type='button' class='adsimPfTab" + active + "' data-pfid='" + attr(pf.id) + "'>" + esc(label) + "</button>";
+    wrap.innerHTML = s.products.map(function(pd){
+      var active = (pd.id === s.selectedProductId) ? " active" : "";
+      var label = pd.asin ? (pd.asin + (pd.name ? "／" + pd.name : "")) : (pd.name || "（未設定）");
+      return "<button type='button' class='adsimProductTab" + active + "' data-pid='" + attr(pd.id) + "'>" + esc(label) + "</button>";
     }).join("");
-    wrap.querySelectorAll(".adsimPfTab").forEach(function(btn){
+    wrap.querySelectorAll(".adsimProductTab").forEach(function(btn){
       btn.addEventListener("click", function(){
-        adSimEnsureState().selectedPortfolioId = btn.dataset.pfid;
+        adSimEnsureState().selectedProductId = btn.dataset.pid;
+        adSimEditingPatternId = null;
         markDirty();
         renderAdSimAll();
       });
     });
   }
 
-  function renderAdSimPfFields(){
-    var pf = adSimCurrentPortfolio();
-    document.getElementById("adsimPfParentAsin").value = pf.parentAsin;
-    document.getElementById("adsimPfName").value = pf.name;
-    document.getElementById("adsimConsultPct").value = pf.consultPct;
-    document.getElementById("adsimMulBull").value = pf.scenarios.bull;
-    document.getElementById("adsimMulBase").value = pf.scenarios.base;
-    document.getElementById("adsimMulBear").value = pf.scenarios.bear;
+  function renderAdSimProductFields(){
+    var pd = adSimCurrentProduct();
+    document.getElementById("adsimProductAsin").value = pd.asin;
+    document.getElementById("adsimProductName").value = pd.name;
+    document.getElementById("adsimTargetMargin").value = pd.targetMarginPct;
+    document.getElementById("adsimMaxLoss").value = pd.maxLossYen;
   }
 
   function renderAdSimChildTable(){
-    var pf = adSimCurrentPortfolio();
+    var pd = adSimCurrentProduct();
     var body = document.getElementById("adsimChildBody");
     if (!body) return;
-    body.innerHTML = pf.children.map(function(c){
+    body.innerHTML = pd.children.map(function(c){
       return "<tr data-cid='" + attr(c.id) + "'>" +
-        "<td><input type='text' data-adsim-key='c" + attr(c.id) + "sku' value='" + attr(c.sku) + "' placeholder='例: B0XXXXXXXX'></td>" +
+        "<td><input type='text' data-adsim-key='c" + attr(c.id) + "sku' value='" + attr(c.sku) + "' placeholder='例: B0XXXXXXXX / SKU名'></td>" +
+        adSimNumCell("c" + c.id + "price", c.price, "1", "0") +
         adSimNumCell("c" + c.id + "cost", c.cost, "1", "0") +
-        adSimNumCell("c" + c.id + "feeYen", c.feeYen, "1", "0") +
+        adSimNumCell("c" + c.id + "amazonFee", c.amazonFee, "1", "0") +
+        adSimNumCell("c" + c.id + "consultFee", c.consultFee, "1", "0") +
         adSimNumCell("c" + c.id + "sharePct", c.sharePct, "0.1", "0") +
         "<td class='rmCell'><button type='button' class='btn small ghost' data-act='adsimDelChild' data-cid='" + attr(c.id) + "'>削除</button></td>" +
       "</tr>";
@@ -4393,10 +4496,9 @@
     body.querySelectorAll("input[data-adsim-key]").forEach(function(inp){
       inp.addEventListener("input", function(){
         var cid = inp.closest("tr").dataset.cid;
-        var child = pf.children.filter(function(x){ return x.id === cid; })[0];
+        var child = pd.children.filter(function(x){ return x.id === cid; })[0];
         if (!child) return;
-        var key = inp.dataset.adsimKey;
-        var field = key.slice(("c" + cid).length);
+        var field = inp.dataset.adsimKey.slice(("c" + cid).length);
         child[field] = (field === "sku") ? inp.value : adSimNum(inp.value);
         markDirty();
         adSimRefreshValidationUI();   // テーブルは再描画しない（フォーカス保持）
@@ -4404,126 +4506,111 @@
     });
     body.querySelectorAll("[data-act='adsimDelChild']").forEach(function(btn){
       btn.addEventListener("click", function(){
-        if (pf.children.length <= 1){
+        if (pd.children.length <= 1){
           adSimShowSaveMsg("子ASINは最低1件必要です。", true);
           return;
         }
-        pf.children = pf.children.filter(function(x){ return x.id !== btn.dataset.cid; });
+        pd.children = pd.children.filter(function(x){ return x.id !== btn.dataset.cid; });
         markDirty();
         renderAdSimChildTable();      // 構造が変わったので再描画してよい
+        adSimResyncIfComputed();
         adSimRefreshValidationUI();
       });
     });
   }
 
-  function renderAdSimMonthlyTable(){
-    var pf = adSimCurrentPortfolio();
-    var body = document.getElementById("adsimMonthlyBody");
-    if (!body) return;
-    var html = "";
-    for (var i = 0; i < ADSIM_BLOCKS; i++){
-      var m = pf.monthly[i];
-      var from = i * ADSIM_WEEKS_PER_BLOCK + 1, to = from + ADSIM_WEEKS_PER_BLOCK - 1;
-      html += "<tr data-block='" + i + "'>" +
-        "<td class='adsimColWeek'>Week" + from + "-" + to + "</td>" +
-        adSimNumCell("m" + i + "adSpend", m.adSpend, "1000", "0") +
-        adSimNumCell("m" + i + "cpc", m.cpc, "1", "1") +
-        adSimNumCell("m" + i + "cvr", m.cvr, "0.01", "0.01") +
-        adSimNumCell("m" + i + "aov", m.aov, "10", "1") +
-        adSimNumCell("m" + i + "organic", m.organic, "1000", "0") +
-      "</tr>";
+  // 加重平均の結果チップ。入力欄を含まないので入力中に描き直しても安全。
+  function renderAdSimAvgRow(){
+    var el = document.getElementById("adsimAvgRow");
+    if (!el) return;
+    var pd = adSimCurrentProduct();
+    var avg = adSimWeightedAverages(pd);
+    var marginPct = avg.avgPrice > 0 ? (avg.avgNet / avg.avgPrice * 100) : null;
+    el.innerHTML =
+      "<span class='adsimAvgChip'>加重平均単価 <b>" + adSimYen(avg.avgPrice) + "</b></span>" +
+      "<span class='adsimAvgChip'>加重平均1点純粗利 <b>" + adSimYen(avg.avgNet) + "</b></span>" +
+      "<span class='adsimAvgChip'>1点あたり粗利率 <b>" + adSimPct(marginPct) + "</b></span>";
+  }
+
+  function renderAdSimDraftFields(){
+    var pd = adSimCurrentProduct();
+    document.getElementById("adsimDraftName").value = pd.draft.name;
+    document.getElementById("adsimDraftCpc").value = pd.draft.cpc;
+    document.getElementById("adsimDraftCvr").value = pd.draft.cvr;
+    document.getElementById("adsimDraftM1").value = pd.draft.m1;
+    document.getElementById("adsimDraftM2").value = pd.draft.m2;
+    document.getElementById("adsimDraftM3").value = pd.draft.m3;
+  }
+
+  // 「新規として保存」か「読み込んだパターンの上書き保存」かを見た目で明示する
+  function adSimUpdateEditingUI(){
+    var pd = adSimCurrentProduct();
+    var editing = adSimEditingPatternId
+      ? pd.patterns.filter(function(p){ return p.id === adSimEditingPatternId; })[0]
+      : null;
+    var note = document.getElementById("adsimEditingNote");
+    var saveBtn = document.getElementById("adsimSaveBtn");
+    var cancelBtn = document.getElementById("adsimCancelEditBtn");
+    if (note){
+      note.hidden = !editing;
+      note.textContent = editing ? ("✏️ 保存済みパターン「" + (editing.name || "（無名）") + "」を編集中です。") : "";
     }
-    body.innerHTML = html;
-    body.querySelectorAll("input[data-adsim-key]").forEach(function(inp){
-      inp.addEventListener("input", function(){
-        var idx = Number(inp.closest("tr").dataset.block);
-        var key = inp.dataset.adsimKey;
-        var field = key.slice(("m" + idx).length);
-        pf.monthly[idx][field] = adSimNum(inp.value);
+    if (saveBtn) saveBtn.textContent = editing ? "💾 このパターンを上書き保存" : "💾 パターンを保存";
+    if (cancelBtn) cancelBtn.hidden = !editing;
+  }
+
+  function renderAdSimPatternList(){
+    var pd = adSimCurrentProduct();
+    var el = document.getElementById("adsimPatternList");
+    if (!el) return;
+    if (!pd.patterns.length){
+      el.innerHTML = "<p class='hint' style='margin:0;'>保存済みパターンはまだありません。上の「② 投下パターンを入力」で入力して「💾 パターンを保存」を押すと、ここに追加され、グラフとサマリー表で比較できるようになります（最大" + ADSIM_MAX_PATTERNS + "件）。</p>";
+      return;
+    }
+    el.innerHTML = pd.patterns.map(function(pt, idx){
+      var editing = (pt.id === adSimEditingPatternId) ? " editing" : "";
+      var meta = "CPC " + adSimYen(pt.cpc) + "／CVR " + adSimPct(pt.cvr) +
+        "／月1 " + adSimYen(pt.m1) + "・月2 " + adSimYen(pt.m2) + "・月3 " + adSimYen(pt.m3) +
+        "（総投下 " + adSimYen(adSimNum(pt.m1) + adSimNum(pt.m2) + adSimNum(pt.m3)) + "）";
+      return "<div class='adsimPatRow" + editing + "' data-ptid='" + attr(pt.id) + "'>" +
+        "<span class='adsimPatSwatch' style='background:" + adSimPatternColor(idx) + ";'></span>" +
+        "<div>" +
+          "<div class='adsimPatName'>" + esc(pt.name || "（無名パターン）") + "</div>" +
+          "<div class='adsimPatMeta'>" + esc(meta) + "</div>" +
+        "</div>" +
+        "<div class='adsimPatActions'>" +
+          "<button type='button' class='btn small ghost' data-act='adsimLoadPat'>読み込む</button>" +
+          "<button type='button' class='btn small ghost' data-act='adsimDelPat'>削除</button>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+
+    el.querySelectorAll(".adsimPatRow").forEach(function(row){
+      var ptid = row.dataset.ptid;
+      row.querySelector("[data-act='adsimLoadPat']").addEventListener("click", function(){
+        var pt = pd.patterns.filter(function(p){ return p.id === ptid; })[0];
+        if (!pt) return;
+        pd.draft = { name: pt.name, cpc: pt.cpc, cvr: pt.cvr, m1: pt.m1, m2: pt.m2, m3: pt.m3 };
+        adSimEditingPatternId = pt.id;
         markDirty();
-        adSimSyncWeeklyDisplay(idx);  // 未上書きの週の「表示値」だけ追従させる
+        renderAdSimDraftFields();
+        renderAdSimPatternList();
+        adSimUpdateEditingUI();
+        adSimResyncIfComputed();
         adSimRefreshValidationUI();
+        adSimShowSaveMsg("「" + (pt.name || "（無名）") + "」を入力欄に読み込みました。", false);
       });
-    });
-  }
-
-  function renderAdSimWeeklyTable(){
-    var pf = adSimCurrentPortfolio();
-    var body = document.getElementById("adsimWeeklyBody");
-    if (!body) return;
-    var html = "";
-    for (var w = 1; w <= ADSIM_WEEKS; w++){
-      var pinned = adSimIsPinned(pf, w);
-      var p = adSimEffectiveWeek(pf, w);
-      html += "<tr data-week='" + w + "'" + (pinned ? " class='adsimPinned'" : "") + ">" +
-        "<td class='adsimColWeek'>W" + w + (pinned ? " 📌" : "") + "</td>" +
-        adSimNumCell("w" + w + "adSpend", p.adSpend, "1000", "0") +
-        adSimNumCell("w" + w + "cpc", p.cpc, "1", "1") +
-        adSimNumCell("w" + w + "cvr", p.cvr, "0.01", "0.01") +
-        adSimNumCell("w" + w + "aov", p.aov, "10", "1") +
-        adSimNumCell("w" + w + "organic", p.organic, "1000", "0") +
-        "<td class='rmCell'>" + (pinned ? "<button type='button' class='btn small ghost' data-act='adsimUnpin' data-week='" + w + "'>月次に戻す</button>" : "") + "</td>" +
-      "</tr>";
-    }
-    body.innerHTML = html;
-
-    body.querySelectorAll("input[data-adsim-key]").forEach(function(inp){
-      inp.addEventListener("input", function(){
-        var tr = inp.closest("tr");
-        var w = Number(tr.dataset.week);
-        var key = inp.dataset.adsimKey;
-        var field = key.slice(("w" + w).length);
-        // 「週まるごとピン留め」：どれか1項目でも編集したら、その週の実効値5項目を
-        // すべてスナップショットして固定する。以後この週は月次の変更を受けない。
-        if (!adSimIsPinned(pf, w)){
-          var base = adSimEffectiveWeek(pf, w);
-          var snap = {};
-          ADSIM_FIELDS.forEach(function(f){ snap[f] = adSimNum(base[f]); });
-          pf.weekOverrides[String(w)] = snap;
-          // 行の見た目（📌・「月次に戻す」）だけ、フォーカスを壊さずに更新する
-          tr.classList.add("adsimPinned");
-          tr.querySelector(".adsimColWeek").textContent = "W" + w + " 📌";
-          var rm = tr.querySelector("td.rmCell");
-          if (rm && !rm.firstChild){
-            rm.innerHTML = "<button type='button' class='btn small ghost' data-act='adsimUnpin' data-week='" + w + "'>月次に戻す</button>";
-            adSimBindUnpin(rm.firstChild);
-          }
-        }
-        pf.weekOverrides[String(w)][field] = adSimNum(inp.value);
+      row.querySelector("[data-act='adsimDelPat']").addEventListener("click", function(){
+        pd.patterns = pd.patterns.filter(function(p){ return p.id !== ptid; });
+        if (adSimEditingPatternId === ptid) adSimEditingPatternId = null;
         markDirty();
+        renderAdSimPatternList();
+        adSimUpdateEditingUI();
+        adSimResyncIfComputed();
         adSimRefreshValidationUI();
+        adSimShowSaveMsg("パターンを削除しました。", false);
       });
     });
-    body.querySelectorAll("[data-act='adsimUnpin']").forEach(adSimBindUnpin);
-  }
-
-  function adSimBindUnpin(btn){
-    btn.addEventListener("click", function(){
-      var pf = adSimCurrentPortfolio();
-      delete pf.weekOverrides[String(btn.dataset.week)];
-      markDirty();
-      renderAdSimWeeklyTable();   // 構造（ピン状態）が変わったので再描画してよい
-      adSimRefreshValidationUI();
-    });
-  }
-
-  // 月次を編集したとき、未上書きの週の入力欄の「表示値」だけを追従させる。
-  // 行そのものは作り直さないので、編集中のフォーカスは壊れない。
-  function adSimSyncWeeklyDisplay(blockIdx){
-    var pf = adSimCurrentPortfolio();
-    var body = document.getElementById("adsimWeeklyBody");
-    if (!body) return;
-    var from = blockIdx * ADSIM_WEEKS_PER_BLOCK + 1;
-    for (var w = from; w < from + ADSIM_WEEKS_PER_BLOCK; w++){
-      if (adSimIsPinned(pf, w)) continue;   // 上書き済みの週は月次に追従させない
-      var tr = body.querySelector("tr[data-week='" + w + "']");
-      if (!tr) continue;
-      var eff = adSimEffectiveWeek(pf, w);
-      ADSIM_FIELDS.forEach(function(f){
-        var inp = tr.querySelector("input[data-adsim-key='w" + w + f + "']");
-        if (inp && document.activeElement !== inp) inp.value = eff[f];
-      });
-    }
   }
 
   function adSimShowSaveMsg(msg, isErr){
@@ -4533,31 +4620,30 @@
     el.textContent = msg || "";
   }
 
-  // エラー表示とボタンのdisabledだけを更新する（テーブルは再描画しない）
+  // エラー表示・加重平均チップ・ボタンのdisabledだけを更新する（テーブルは再描画しない）
   function adSimRefreshValidationUI(){
     var v = adSimValidate();
 
-    // 占有率の合計
+    renderAdSimAvgRow();
+
     var sumEl = document.getElementById("adsimShareSum");
     if (sumEl){
       sumEl.className = "adsimShareSum " + (v.shareOk ? "ok" : "ng");
       if (v.shareOk){
-        sumEl.textContent = "売上占有率の合計：100.0%（OK）";
+        sumEl.textContent = "想定販売比率の合計：100.0%（OK）";
       } else {
         var diff = adSimRound1(100 - v.shareSum);
-        sumEl.textContent = "売上占有率の合計：" + v.shareSum.toFixed(1) + "%　"
+        sumEl.textContent = "想定販売比率の合計：" + v.shareSum.toFixed(1) + "%　"
           + (diff > 0 ? ("→ " + diff.toFixed(1) + "% 不足") : ("→ " + Math.abs(diff).toFixed(1) + "% 超過"));
       }
     }
 
-    // フィールド直下の赤字
     document.querySelectorAll("#view-adsim .adsimFieldErr[data-fe]").forEach(function(p){
       var msg = v.fieldErrs[p.dataset.fe];
       p.textContent = msg || "";
       p.classList.toggle("show", !!msg);
     });
 
-    // エラーサマリ
     var sum2 = document.getElementById("adsimErrSummary");
     if (sum2){
       if (v.ok){ sum2.hidden = true; sum2.textContent = ""; }
@@ -4569,27 +4655,30 @@
       }
     }
 
-    // エラーが1つでもあれば計算・保存を無効化
+    // エラーが1件でもあれば計算・保存を両方無効化
     var calcBtn = document.getElementById("adsimCalcBtn");
     var saveBtn = document.getElementById("adsimSaveBtn");
     if (calcBtn) calcBtn.disabled = !v.ok;
     if (saveBtn) saveBtn.disabled = !v.ok;
 
-    // グラフのオーバーレイ／凍結表示
     adSimApplyChartState(v.ok);
     return v;
   }
 
-  // グラフの3状態（初期／正常／エラー凍結）を切り替える
-  function adSimApplyChartState(isValid){
+  // 現在の親ASINの計算結果があるかどうか（親ASINを切り替えたら未計算扱いに戻す）
+  function adSimHasResult(){
     var s = adSimEnsureState();
-    var overlay = document.getElementById("adsimOverlay");
-    var beEl = document.getElementById("adsimBreakEven");
-    var hasResult = !!s.lastResult;
-    if (overlay) overlay.hidden = isValid || !hasResult;
-    if (beEl) beEl.classList.toggle("stale", !isValid && hasResult);
+    return !!(s.lastResult && s.lastResult.productId === s.selectedProductId);
+  }
 
-    var note = beEl ? beEl.querySelector(".adsimBeNote") : null;
+  // グラフの3状態（①未計算／②正常／③エラーで凍結表示）を切り替える
+  function adSimApplyChartState(isValid){
+    var overlay = document.getElementById("adsimOverlay");
+    var vEl = document.getElementById("adsimVerdict");
+    var hasResult = adSimHasResult();
+    if (overlay) overlay.hidden = (isValid || !hasResult);
+    if (vEl) vEl.classList.toggle("stale", (!isValid && hasResult));
+    var note = vEl ? vEl.querySelector(".adsimVerdictNote") : null;
     if (note) note.textContent = (!isValid && hasResult) ? "（※直前の入力に基づく参考値）" : "";
 
     // 未入力かつ未計算のときは、凍結表示ではなくプレースホルダーを出す
@@ -4598,265 +4687,293 @@
       if (area && !area.querySelector(".adsimPlaceholder")){
         area.innerHTML = "<div class='adsimPlaceholder'>パラメータを入力してください</div>";
       }
-      if (beEl && !beEl.querySelector(".adsimBeNote")){
-        beEl.innerHTML = "<span class='adsimBeMain'></span><span class='adsimBeNote'></span>";
+      if (vEl && !vEl.querySelector(".adsimVerdictNote")){
+        vEl.innerHTML = "<span class='adsimVerdictMain'></span><span class='adsimVerdictNote'></span>";
       }
       var legend = document.getElementById("adsimLegend");
       if (legend) legend.innerHTML = "";
     }
   }
 
-  // ---------- 広告シミュレーター：SVGグラフ ----------
+  // ---------- 広告投資回収シミュレーター：SVGグラフ ----------
   // 既存 renderAirChart() と同じ idiom（SVG文字列を組み立てて innerHTML、色は
   // var(--...) 参照でダークモードに自動追従、ホバーは共通の #tooltip を流用）。
+  function adSimAxisLabel(v){
+    var man = v / 10000;
+    return (Math.round(man * 10) / 10) + "万";
+  }
   function adSimRenderChart(result){
     var area = document.getElementById("adsimChartArea");
     var legend = document.getElementById("adsimLegend");
-    var beEl = document.getElementById("adsimBreakEven");
+    var vEl = document.getElementById("adsimVerdict");
     if (!area || !result) return;
 
-    var compare = !!result.compareMode;
-    var W = 960, H = 340;
-    var padL = 66, padR = 66, padT = 16, padB = 34;
+    var W = 860, H = 320;
+    var padL = 78, padR = 26, padT = 18, padB = 40;
     var plotW = W - padL - padR, plotH = H - padT - padB;
 
-    function xForWeek(w){ return padL + (plotW * (w - 0.5) / ADSIM_WEEKS); }
-
-    // 右軸（累積利益）のスケール：比較モードでは3シナリオ全体の min/max を使う
-    var cumVals = [];
-    result.series.forEach(function(s){ s.rows.forEach(function(r){ cumVals.push(r.cum); }); });
-    var cumMin = Math.min.apply(null, cumVals.concat([0]));
-    var cumMax = Math.max.apply(null, cumVals.concat([0]));
-    if (cumMin === cumMax){ cumMin -= 1; cumMax += 1; }
-    var cumPad = (cumMax - cumMin) * 0.08;
-    cumMin -= cumPad; cumMax += cumPad;
-    function yForCum(v){ return padT + plotH * (1 - (v - cumMin) / (cumMax - cumMin)); }
-
-    // 左軸（棒＝広告費／週間利益）は通常モードのみ
-    var baseRows = result.series.filter(function(s){ return s.key === "base"; })[0].rows;
-    var barVals = [0];
-    baseRows.forEach(function(r){ barVals.push(r.adSpend); barVals.push(r.profit); });
-    var barMin = Math.min.apply(null, barVals);
-    var barMax = Math.max.apply(null, barVals);
-    if (barMin === barMax){ barMin -= 1; barMax += 1; }
-    function yForBar(v){ return padT + plotH * (1 - (v - barMin) / (barMax - barMin)); }
+    var vals = [0];
+    result.series.forEach(function(sr){ sr.calc.rows.forEach(function(r){ vals.push(r.cum); }); });
+    var limit = result.guardLimit;
+    if (limit > 0) vals.push(-limit);
+    var vMin = Math.min.apply(null, vals);
+    var vMax = Math.max.apply(null, vals);
+    if (vMin === vMax){ vMin -= 1; vMax += 1; }
+    var padV = (vMax - vMin) * 0.1;
+    vMin -= padV; vMax += padV;
+    function yFor(v){ return padT + plotH * (1 - (v - vMin) / (vMax - vMin)); }
+    function xFor(m){ return ADSIM_MONTHS > 1 ? (padL + plotW * (m - 1) / (ADSIM_MONTHS - 1)) : (padL + plotW / 2); }
 
     var svg = "";
-
-    // 横グリッド＋左右の軸ラベル
     var steps = 5;
     for (var i = 0; i <= steps; i++){
       var gy = padT + plotH * i / steps;
       svg += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="var(--grid)" stroke-width="1"/>';
-      var rv = cumMax - (cumMax - cumMin) * i / steps;
-      svg += '<text x="' + (W - padR + 5) + '" y="' + (gy + 3.5).toFixed(1) + '" font-size="9" fill="var(--text-secondary)">' + Math.round(rv / 10000) + '万</text>';
-      if (!compare){
-        var lv = barMax - (barMax - barMin) * i / steps;
-        svg += '<text x="' + (padL - 5) + '" y="' + (gy + 3.5).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--text-secondary)">' + Math.round(lv / 10000) + '万</text>';
-      }
+      var gv = vMax - (vMax - vMin) * i / steps;
+      svg += '<text x="' + (padL - 6) + '" y="' + (gy + 3.5).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--text-secondary)">' + adSimAxisLabel(gv) + '</text>';
+    }
+    for (var m = 1; m <= ADSIM_MONTHS; m++){
+      svg += '<text x="' + xFor(m).toFixed(1) + '" y="' + (H - padB + 20) + '" font-size="11.5" font-weight="600" text-anchor="middle" fill="var(--text-secondary)">月' + m + '</text>';
     }
 
-    // X軸ラベル（4週おき）
-    for (var w = 1; w <= ADSIM_WEEKS; w += 4){
-      svg += '<text x="' + xForWeek(w).toFixed(1) + '" y="' + (H - padB + 15) + '" font-size="9" text-anchor="middle" fill="var(--text-secondary)">' + w + '</text>';
-    }
-    svg += '<text x="' + (W/2) + '" y="' + (H - 3) + '" font-size="9.5" text-anchor="middle" fill="var(--text-muted)">Week</text>';
+    // 損益分岐（累積0円）のライン
+    var zy = yFor(0);
+    svg += '<line x1="' + padL + '" y1="' + zy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zy.toFixed(1) + '" stroke="var(--text-muted)" stroke-width="1.3" stroke-dasharray="5 4"/>';
+    svg += '<text x="' + (W - padR) + '" y="' + (zy - 5).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--text-muted)">損益分岐（0円）</text>';
 
-    // 通常モードのみ：棒グラフ（左軸）
-    if (!compare){
-      var slot = plotW / ADSIM_WEEKS;
-      var bw = Math.max(1.6, slot / 2 - 0.6);
-      var zeroBarY = yForBar(0);
-      baseRows.forEach(function(r){
-        var cx = xForWeek(r.week);
-        // 広告費（左寄せ）
-        var ya = yForBar(r.adSpend);
-        svg += '<rect class="adsimBar" x="' + (cx - bw - 0.3).toFixed(1) + '" y="' + Math.min(ya, zeroBarY).toFixed(1) +
-          '" width="' + bw.toFixed(1) + '" height="' + Math.max(0.6, Math.abs(zeroBarY - ya)).toFixed(1) +
-          '" fill="var(--series-4)" data-tip="' + attr("Week" + r.week + " 広告費 " + adSimYen(r.adSpend)) + '"/>';
-        // 週間利益（右寄せ）。マイナスはゼロ線より下に伸びる
-        var yp = yForBar(r.profit);
-        svg += '<rect class="adsimBar" x="' + (cx + 0.3).toFixed(1) + '" y="' + Math.min(yp, zeroBarY).toFixed(1) +
-          '" width="' + bw.toFixed(1) + '" height="' + Math.max(0.6, Math.abs(zeroBarY - yp)).toFixed(1) +
-          '" fill="' + (r.profit >= 0 ? "var(--series-3)" : "var(--series-8)") + '" data-tip="' + attr("Week" + r.week + " 週間利益 " + adSimYen(r.profit)) + '"/>';
+    // ガードレール（最大許容累積赤字額）のライン
+    if (limit > 0){
+      var ly = yFor(-limit);
+      svg += '<line x1="' + padL + '" y1="' + ly.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + ly.toFixed(1) + '" stroke="var(--status-critical)" stroke-width="1.3" stroke-dasharray="3 3"/>';
+      svg += '<text x="' + (W - padR) + '" y="' + (ly + 13).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--status-critical)">許容赤字上限 -' + ADSIM_YEN_FMT.format(limit) + '円</text>';
+    }
+
+    result.series.forEach(function(sr){
+      var pts = sr.calc.rows.map(function(r){ return xFor(r.month).toFixed(1) + "," + yFor(r.cum).toFixed(1); }).join(" ");
+      // 編集中の入力欄は保存済みパターンと区別できるよう破線にする
+      var dash = sr.isDraft ? ' stroke-dasharray="6 3"' : '';
+      svg += '<polyline points="' + pts + '" fill="none" stroke="' + sr.color + '" stroke-width="2.4" stroke-linejoin="round"' + dash + '/>';
+      sr.calc.rows.forEach(function(r){
+        svg += '<circle class="adsimDot" cx="' + xFor(r.month).toFixed(1) + '" cy="' + yFor(r.cum).toFixed(1) +
+          '" r="5" fill="var(--surface-1)" stroke="' + sr.color + '" stroke-width="2.5" data-tip="' +
+          attr(sr.name + " ／ 月" + r.month + " 累積損益 " + adSimSignedYen(r.cum)) + '"/>';
       });
-      svg += '<line x1="' + padL + '" y1="' + zeroBarY.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zeroBarY.toFixed(1) + '" stroke="var(--baseline)" stroke-width="1.2"/>';
-    }
-
-    // 累積利益ゼロライン（右軸基準）
-    var zeroCumY = yForCum(0);
-    svg += '<line x1="' + padL + '" y1="' + zeroCumY.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zeroCumY.toFixed(1) +
-      '" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="5 4"/>';
-
-    // 累積利益の折れ線（通常＝標準のみ／比較＝3本）
-    var drawSeries = compare ? result.series : result.series.filter(function(s){ return s.key === "base"; });
-    drawSeries.forEach(function(s){
-      var pts = s.rows.map(function(r){ return xForWeek(r.week).toFixed(1) + "," + yForCum(r.cum).toFixed(1); }).join(" ");
-      svg += '<polyline points="' + pts + '" fill="none" stroke="' + s.color + '" stroke-width="2.2" stroke-linejoin="round"/>';
-      // 黒転点マーカー（ReferenceDot相当）。比較モードでは折れ線と同色にする。
-      if (s.breakEven){
-        var br = s.rows[s.breakEven - 1];
-        var bx = xForWeek(br.week), by = yForCum(br.cum);
-        svg += '<circle cx="' + bx.toFixed(1) + '" cy="' + by.toFixed(1) + '" r="6.5" fill="var(--surface-1)" stroke="' + s.color + '" stroke-width="3"/>';
-        svg += '<text x="' + bx.toFixed(1) + '" y="' + (by - 12).toFixed(1) + '" font-size="10" font-weight="700" text-anchor="middle" fill="' + s.color + '">W' + br.week + '</text>';
-      }
     });
 
     area.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; height:auto; display:block;">' + svg + '</svg>';
 
-    // 黒転テキスト
-    var mainText;
-    if (compare){
-      mainText = result.series.map(function(s){
-        return s.label + "：" + (s.breakEven ? ("Week" + s.breakEven) : "52週内に黒転せず");
-      }).join("<br>");
-    } else {
-      var be = result.series.filter(function(s){ return s.key === "base"; })[0].breakEven;
-      mainText = be ? ("黒字化予測：Week" + be) : "黒字化予測：52週内に黒転せず";
-    }
-    if (beEl) beEl.innerHTML = "<span class='adsimBeMain'>" + mainText + "</span><span class='adsimBeNote'></span>";
+    // 回収判定（3ヶ月目終了時点で累積損益がプラスに転換しているか）を上部に明示する
+    var verdictLines = result.series.map(function(sr){
+      return esc(sr.name) + "：" + (sr.calc.recovered
+        ? ("3ヶ月で回収（累積 " + adSimSignedYen(sr.calc.finalCum) + "）")
+        : ("未回収（累積 " + adSimSignedYen(sr.calc.finalCum) + "）"));
+    }).join("<br>");
+    if (vEl) vEl.innerHTML = "<span class='adsimVerdictMain'>" + verdictLines + "</span><span class='adsimVerdictNote'></span>";
 
-    // 凡例
     if (legend){
-      if (compare){
-        legend.innerHTML = result.series.map(function(s){
-          return '<span class="legendItem"><span class="sw" style="background:' + s.color + ';"></span>' + esc(s.label) + '（広告費 ' + adSimPct(s.multiplier) + '）の累積利益</span>';
-        }).join("");
-      } else {
-        legend.innerHTML =
-          '<span class="legendItem"><span class="sw" style="background:var(--series-4);"></span>週間投下広告費（左軸）</span>' +
-          '<span class="legendItem"><span class="sw" style="background:var(--series-3);"></span>週間利益（左軸）</span>' +
-          '<span class="legendItem"><span class="sw" style="background:var(--series-1);"></span>累積利益（右軸）</span>';
-      }
+      legend.innerHTML = result.series.map(function(sr){
+        return "<span class='legendItem'><span class='sw' style='background:" + sr.color + ";'></span>" + esc(sr.name) + "</span>";
+      }).join("");
     }
 
     // ホバーは既存のグローバル #tooltip を流用する
-    area.querySelectorAll(".adsimBar").forEach(function(b){
-      b.addEventListener("mousemove", function(e){
+    area.querySelectorAll(".adsimDot").forEach(function(dot){
+      dot.addEventListener("mousemove", function(e){
         tooltipEl.hidden = false;
-        tooltipEl.textContent = b.dataset.tip;
+        tooltipEl.textContent = dot.dataset.tip;
         tooltipEl.style.left = (e.clientX + 12) + "px";
         tooltipEl.style.top = (e.clientY + 12) + "px";
       });
-      b.addEventListener("mouseleave", function(){ tooltipEl.hidden = true; });
+      dot.addEventListener("mouseleave", function(){ tooltipEl.hidden = true; });
     });
   }
 
-  function renderAdSimDetailTable(result){
-    var body = document.getElementById("adsimDetailBody");
+  // ③ 単月損益の推移（月1〜3を赤字/黄字/黒字で色分け）
+  function renderAdSimMonthTable(result){
+    var body = document.getElementById("adsimMonthBody");
+    var warn = document.getElementById("adsimWarnBox");
     if (!body) return;
     if (!result){
-      body.innerHTML = "<tr><td colspan='8' class='hint'>「▶ 計算実行」を押すと明細が表示されます。</td></tr>";
+      body.innerHTML = "<tr><td colspan='11' class='hint'>「▶ 計算実行」を押すと月次の内訳が表示されます。</td></tr>";
+      if (warn){ warn.hidden = true; warn.textContent = ""; }
       return;
     }
-    var rows = result.series.filter(function(s){ return s.key === "base"; })[0].rows;
-    body.innerHTML = rows.map(function(r){
+
+    var html = "";
+    result.series.forEach(function(sr){
+      sr.calc.rows.forEach(function(r, i){
+        var meta = ADSIM_STATUS_META[r.status];
+        var cls = [];
+        if (meta.rowCls) cls.push(meta.rowCls);
+        if (i === 0) cls.push("adsimGroupTop");
+        html += "<tr class='" + cls.join(" ") + "'>" +
+          "<td class='adsimPatName'>" + (i === 0 ? esc(sr.name) : "") + "</td>" +
+          "<td class='adsimNum'>月" + r.month + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(r.spend) + "</td>" +
+          "<td class='adsimNum'>" + adSimQty(r.clicks) + "</td>" +
+          "<td class='adsimNum'>" + adSimQty(r.units) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(r.revenue) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(r.gross) + "</td>" +
+          "<td class='adsimNum'>" + adSimSignedYen(r.pl) + "</td>" +
+          "<td class='adsimNum'>" + adSimPct(r.marginPct) + "</td>" +
+          "<td><span class='adsimStatus " + meta.cls + "'>" + meta.icon + " " + meta.label + "</span></td>" +
+          "<td class='adsimNum'>" + adSimSignedYen(r.cum) + "</td>" +
+        "</tr>";
+      });
+    });
+    body.innerHTML = html;
+
+    // ガードレール警告（最大許容累積赤字額を超えて沈む見込みのパターン）
+    if (warn){
+      var breached = result.series.filter(function(sr){ return sr.calc.guardBreach; });
+      if (!breached.length){ warn.hidden = true; warn.textContent = ""; }
+      else {
+        warn.hidden = false;
+        warn.textContent = "⚠ 最大許容累積赤字額（" + adSimYen(result.guardLimit) + "）を超える見込みのパターンがあります\n" +
+          breached.map(function(sr){
+            return "・" + sr.name + "：最も沈む時点の累積損益 " + adSimSignedYen(sr.calc.worstCum);
+          }).join("\n");
+      }
+    }
+  }
+
+  // ⑤ パターン別サマリー（総投下額・3ヶ月目時点の累積損益・黒字転換の有無）
+  function renderAdSimSummaryTable(result){
+    var body = document.getElementById("adsimSummaryBody");
+    if (!body) return;
+    if (!result){
+      body.innerHTML = "<tr><td colspan='4' class='hint'>「▶ 計算実行」を押すと比較表が表示されます。</td></tr>";
+      return;
+    }
+    body.innerHTML = result.series.map(function(sr){
+      var warnMark = sr.calc.guardBreach ? " <span class='adsimStatus loss'>⚠上限超過</span>" : "";
       return "<tr>" +
-        "<td class='adsimColWeek'>W" + r.week + "</td>" +
-        "<td>" + adSimYen(r.adSpend) + "</td>" +
-        "<td>" + adSimYen(r.revenue) + "</td>" +
-        "<td>" + adSimYen(r.cost) + "</td>" +
-        "<td>" + adSimYen(r.fee) + "</td>" +
-        "<td>" + adSimYen(r.consult) + "</td>" +
-        "<td style='color:" + (r.profit >= 0 ? "var(--status-good)" : "var(--danger)") + ";'>" + adSimYen(r.profit) + "</td>" +
-        "<td style='font-weight:700; color:" + (r.cum >= 0 ? "var(--status-good)" : "var(--danger)") + ";'>" + adSimYen(r.cum) + "</td>" +
+        "<td class='adsimPatName'><span class='adsimPatSwatch' style='background:" + sr.color + "; display:inline-block; margin-right:6px;'></span>" + esc(sr.name) + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(sr.calc.totalSpend) + "</td>" +
+        "<td class='adsimNum'>" + adSimSignedYen(sr.calc.finalCum) + "</td>" +
+        "<td>" + (sr.calc.recovered
+          ? "<span class='adsimStatus good'>⚫ 黒字転換</span>"
+          : "<span class='adsimStatus loss'>🔴 未回収</span>") + warnMark + "</td>" +
       "</tr>";
     }).join("");
   }
 
-  // 計算実行：3シナリオ分を計算して lastResult に保存する
+  // 計算実行：編集中の入力欄＋保存済みパターンをまとめて計算し lastResult に保存する
   function adSimRunCalculation(){
     var v = adSimValidate();
     if (!v.ok) return false;
     var s = adSimEnsureState();
-    var pf = adSimCurrentPortfolio();
-    var series = ADSIM_SCENARIOS.map(function(sc){
-      var mul = adSimNum(pf.scenarios[sc.key]);
-      var rows = adSimComputeSeries(pf, mul);
-      return { key: sc.key, label: sc.label, color: sc.color, multiplier: mul, rows: rows, breakEven: adSimFindBreakEven(rows) };
-    });
-    s.lastResult = { portfolioId: pf.id, compareMode: !!s.compareMode, series: series };
+    var pd = adSimCurrentProduct();
+    s.lastResult = {
+      productId: pd.id,
+      guardLimit: adSimNum(pd.maxLossYen),
+      targetMarginPct: adSimNum(pd.targetMarginPct),
+      series: adSimBuildSeries(pd)
+    };
     markDirty();
     return true;
   }
 
+  // すでに計算済みなら、構造変更（子ASIN追加削除・パターン保存/削除/読み込み）のあとに
+  // 結果を作り直して表示を合わせる。未計算のときは何もしない（①未計算状態を保つ）。
+  function adSimResyncIfComputed(){
+    if (!adSimHasResult()) return;
+    if (adSimValidate().ok) adSimRunCalculation();
+    renderAdSimResult();
+  }
+
   function renderAdSimResult(){
     var s = adSimEnsureState();
-    if (!s.lastResult){
-      renderAdSimDetailTable(null);
+    if (!adSimHasResult()){
+      renderAdSimMonthTable(null);
+      renderAdSimSummaryTable(null);
       return;
     }
-    s.lastResult.compareMode = !!s.compareMode;
     adSimRenderChart(s.lastResult);
-    renderAdSimDetailTable(s.lastResult);
+    renderAdSimMonthTable(s.lastResult);
+    renderAdSimSummaryTable(s.lastResult);
   }
 
   // 画面全体の描画エントリポイント（goToView と renderAll から呼ばれる）
   function renderAdSimAll(){
     if (!document.getElementById("view-adsim")) return;
     adSimEnsureState();
-    renderAdSimPfTabs();
-    renderAdSimPfFields();
+    renderAdSimProductTabs();
+    renderAdSimProductFields();
     renderAdSimChildTable();
-    renderAdSimMonthlyTable();
-    renderAdSimWeeklyTable();
-    document.getElementById("adsimCompareToggle").checked = !!adSimEnsureState().compareMode;
+    renderAdSimDraftFields();
+    renderAdSimPatternList();
+    adSimUpdateEditingUI();
     renderAdSimResult();
     adSimRefreshValidationUI();
   }
 
-  // ---------- 広告シミュレーター：イベント配線（起動時に1回だけ） ----------
+  // ---------- 広告投資回収シミュレーター：イベント配線（起動時に1回だけ） ----------
   (function adSimWire(){
     if (!document.getElementById("view-adsim")) return;
 
-    // ポートフォリオの基本項目：入力中に再描画しない（タブのラベルだけ後で更新）
-    function bindPfField(id, apply){
+    // 入力中は再描画しない。タブのラベルはASIN・商品名に依存するので、入力を終えた
+    // 時点（changeイベント）でだけ描き直す。
+    function bindField(id, apply, relabel){
       var el = document.getElementById(id);
       if (!el) return;
       el.addEventListener("input", function(){
-        apply(adSimCurrentPortfolio(), el.value);
+        apply(adSimCurrentProduct(), el.value);
         markDirty();
         adSimRefreshValidationUI();
       });
-      // タブのラベルは名前/ASINに依存するので、入力を終えた時点で反映する
-      el.addEventListener("change", function(){ renderAdSimPfTabs(); });
+      el.addEventListener("change", function(){
+        if (relabel) renderAdSimProductTabs();
+        adSimResyncIfComputed();
+      });
     }
-    bindPfField("adsimPfParentAsin", function(pf, v){ pf.parentAsin = v.trim(); });
-    bindPfField("adsimPfName", function(pf, v){ pf.name = v; });
-    bindPfField("adsimConsultPct", function(pf, v){ pf.consultPct = adSimNum(v); });
-    bindPfField("adsimMulBull", function(pf, v){ pf.scenarios.bull = adSimNum(v); });
-    bindPfField("adsimMulBase", function(pf, v){ pf.scenarios.base = adSimNum(v); });
-    bindPfField("adsimMulBear", function(pf, v){ pf.scenarios.bear = adSimNum(v); });
+    bindField("adsimProductAsin", function(pd, v){ pd.asin = v.trim(); }, true);
+    bindField("adsimProductName", function(pd, v){ pd.name = v; }, true);
+    bindField("adsimTargetMargin", function(pd, v){ pd.targetMarginPct = adSimNum(v); }, false);
+    bindField("adsimMaxLoss", function(pd, v){ pd.maxLossYen = adSimNum(v); }, false);
+    bindField("adsimDraftName", function(pd, v){ pd.draft.name = v; }, false);
+    bindField("adsimDraftCpc", function(pd, v){ pd.draft.cpc = adSimNum(v); }, false);
+    bindField("adsimDraftCvr", function(pd, v){ pd.draft.cvr = adSimNum(v); }, false);
+    bindField("adsimDraftM1", function(pd, v){ pd.draft.m1 = adSimNum(v); }, false);
+    bindField("adsimDraftM2", function(pd, v){ pd.draft.m2 = adSimNum(v); }, false);
+    bindField("adsimDraftM3", function(pd, v){ pd.draft.m3 = adSimNum(v); }, false);
 
-    document.getElementById("adsimAddPfBtn").addEventListener("click", function(){
+    document.getElementById("adsimAddProductBtn").addEventListener("click", function(){
       var s = adSimEnsureState();
-      var pf = adSimDefaultPortfolio();
-      s.portfolios.push(pf);
-      s.selectedPortfolioId = pf.id;
-      s.lastResult = null;   // 別ポートフォリオの結果を引き継がない
+      var pd = adSimDefaultProduct();
+      s.products.push(pd);
+      s.selectedProductId = pd.id;
+      // lastResultは消さない。adSimHasResult()がproductIdで突き合わせるので、
+      // 追加直後の新しい親ASINは未計算（プレースホルダー）として表示され、
+      // 元の親ASINに戻ればその計算結果がそのまま復帰する。
+      adSimEditingPatternId = null;
       markDirty();
       renderAdSimAll();
     });
 
-    document.getElementById("adsimDeletePfBtn").addEventListener("click", function(){
+    document.getElementById("adsimDeleteProductBtn").addEventListener("click", function(){
       var s = adSimEnsureState();
-      if (s.portfolios.length <= 1){
-        adSimShowSaveMsg("ポートフォリオは最低1件必要です。", true);
+      if (s.products.length <= 1){
+        adSimShowSaveMsg("親ASINは最低1件必要です。", true);
         return;
       }
-      s.portfolios = s.portfolios.filter(function(p){ return p.id !== s.selectedPortfolioId; });
-      s.selectedPortfolioId = s.portfolios[0].id;
-      s.lastResult = null;
+      var removedId = s.selectedProductId;
+      s.products = s.products.filter(function(p){ return p.id !== removedId; });
+      s.selectedProductId = s.products[0].id;
+      // 削除した親ASINの計算結果だけを捨てる（他の親ASINの結果は残す）
+      if (s.lastResult && s.lastResult.productId === removedId) s.lastResult = null;
+      adSimEditingPatternId = null;
       markDirty();
       renderAdSimAll();
-      adSimShowSaveMsg("ポートフォリオを削除しました。", false);
+      adSimShowSaveMsg("親ASINを削除しました。", false);
     });
 
     document.getElementById("adsimAddChildBtn").addEventListener("click", function(){
-      var pf = adSimCurrentPortfolio();
-      pf.children.push({ id: adSimNextId("adc"), sku: "", cost: 0, feeYen: 0, sharePct: 0 });
+      var pd = adSimCurrentProduct();
+      pd.children.push(adSimDefaultChild(0));
       markDirty();
       renderAdSimChildTable();
+      adSimResyncIfComputed();
       adSimRefreshValidationUI();
     });
 
@@ -4869,21 +4986,58 @@
     });
 
     document.getElementById("adsimSaveBtn").addEventListener("click", function(){
-      // シナリオは「倍率」として常に保持しているので、保存＝倍率の確定＋再計算。
-      if (adSimRunCalculation()){
-        renderAdSimResult();
-        adSimRefreshValidationUI();
-        adSimShowSaveMsg("シナリオ（強気 " + adSimPct(adSimCurrentPortfolio().scenarios.bull)
-          + " ／ 標準 " + adSimPct(adSimCurrentPortfolio().scenarios.base)
-          + " ／ 保守 " + adSimPct(adSimCurrentPortfolio().scenarios.bear) + "）を保存しました。", false);
+      if (!adSimValidate().ok) return;
+      var pd = adSimCurrentProduct();
+      var name = (pd.draft.name || "").trim();
+      if (!name){
+        adSimShowSaveMsg("パターン名を入力してください（例:「積極型」「慎重型」）。", true);
+        return;
       }
+      var editing = adSimEditingPatternId
+        ? pd.patterns.filter(function(p){ return p.id === adSimEditingPatternId; })[0]
+        : null;
+      if (editing){
+        editing.name = name;
+        editing.cpc = pd.draft.cpc; editing.cvr = pd.draft.cvr;
+        editing.m1 = pd.draft.m1; editing.m2 = pd.draft.m2; editing.m3 = pd.draft.m3;
+        adSimEditingPatternId = null;
+        markDirty();
+        adSimShowSaveMsg("「" + name + "」を上書き保存しました。", false);
+      } else {
+        if (pd.patterns.length >= ADSIM_MAX_PATTERNS){
+          adSimShowSaveMsg("パターンは最大" + ADSIM_MAX_PATTERNS + "件までです。不要なパターンを削除してから保存してください。", true);
+          return;
+        }
+        if (pd.patterns.some(function(p){ return p.name === name; })){
+          adSimShowSaveMsg("同じ名前のパターンが既にあります。別の名前にするか、その行の「読み込む」から上書き保存してください。", true);
+          return;
+        }
+        pd.patterns.push({
+          id: adSimNextId("adpt"), name: name,
+          cpc: pd.draft.cpc, cvr: pd.draft.cvr,
+          m1: pd.draft.m1, m2: pd.draft.m2, m3: pd.draft.m3
+        });
+        markDirty();
+        adSimShowSaveMsg("「" + name + "」を保存しました。", false);
+      }
+      renderAdSimPatternList();
+      adSimUpdateEditingUI();
+      // 保存したパターンをグラフ・表に反映する
+      if (adSimRunCalculation()) renderAdSimResult();
+      adSimRefreshValidationUI();
     });
 
-    document.getElementById("adsimCompareToggle").addEventListener("change", function(){
-      adSimEnsureState().compareMode = this.checked;
+    document.getElementById("adsimCancelEditBtn").addEventListener("click", function(){
+      var pd = adSimCurrentProduct();
+      adSimEditingPatternId = null;
+      pd.draft = adSimDefaultDraft();
       markDirty();
-      renderAdSimResult();
+      renderAdSimDraftFields();
+      renderAdSimPatternList();
+      adSimUpdateEditingUI();
+      adSimResyncIfComputed();
       adSimRefreshValidationUI();
+      adSimShowSaveMsg("編集をキャンセルしました。", false);
     });
   })();
 
@@ -6034,22 +6188,24 @@
   function renderHistoryAdSimTab(){
     var el = document.getElementById("historyBodyAdSim");
     var s = adSimEnsureState();
-    if (!s.portfolios.length){
-      el.innerHTML = "<p class='historyEmpty'>まだポートフォリオが登録されていません。「広告シミュ」で親ASINを登録すると、ここに表示されます。</p>";
+    if (!s.products.length){
+      el.innerHTML = "<p class='historyEmpty'>まだ親ASINが登録されていません。「広告シミュ」で親ASINを登録すると、ここに表示されます。</p>";
       return;
     }
-    el.innerHTML = s.portfolios.map(function(pf){
-      var label = pf.parentAsin ? (pf.parentAsin + (pf.name ? "／" + pf.name : "")) : (pf.name || "（未設定）");
-      var hint = pf.children.length + "件の子ASIN";
-      if (s.lastResult && s.lastResult.portfolioId === pf.id){
-        var base = s.lastResult.series.filter(function(x){ return x.key === "base"; })[0];
-        if (base) hint += "・" + (base.breakEven ? ("黒字化予測 Week" + base.breakEven) : "52週内に黒転せず");
+    el.innerHTML = s.products.map(function(pd){
+      var label = pd.asin ? (pd.asin + (pd.name ? "／" + pd.name : "")) : (pd.name || "（未設定）");
+      var hint = pd.children.length + "件の子ASIN・" + pd.patterns.length + "件の保存済みパターン";
+      // 直前の計算結果がこの親ASINのものなら、回収判定も併記する
+      if (s.lastResult && s.lastResult.productId === pd.id){
+        var saved = (s.lastResult.series || []).filter(function(x){ return !x.isDraft; });
+        var recovered = saved.filter(function(x){ return x.calc && x.calc.recovered; }).length;
+        if (saved.length) hint += "・3ヶ月で回収 " + recovered + "/" + saved.length + "パターン";
       }
-      return "<div class='pwHistProductRow' data-id='" + attr(pf.id) + "'><span>" + esc(label) + "</span><span class='hint'>" + esc(hint) + "</span></div>";
+      return "<div class='pwHistProductRow' data-id='" + attr(pd.id) + "'><span>" + esc(label) + "</span><span class='hint'>" + esc(hint) + "</span></div>";
     }).join("");
     el.querySelectorAll(".pwHistProductRow").forEach(function(row){
       row.addEventListener("click", function(){
-        adSimEnsureState().selectedPortfolioId = row.dataset.id;
+        adSimEnsureState().selectedProductId = row.dataset.id;
         closeHistoryModal();
         goToView("adsim");
       });
