@@ -1226,9 +1226,9 @@
 
   <section id="view-adsim" class="topView">
     <h2>📈 広告投資回収シミュレーター</h2>
-    <p class="hint">注力商品（親ASIN単位）に、赤字を出してでも先行して広告投資を行う際の「どこまで投下し、いつ回収できるか」を月次3ヶ月で試算します。上長への特別枠投資の説明・承認用。対象はAmazonのみです。</p>
+    <p class="hint">注力商品（親ASIN単位）の日別目標を作り、その合算に月別の広告費をぶつけて「どこまで投下すると粗利率が何％になるか・いつ回収できるか」を見ます。上長への特別枠投資の説明・承認用。対象はAmazonのみです。</p>
 
-    <!-- 親ASINの選択 -->
+    <!-- 親ASINの選択（3タブ共通） -->
     <div class="card" id="adsimProductCard">
       <div class="cardHeader">
         <h3 style="margin:0;">🗂 親ASIN</h3>
@@ -1238,148 +1238,80 @@
       <div class="pwFormGrid" style="margin-top:12px;">
         <div><label for="adsimProductAsin">親ASIN</label><input type="text" id="adsimProductAsin" placeholder="例: B0ABCDEFGH"></div>
         <div><label for="adsimProductName">商品名</label><input type="text" id="adsimProductName" placeholder="例: 天然水シリーズ"></div>
-        <div><label for="adsimTargetMargin">目標粗利率（％）</label><input type="number" id="adsimTargetMargin" min="0" max="100" step="0.1" placeholder="例: 20"></div>
+        <div><label for="adsimTargetMargin">目標粗利率（％）</label><input type="number" id="adsimTargetMargin" min="0" max="100" step="0.1" placeholder="例: 13"></div>
         <div><label for="adsimMaxLossPct">最大許容粗利率（％）</label><input type="number" id="adsimMaxLossPct" min="-100" max="100" step="0.1" placeholder="例: -20（未入力なら警告なし）"><p class="adsimFieldErr" data-fe="maxLossPct"></p></div>
         <div><label for="adsimConsultPct">コンサル料率（％）</label><input type="number" id="adsimConsultPct" min="0" max="100" step="0.1" placeholder="例: 1"></div>
         <div><label for="adsimTaxPct">税率（％）</label><input type="number" id="adsimTaxPct" min="0" max="100" step="0.1" placeholder="例: 10"></div>
         <div><label for="adsimFbaYen">FBAコスト（円/個）</label><input type="number" id="adsimFbaYen" min="0" step="1" placeholder="例: 0"></div>
       </div>
-      <p class="hint" style="margin:8px 0 0;">コンサル料率・税率・FBAコストは<b>月次シミュと日別目標の両方で共通</b>に使います。コンサル手数料 ＝ 売価 × 料率 ×（1＋税率）です（例: 1％・税率10％なら売価の1.1％）。</p>
-      <p class="hint" style="margin:8px 0 0;">2つのしきい値で単月の判定を4段階に分けます。<b>最大許容粗利率</b>は「赤字をどこまで許容するか」の下限（例: -20％）、<b>目標粗利率</b>は「黄字／黒字」の境目（例: 13％）です。この例だと <b>-20％未満＝⚠許容外</b>／<b>-20〜0％未満＝🔴赤字</b>／<b>0〜13％未満＝🟡黄字</b>／<b>13％以上＝⚫黒字</b> になり、許容外のパターンには警告を出します。</p>
+      <p class="hint" style="margin:8px 0 0;">コンサル手数料 ＝ 売価 × 料率 ×（1＋税率）で計算します（例: 1％・税率10％なら売価の1.1％）。目標粗利率・最大許容粗利率は単月の判定（⚠許容外／🔴赤字／🟡黄字／⚫黒字）に使います。</p>
       <button type="button" class="btn small ghost" id="adsimDeleteProductBtn" style="margin-top:10px;">この親ASINを削除</button>
     </div>
 
-    <!-- 月次シミュ／日別目標のタブ切替。親ASINの選択（上のカード）は両タブで共用する。
-         CSSは価格アラートの .pwTabs / .pwTab をそのまま流用している。 -->
+    <!-- ①マスタ → ②日別目標 → ③月次シミュ の順に進む -->
     <div class="pwTabs" id="adsimTabs">
-      <button type="button" class="pwTab active" data-tab="sim">📊 月次シミュ（3ヶ月）</button>
-      <button type="button" class="pwTab" data-tab="daily">📅 日別目標（PL・販売スケジュール）</button>
+      <button type="button" class="pwTab active" data-tab="master">① 商品マスタ</button>
+      <button type="button" class="pwTab" data-tab="daily">② 日別目標</button>
+      <button type="button" class="pwTab" data-tab="sim">③ 月次シミュ</button>
     </div>
 
-    <div id="adsimSimSection">
-
-    <!-- ① 商品マスタ（子ASIN） -->
-    <div class="card" id="adsimChildCard">
-      <div class="cardHeader">
-        <h3 style="margin:0;">① 商品マスタ（子ASIN × 売価）</h3>
-        <button type="button" class="btn small primary" id="adsimAddChildBtn">＋ 行を追加</button>
-      </div>
-      <p class="hint" style="margin:0 0 10px;"><b>1行＝「子ASIN × 売価」</b>です。同じ子ASINでも売価によって原価や販売手数料が変わるため、売価ごとに1行登録してください（例: セール価格の行を別に作る）。金額はすべて<b>1点あたりの円</b>です。<b>日別目標の各日の売価も、ここから同じ（子ASIN・売価）の行を探して原価・手数料を計算します。</b>コンサル手数料は上の「コンサル料率」から自動計算するので、ここには入力しません。</p>
-      <div class="tableWrap">
-        <table class="dataTable adsimTable">
-          <thead><tr><th>子ASIN / SKU</th><th>売価（円）</th><th>原価（円/個）</th><th>販売手数料（円/個）</th><th>1点純粗利</th><th></th></tr></thead>
-          <tbody id="adsimChildBody"></tbody>
-        </table>
-      </div>
-      <p class="adsimFieldErr" data-fe="childRows"></p>
-    </div>
-
-    <!-- ② 投下パターンの入力 -->
-    <div class="card" id="adsimDraftCard">
-      <h3 style="margin-top:0;">② 投下パターンを入力</h3>
-
-      <div class="adsimShareBlock">
-        <div class="adsimBulkTitle">想定販売比率（全パターン共通・合計100.0％）</div>
-        <p class="hint" style="margin:0 0 8px;">①で登録した「子ASIN × 売価」のうち、<b>実際に売る想定のものに比率を入れてください</b>（売らない売価は0のままでOK）。この比率で加重平均して1つの経済性にまとめ、月次シミュの計算に使います。※比率は全パターン共通で、パターンごとには保存されません。</p>
+    <!-- ================= ① 商品マスタ ================= -->
+    <div id="adsimMasterSection">
+      <div class="card" id="adsimChildCard">
+        <div class="cardHeader">
+          <h3 style="margin:0;">① 商品マスタ（子ASIN × 売価区分）</h3>
+          <button type="button" class="btn small primary" id="adsimAddChildBtn">＋ 行を追加</button>
+        </div>
+        <p class="hint" style="margin:0 0 10px;"><b>1行＝「子ASIN × 売価区分」</b>です。1ヶ月の中で通常売価とSALE売価を切り替えるので、<b>区分ごとに1行</b>登録してください（通常／SALE①／SALE②／SALE③）。SALEでもう一段階値下げする場合はSALE②を使います。金額はすべて<b>1点あたりの円</b>です。コンサル手数料は上の「コンサル料率」から自動計算するので、ここには入力しません。</p>
         <div class="tableWrap">
           <table class="dataTable adsimTable">
-            <thead><tr><th>子ASIN / SKU</th><th>売価</th><th>1点純粗利</th><th>想定販売比率（％）</th></tr></thead>
+            <thead><tr><th>子ASIN / SKU</th><th>売価区分</th><th>売価（円）</th><th>原価（円/個）</th><th>販売手数料（円/個）</th><th>1点純粗利</th><th></th></tr></thead>
+            <tbody id="adsimChildBody"></tbody>
+          </table>
+        </div>
+        <p class="adsimFieldErr" data-fe="childRows"></p>
+      </div>
+
+      <div class="card" id="adsimShareCard">
+        <h3 style="margin-top:0;">想定販売比率（子ASINごと・合計100.0％）</h3>
+        <p class="hint" style="margin:0 0 10px;">複数の子ASINがある場合、売上がどの子ASINにどれくらい割れるかを入れてください。この比率で加重平均して1つの経済性にまとめ、<b>②日別目標の計算に使います</b>（区分ごとの加重平均単価を出します）。1行＝1子ASINなので、どの行に入れるか迷うことはありません。</p>
+        <div class="tableWrap">
+          <table class="dataTable adsimTable">
+            <thead><tr><th>子ASIN / SKU</th><th>通常売価</th><th>想定販売比率（％）</th></tr></thead>
             <tbody id="adsimShareBody"></tbody>
           </table>
         </div>
         <p class="adsimShareSum" id="adsimShareSum"></p>
         <div class="adsimAvgRow" id="adsimAvgRow"></div>
       </div>
-
-      <p class="hint" style="margin:14px 0 10px;">CPC・CVRはAmazon広告の管理画面の実績値を手入力してください（3ヶ月を通じて固定値として扱います）。月別の投下額は自由入力です（月1・2を厚め、月3で絞る「逓減型」を想定していますが、配分は毎回自由に決められます）。</p>
-      <div class="pwFormGrid">
-        <div><label for="adsimDraftName">パターン名</label><input type="text" id="adsimDraftName" placeholder="例: 積極型"></div>
-        <div><label for="adsimDraftCpc">CPC（円）</label><input type="number" id="adsimDraftCpc" min="1" step="1" placeholder="例: 45"><p class="adsimFieldErr" data-fe="cpc"></p></div>
-        <div><label for="adsimDraftCvr">CVR（％）</label><input type="number" id="adsimDraftCvr" min="0.01" max="100" step="0.01" placeholder="例: 8"><p class="adsimFieldErr" data-fe="cvr"></p></div>
-        <div><label for="adsimDraftM1">月1 投下広告費（円）</label><input type="number" id="adsimDraftM1" min="0" step="10000" placeholder="例: 500000"><p class="adsimFieldErr" data-fe="m1"></p></div>
-        <div><label for="adsimDraftM2">月2 投下広告費（円）</label><input type="number" id="adsimDraftM2" min="0" step="10000" placeholder="例: 300000"><p class="adsimFieldErr" data-fe="m2"></p></div>
-        <div><label for="adsimDraftM3">月3 投下広告費（円）</label><input type="number" id="adsimDraftM3" min="0" step="10000" placeholder="例: 150000"><p class="adsimFieldErr" data-fe="m3"></p></div>
-      </div>
-      <p class="adsimEditingNote" id="adsimEditingNote" hidden></p>
-      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <button type="button" class="btn primary" id="adsimCalcBtn">▶ 計算実行</button>
-        <button type="button" class="btn" id="adsimSaveBtn">💾 パターンを保存</button>
-        <button type="button" class="btn ghost" id="adsimCancelEditBtn" hidden>編集をキャンセル</button>
-      </div>
-      <p class="adsimErrSummary" id="adsimErrSummary" hidden></p>
-      <p class="pwMsg" id="adsimSaveMsg"></p>
     </div>
 
-    <!-- 保存済みパターン -->
-    <div class="card" id="adsimPatternCard">
-      <h3 style="margin-top:0;">保存済みパターン（最大3件）</h3>
-      <div id="adsimPatternList"></div>
-    </div>
-
-    <!-- ③ 単月損益の推移 -->
-    <div class="card" id="adsimMonthCard">
-      <h3 style="margin-top:0;">③ 単月損益の推移</h3>
-      <p class="hint" style="margin:0 0 10px;">⚠ 許容外＝最大許容粗利率を下回る／🔴 赤字＝許容範囲内だが実質粗利率がマイナス／🟡 黄字＝プラスだが目標粗利率に未達／⚫ 黒字＝目標粗利率を達成。</p>
-      <div class="adsimWarnBox" id="adsimWarnBox" hidden></div>
-      <div class="tableWrap">
-        <table class="dataTable adsimTable">
-          <thead><tr><th>パターン</th><th>月</th><th>広告費</th><th>クリック数</th><th>販売点数</th><th>売上</th><th>粗利</th><th>月次損益</th><th>実質粗利率</th><th>判定</th><th>累積損益</th></tr></thead>
-          <tbody id="adsimMonthBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ④ 累積損益グラフ -->
-    <div class="card" id="adsimChartCard">
-      <div id="adsimVerdict" class="adsimVerdict"></div>
-      <div class="legendRow" id="adsimLegend"></div>
-      <div class="adsimChartWrap">
-        <div id="adsimChartArea"></div>
-        <div class="adsimOverlay" id="adsimOverlay" hidden><span>入力エラーを解消してください</span></div>
-      </div>
-    </div>
-
-    <!-- ⑤ パターン別サマリー -->
-    <div class="card" id="adsimSummaryCard">
-      <h3 style="margin-top:0;">⑤ パターン別サマリー</h3>
-      <div class="tableWrap">
-        <table class="dataTable adsimTable">
-          <thead><tr><th>パターン</th><th>総投下額</th><th>3ヶ月目時点の累積損益</th><th>黒字転換</th></tr></thead>
-          <tbody id="adsimSummaryBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    </div><!-- /#adsimSimSection -->
-
+    <!-- ================= ② 日別目標 ================= -->
     <div id="adsimDailySection" hidden>
-      <!-- 日別目標の設定 -->
       <div class="card" id="adsimDailyCfgCard">
-        <h3 style="margin-top:0;">📅 日別目標の設定</h3>
-        <p class="hint" style="margin:0 0 10px;">スプレッドシート「PL管理＆販売スケジュール」と同じ形で、日別の目標を作ります。売価・目標個数・目標アクセス数だけを入力すれば、売上・原価・手数料・変動費・粗利は自動計算します。原価と販売手数料は上の「価格マスタ」から売価に応じて引いてきます。</p>
+        <h3 style="margin-top:0;">② 日別目標の設定</h3>
+        <p class="hint" style="margin:0 0 10px;">各日に入力するのは<b>売価区分・目標個数・目標アクセス数の3つだけ</b>です。売価・原価・販売手数料は、その区分の加重平均（①のマスタ＋想定販売比率）から自動計算します。<b>この日別目標の合算が、そのまま③月次シミュの売上・粗利になります。</b></p>
         <div class="pwFormGrid">
-          <div><label for="adsimDailyChild">対象の子ASIN</label><select id="adsimDailyChild"></select></div>
           <div><label for="adsimDailyStart">開始日</label><input type="date" id="adsimDailyStart"></div>
           <div><label for="adsimDailyEnd">終了日</label><input type="date" id="adsimDailyEnd"><p class="adsimFieldErr" data-fe="dailyRange"></p></div>
         </div>
         <div class="adsimAvgRow" id="adsimDailyParamRow" style="margin-top:12px;"></div>
-        <p class="hint" style="margin:8px 0 0;">コンサル料率・税率・FBAコストは上の「🗂 親ASIN」で設定した値を使います（月次シミュと共通）。</p>
+        <p class="hint" style="margin:8px 0 0;">コンサル料率・税率・FBAコストは上の「🗂 親ASIN」で設定した値を使います。</p>
       </div>
 
-      <!-- 一括入力 -->
       <div class="card" id="adsimBulkCard">
         <h3 style="margin-top:0;">⚡ 一括入力</h3>
         <p class="hint" style="margin:0 0 12px;">日数が多いので、まずここで大枠を埋めてから、必要な日だけ下の表で微調整するのがおすすめです。</p>
 
         <div class="adsimBulkBlock">
-          <div class="adsimBulkTitle">売価を期間で一律入力</div>
+          <div class="adsimBulkTitle">売価区分を期間で一律入力（SALE期間の設定）</div>
           <div class="adsimBulkRow">
             <label>開始 <input type="date" id="adsimBulkPriceFrom"></label>
             <label>終了 <input type="date" id="adsimBulkPriceTo"></label>
-            <label>売価 <select id="adsimBulkPriceVal"></select></label>
+            <label>売価区分 <select id="adsimBulkPriceVal"></select></label>
             <button type="button" class="btn small primary" id="adsimBulkPriceBtn">この期間に反映</button>
           </div>
-          <p class="hint" style="margin:6px 0 0;">売価は価格マスタに登録済みのものから選びます（原価・手数料が確実に紐づきます）。セール期間だけ売価を下げる、といった使い方ができます。</p>
+          <p class="hint" style="margin:6px 0 0;">例:「7/10〜7/20 は SALE①」と指定できます。<b>あとから①でSALE①の売価を変えれば、その期間の全日に自動で反映されます</b>（日別に売価の数値を持たないため）。</p>
         </div>
 
         <div class="adsimBulkBlock">
@@ -1404,13 +1336,12 @@
           <div class="adsimBulkRow">
             <label>コピー元 <select id="adsimCopyFrom"></select></label>
             <label>コピー先 <select id="adsimCopyTo"></select></label>
-            <button type="button" class="btn small" id="adsimCopyBtn">売価・個数・アクセス数をコピー</button>
+            <button type="button" class="btn small" id="adsimCopyBtn">区分・個数・アクセス数をコピー</button>
           </div>
           <p class="hint" style="margin:6px 0 0;">日数が違う月にコピーする場合は、コピー先の日数分だけ先頭から順に入ります（足りない分は元の月を繰り返します）。</p>
         </div>
       </div>
 
-      <!-- 月別入力 -->
       <div class="card" id="adsimMonthlyInputCard">
         <div class="cardHeader">
           <h3 style="margin:0;">🗓 月別に入力</h3>
@@ -1421,10 +1352,10 @@
             </select>
           </label>
         </div>
-        <p class="hint" style="margin:0 0 10px;">月ごとに手入力して「この月に反映」を押すと、その月の全日に書き込みます。<b>月合計</b>モードなら月の日数で均等割りします（端数は月末日で調整）。</p>
+        <p class="hint" style="margin:0 0 10px;">月ごとに手入力して「この月に反映」を押すと、その月の全日に書き込みます。<b>月合計</b>モードなら月の日数で均等割りします（端数は月末日で調整）。空欄の項目はスキップするので、区分だけ・個数だけの反映もできます。</p>
         <div class="tableWrap">
           <table class="dataTable adsimTable">
-            <thead><tr><th>月</th><th>日数</th><th>売価（円）</th><th>目標個数</th><th>目標アクセス数</th><th></th></tr></thead>
+            <thead><tr><th>月</th><th>日数</th><th>売価区分</th><th>目標個数</th><th>目標アクセス数</th><th></th></tr></thead>
             <tbody id="adsimMonthlyInputBody"></tbody>
           </table>
         </div>
@@ -1435,25 +1366,92 @@
         <p class="pwMsg" id="adsimDailyMsg"></p>
       </div>
 
-      <!-- 月次サマリー -->
       <div class="card" id="adsimDailySummaryCard">
-        <h3 style="margin-top:0;">📊 月次サマリー</h3>
+        <h3 style="margin-top:0;">📊 月次サマリー（この合算が③月次シミュの売上・粗利になります）</h3>
         <div class="adsimWarnBox" id="adsimDailyWarn" hidden></div>
         <div class="tableWrap">
           <table class="dataTable adsimTable">
-            <thead><tr><th>月</th><th>売上</th><th>個数</th><th>アクセス数</th><th>原価合計</th><th>販売手数料</th><th>FBA</th><th>コンサル料</th><th>VC(変動費)</th><th>MQ(粗利額)</th><th>M(粗利率)</th></tr></thead>
+            <thead><tr><th>月</th><th>売上</th><th>個数</th><th>アクセス数</th><th>原価合計</th><th>販売手数料</th><th>FBA</th><th>コンサル料</th><th>VC(変動費)</th><th>粗利(MQ)</th><th>粗利率</th></tr></thead>
             <tbody id="adsimDailySummaryBody"></tbody>
+          </table>
+        </div>
+        <p class="hint" style="margin:10px 0 0;">※ここの粗利は<b>広告費を引く前</b>です。広告費は③月次シミュで月別に入力します。</p>
+      </div>
+
+      <div class="card" id="adsimDailyTableCard">
+        <h3 style="margin-top:0;">📋 日別の内訳</h3>
+        <p class="hint" style="margin:0 0 10px;">月の見出しをクリックすると開きます（開いたときにその月の行を作るので、初期表示が重くなりません）。<b>売価区分・目標個数・目標アクセス数</b>だけが入力欄で、他は自動計算です。</p>
+        <div id="adsimDailyMonthBlocks"></div>
+      </div>
+    </div>
+
+    <!-- ================= ③ 月次シミュ ================= -->
+    <div id="adsimSimSection" hidden>
+      <div class="card" id="adsimDraftCard">
+        <h3 style="margin-top:0;">③ 月別の投下広告費を入力</h3>
+        <p class="hint" style="margin:0 0 10px;">売上・個数・粗利は<b>②日別目標の合算で固定</b>です。ここに月別の広告費を入れると「これだけ掛けたら実質粗利率が何％になるか」「累積でいつ回収できるか」が出ます。投下額の配分を変えたパターンを最大3件まで保存して比較できます。</p>
+        <div class="pwFormGrid">
+          <div><label for="adsimDraftName">パターン名</label><input type="text" id="adsimDraftName" placeholder="例: 積極型"></div>
+          <div><label for="adsimDraftCpc">参考：CPC（円）</label><input type="number" id="adsimDraftCpc" min="0" step="1" placeholder="任意"></div>
+          <div><label for="adsimDraftCvr">参考：CVR（％）</label><input type="number" id="adsimDraftCvr" min="0" max="100" step="0.01" placeholder="任意"></div>
+        </div>
+        <p class="hint" style="margin:6px 0 0;">CPC・CVRは<b>計算には使いません</b>（記録用）。両方入れると「この目標個数を達成するのに必要な広告費の目安」を下の表に併記します。</p>
+        <div class="tableWrap" style="margin-top:12px;">
+          <table class="dataTable adsimTable">
+            <thead><tr><th>月</th><th>目標個数</th><th>投下広告費（円）</th><th>参考：必要額の目安</th></tr></thead>
+            <tbody id="adsimSpendBody"></tbody>
+          </table>
+        </div>
+        <div class="adsimBulkRow" style="margin-top:10px;">
+          <label>全月に同額 <input type="number" id="adsimSpendAllVal" min="0" step="10000" placeholder="例: 300000"></label>
+          <button type="button" class="btn small" id="adsimSpendAllBtn">全月に入れる</button>
+        </div>
+        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button type="button" class="btn primary" id="adsimCalcBtn">▶ 計算実行</button>
+          <button type="button" class="btn" id="adsimSaveBtn">💾 パターンを保存</button>
+          <button type="button" class="btn ghost" id="adsimCancelEditBtn" hidden>編集をキャンセル</button>
+        </div>
+        <p class="adsimEditingNote" id="adsimEditingNote" hidden></p>
+        <p class="adsimErrSummary" id="adsimErrSummary" hidden></p>
+        <p class="pwMsg" id="adsimSaveMsg"></p>
+      </div>
+
+      <div class="card" id="adsimPatternCard">
+        <h3 style="margin-top:0;">保存済みパターン（最大3件）</h3>
+        <div id="adsimPatternList"></div>
+      </div>
+
+      <div class="card" id="adsimMonthCard">
+        <h3 style="margin-top:0;">単月損益の推移</h3>
+        <p class="hint" style="margin:0 0 10px;">⚠ 許容外＝最大許容粗利率を下回る／🔴 赤字＝許容範囲内だが実質粗利率がマイナス／🟡 黄字＝プラスだが目標粗利率に未達／⚫ 黒字＝目標粗利率を達成。</p>
+        <div class="adsimWarnBox" id="adsimWarnBox" hidden></div>
+        <div class="tableWrap">
+          <table class="dataTable adsimTable">
+            <thead><tr><th>パターン</th><th>月</th><th>売上</th><th>個数</th><th>粗利(広告費前)</th><th>広告費</th><th>広告費率</th><th>月次損益</th><th>実質粗利率</th><th>判定</th><th>累積損益</th></tr></thead>
+            <tbody id="adsimMonthBody"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- 日別テーブル（月ごとに折りたたむ） -->
-      <div class="card" id="adsimDailyTableCard">
-        <h3 style="margin-top:0;">📋 日別の内訳</h3>
-        <p class="hint" style="margin:0 0 10px;">月の見出しをクリックすると開きます（開いたときにその月の行を作るので、初期表示が重くなりません）。<b>売価・目標個数・目標アクセス数</b>だけが入力欄で、他は自動計算です。</p>
-        <div id="adsimDailyMonthBlocks"></div>
+      <div class="card" id="adsimChartCard">
+        <div id="adsimVerdict" class="adsimVerdict"></div>
+        <div class="legendRow" id="adsimLegend"></div>
+        <div class="adsimChartWrap">
+          <div id="adsimChartArea"></div>
+          <div class="adsimOverlay" id="adsimOverlay" hidden><span>入力エラーを解消してください</span></div>
+        </div>
       </div>
-    </div><!-- /#adsimDailySection -->
+
+      <div class="card" id="adsimSummaryCard">
+        <h3 style="margin-top:0;">パターン別サマリー</h3>
+        <div class="tableWrap">
+          <table class="dataTable adsimTable">
+            <thead><tr><th>パターン</th><th>総投下額</th><th>期間の売上</th><th>期間の粗利</th><th>最終累積損益</th><th>期間の実質粗利率</th><th>黒字転換</th></tr></thead>
+            <tbody id="adsimSummaryBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </section>
 
 </div>
@@ -1753,7 +1751,7 @@
   ];
 
   var state = {
-    ui: { theme:null, activeView:"home", selectedNewsDate:null, selectedAiNewsDate:null, activeNewsCategory:"food", activeWatchTab:"view", selectedWatchItemId:null, selectedWatchKeywordId:null, watchDetailMode:"keyword", activeAdsimTab:"sim" },
+    ui: { theme:null, activeView:"home", selectedNewsDate:null, selectedAiNewsDate:null, activeNewsCategory:"food", activeWatchTab:"view", selectedWatchItemId:null, selectedWatchKeywordId:null, watchDetailMode:"keyword", activeAdsimTab:"master" },
     aiInput: { name:"", volume:"", category:"", keyword:"", grade:"standard", platforms: PLATFORMS.map(function(p){ return p.key; }) },
     aiResearch: null,
     // 過去に反映したAIリサーチ結果の履歴（新しい順）。「読み込む」で aiResearch に復元できる。
@@ -4307,22 +4305,36 @@
     document.getElementById("pwResultInput").value = JSON.stringify(sample, null, 2);
   });
 
-  // ---------- 広告投資回収シミュレーター（親ASIN単位・月次3ヶ月） ----------
-  // 注力商品（親ASIN単位）に、赤字を出してでも先行して広告投資を行う際、
-  // 「どこまで投下し、いつ回収できるか」を月次3ヶ月で試算する。上長への
-  // 特別枠投資（通常の運用予算を超える先行投資）の判断材料として使う。
+  // ---------- 広告投資回収シミュレーター（親ASIN単位・日別目標→月次） ----------
+  // 流れ：①商品マスタ（子ASIN × 売価区分）→ ②日別目標（区分・目標個数・目標アクセス数）
+  //       → ③月次シミュ（②の合算に月別の広告費をぶつけて損益・回収を見る）
   //
-  // ★旧実装（週次52週・weekOverridesの週次ピン留め・強気/標準/保守の3シナリオ・
-  //   自然流入売上の直接加算）は仕様変更により全面的に置き換えた。旧データは
-  //   本仕様と非互換なので、adSimEnsureState() の version チェックでリセットする
-  //   （移行はしない＝仕様書「既存の登録データは移行不要」に従う）。
+  // ★2026-09-07の仕様変更（重要）：
+  //   旧実装は「広告費 → クリック(÷CPC) → 個数(×CVR) → 売上」の向きで月次を出していたが、
+  //   日別目標で個数を直接入れる形になったため因果が逆転した。現在は
+  //   「日別の合算（売上・個数・粗利＝固定）− 月別の広告費（手入力）」で月次を出す。
+  //   CPC・CVRは計算に使わず、必要額の目安を出す参考値として保持するだけ。
+  //   この変更で、旧モデルにあった「先行赤字→黒転が原理的に起きない」という
+  //   構造的限界も解消した（粗利と広告費が独立した入力になったため）。
   var ADSIM_VERSION = 2;
-  var ADSIM_MONTHS = 3;
   var ADSIM_MAX_PATTERNS = 3;
-  // 保存済みパターンの折れ線色。pd.patterns内のindexで固定的に割り当てるので、
-  // 一覧のスウォッチ・凡例・グラフの色が常に一致する。
+  // 売価区分。1ヶ月の中で通常とSALEを切り替えるので、区分ごとにマスタ行を持つ。
+  var ADSIM_PRICE_TYPES = [
+    { key: "normal", label: "通常" },
+    { key: "sale1", label: "SALE①" },
+    { key: "sale2", label: "SALE②" },
+    { key: "sale3", label: "SALE③" }
+  ];
   var ADSIM_PAT_COLORS = ["var(--series-1)", "var(--status-critical)", "var(--status-good)"];
   var ADSIM_DRAFT_COLOR = "var(--series-4)";
+
+  function adSimPriceTypeLabel(key){
+    var t = ADSIM_PRICE_TYPES.filter(function(x){ return x.key === key; })[0];
+    return t ? t.label : "通常";
+  }
+  function adSimIsPriceType(key){
+    return ADSIM_PRICE_TYPES.some(function(x){ return x.key === key; });
+  }
 
   // 仕様どおり「1,000円」形式。既存の fmtYen/pwYen は「¥1,000」形式なので別に用意する。
   var ADSIM_YEN_FMT = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 });
@@ -4342,8 +4354,8 @@
     if (n == null || isNaN(n)) return "-";
     return Number(n).toLocaleString("ja-JP", { maximumFractionDigits: 1 });
   }
-  // 小数第1位に丸める。想定販売比率の100%判定と表示のときだけ使い、内部の入力値は
-  // 丸めない（0.1刻みの入力を足すと 99.99999999 のような誤差が出て正しい入力が弾かれるため）。
+  // 小数第1位に丸める。想定販売比率の100%判定と単月判定・表示のときだけ使い、
+  // 内部の入力値は丸めない（0.1刻みの入力を足すと 99.99999999 のような誤差が出るため）。
   function adSimRound1(n){ return Math.round(n * 10) / 10; }
   function adSimNum(v){ var n = Number(v); return isNaN(n) ? 0 : n; }
 
@@ -4351,19 +4363,29 @@
   function adSimNextId(pre){ adSimIdCounter++; return pre + "_" + Date.now().toString(36) + "_" + adSimIdCounter; }
 
   // 編集中の保存済みパターンID（null＝新規パターンとして入力中）。
-  // 価格アラート登録フォームの pwEditTarget と同じ「新規／編集」idiom。
+  // 価格アラート登録フォームの pwEditTarget と同じ「新規／編集」idiom。永続化しない。
   var adSimEditingPatternId = null;
 
-  // 1行＝「子ASIN × 売価」。同じskuの行が売価ごとに複数あってよい。
-  // コンサル手数料は行ごとに持たず、親ASINの consultPct（率）から計算する。
-  function adSimDefaultChild(share){
+  function adSimDefaultChild(priceType){
     return {
-      id: adSimNextId("adc"), sku: "", price: 0, cost: 0,
-      amazonFee: 0, sharePct: (share == null ? 100 : share)
+      id: adSimNextId("adc"), sku: "",
+      priceType: priceType || "normal",
+      price: 0, cost: 0, amazonFee: 0
     };
   }
   function adSimDefaultDraft(){
-    return { name: "", cpc: 0, cvr: 0, m1: 0, m2: 0, m3: 0 };
+    return { name: "", cpc: 0, cvr: 0, spends: {} };
+  }
+  function adSimDefaultDaily(){
+    var t = new Date();
+    var start = new Date(t.getFullYear(), t.getMonth(), 1);
+    var end = new Date(t.getFullYear(), t.getMonth() + 6, 0);   // 6ヶ月後の月末
+    return {
+      startDate: adSimIsoDate(start),
+      endDate: adSimIsoDate(end),
+      bulkMode: "perDay",
+      rows: {}   // "YYYY-MM-DD" -> { priceType, units, pv }（入力値のみ保持）
+    };
   }
   function adSimDefaultProduct(){
     return {
@@ -4371,32 +4393,18 @@
       asin: "",
       name: "新しい親ASIN",
       targetMarginPct: 20,
-      // 最大許容粗利率（％）＝「赤字をどこまで許容するか」の下限。これを下回った月は
-      // 「許容外」と判定して警告する。null＝未設定＝許容外判定をしない。
-      // ※0は「赤字を一切許容しない」という有効な設定なので、未設定は0ではなくnullで表す。
+      // 最大許容粗利率（％）。これを下回った月は「許容外」と判定して警告する。
+      // null＝未設定＝許容外判定をしない。0は「赤字を一切許容しない」という有効な設定。
       maxLossPct: null,
-      children: [adSimDefaultChild(100)],
-      patterns: [],
-      draft: adSimDefaultDraft(),
-      // コンサル料率・税率・FBAコストは月次シミュと日別目標で共通に使う
+      // コンサル料率・税率・FBAコストは①の1点純粗利と②日別目標の両方で共通に使う
       consultPct: 1,
       taxPct: 10,
       fbaYen: 0,
+      children: [adSimDefaultChild("normal")],
+      shares: {},        // SKU -> 想定販売比率(%)。1行＝1子ASINなので行IDでは持たない
+      patterns: [],
+      draft: adSimDefaultDraft(),
       daily: adSimDefaultDaily()
-    };
-  }
-
-  // 日別目標（PL管理＆販売スケジュール）の既定値。既定期間は当月1日から6ヶ月。
-  function adSimDefaultDaily(){
-    var t = new Date();
-    var start = new Date(t.getFullYear(), t.getMonth(), 1);
-    var end = new Date(t.getFullYear(), t.getMonth() + 6, 0);   // 6ヶ月後の月末
-    return {
-      sku: "",           // 対象の子ASIN（SKU文字列）。売価は日ごとに持つ
-      startDate: adSimIsoDate(start),
-      endDate: adSimIsoDate(end),
-      bulkMode: "perDay",
-      rows: {}           // "YYYY-MM-DD" -> { price, units, pv }（入力値のみ保持）
     };
   }
 
@@ -4411,7 +4419,6 @@
     var p = parseNewsDate(iso);   // "YYYY-MM-DD" / "YYYY/M/D" を {y,m,d} に（既存関数を再利用）
     return p ? new Date(p.y, p.m - 1, p.d) : null;
   }
-  // 開始日〜終了日の日付を昇順で返す。安全上限を付けて暴走を防ぐ。
   function adSimDateSeq(startIso, endIso, limit){
     var out = [];
     var s = adSimParseDate(startIso), e = adSimParseDate(endIso);
@@ -4426,8 +4433,7 @@
   }
   // 期間を月ごとにまとめる。[{ key:"2026-07", label:"2026年7月", dates:[iso,...] }]
   function adSimDailyMonths(daily){
-    var months = [];
-    var byKey = {};
+    var months = [], byKey = {};
     adSimDateSeq(daily.startDate, daily.endDate).forEach(function(iso){
       var key = iso.slice(0, 7);
       if (!byKey[key]){
@@ -4444,8 +4450,7 @@
   function adSimEnsureState(){
     if (!state.adSim || typeof state.adSim !== "object") state.adSim = {};
     var s = state.adSim;
-    // 旧形式（portfolios[]・週次52週・bull/base/bear）は本仕様と非互換なのでリセットする。
-    // priceWatchの旧 {prices:{}} 形式と同じ扱い（クラッシュさせず新形式の空状態にする）。
+    // 旧形式（portfolios[]・週次52週・bull/base/bear）は非互換なのでリセットする。
     if (s.version !== ADSIM_VERSION || !Array.isArray(s.products)){
       var hadOldData = !!(s.portfolios || s.products);
       state.adSim = { version: ADSIM_VERSION, products: [], selectedProductId: null, lastResult: null };
@@ -4458,34 +4463,17 @@
       if (typeof pd.asin !== "string") pd.asin = "";
       if (typeof pd.name !== "string") pd.name = "";
       pd.targetMarginPct = adSimNum(pd.targetMarginPct);
-      // 「最大許容累積赤字額（円・maxLossYen）」から「最大許容粗利率（％・maxLossPct）」に
-      // 変更した際の移行。円→％は意味が変わって換算できないので未設定(null)から始める。
-      // 登録済みの親ASIN・子ASIN・パターンはそのまま残す（versionは上げない）。
-      if (typeof pd.maxLossPct === "undefined"){
-        pd.maxLossPct = null;
-        if (typeof pd.maxLossYen !== "undefined"){ delete pd.maxLossYen; markDirty(); }
-      }
+      if (typeof pd.maxLossPct === "undefined") pd.maxLossPct = null;
       if (pd.maxLossPct !== null) pd.maxLossPct = adSimNum(pd.maxLossPct);
-      if (!Array.isArray(pd.children) || !pd.children.length) pd.children = [adSimDefaultChild(100)];
-      pd.children.forEach(function(c){
-        if (!c.id) c.id = adSimNextId("adc");
-        if (typeof c.sku !== "string") c.sku = "";
-        c.price = adSimNum(c.price);
-        c.cost = adSimNum(c.cost);
-        c.amazonFee = adSimNum(c.amazonFee);
-        c.sharePct = adSimNum(c.sharePct);
-      });
 
-      // ---- 「商品マスタ」と「価格マスタ」の合体（2026-09-07）----
-      // 元は children（1行＝子ASIN）と priceMaster（1行＝子ASIN×売価）に分かれており、
-      // 原価・販売手数料が両方にあって食い違えた。1行＝「子ASIN×売価」の children に統合する。
-      // ・行の consultFee（円/点）は廃止し、親ASINの consultPct（率）に寄せる。
-      //   既存値は売価に対する率を逆算して引き継ぐ（実データはちょうど1%だった）。
-      // ・priceMaster の行のうち children に無い（sku, 売価）の組み合わせは children に足す。
-      // versionは上げない（上げると登録済みデータが全部消える）。
+      // 旧「最大許容累積赤字額（円）」からの移行（円→％は換算できないので未設定から始める）
+      if (typeof pd.maxLossYen !== "undefined"){ delete pd.maxLossYen; markDirty(); }
+
+      // コンサル料率・税率・FBAコスト。旧実装では行ごとの consultFee（円/点）と
+      // daily.consultPct/taxPct/fbaYen に二重で存在していたので親ASIN単位に一本化した。
       if (typeof pd.consultPct === "undefined"){
         var rate = null;
-        pd.children.forEach(function(c){
+        (pd.children || []).forEach(function(c){
           if (rate === null && adSimNum(c.consultFee) > 0 && adSimNum(c.price) > 0){
             rate = adSimRound1(adSimNum(c.consultFee) / adSimNum(c.price) * 100);
           }
@@ -4495,61 +4483,97 @@
       }
       if (typeof pd.taxPct === "undefined") pd.taxPct = 10;
       if (typeof pd.fbaYen === "undefined"){
-        // 旧 daily 側に入っていた値があれば引き継ぐ
         pd.fbaYen = (pd.daily && typeof pd.daily.fbaYen !== "undefined") ? adSimNum(pd.daily.fbaYen) : 0;
       }
       pd.consultPct = adSimNum(pd.consultPct);
       pd.taxPct = adSimNum(pd.taxPct);
       pd.fbaYen = adSimNum(pd.fbaYen);
+
+      // 旧「価格マスタ（priceMaster）」を children に取り込む（1行＝子ASIN×売価だった時代の移行）
       if (Array.isArray(pd.priceMaster)){
         pd.priceMaster.forEach(function(pm){
-          var sku = "";
-          var owner = pd.children.filter(function(c){ return c.id === pm.childId; })[0];
-          if (owner) sku = owner.sku;
-          else if (typeof pm.childId === "string") sku = pm.childId;
-          if (adSimNum(pm.price) <= 0) return;   // 未入力の行は捨てる
-          var dup = pd.children.filter(function(c){
+          if (adSimNum(pm.price) <= 0) return;
+          var owner = (pd.children || []).filter(function(c){ return c.id === pm.childId; })[0];
+          var sku = owner ? owner.sku : (typeof pm.childId === "string" ? pm.childId : "");
+          var dup = (pd.children || []).filter(function(c){
             return c.sku === sku && adSimPriceKey(c.price) === adSimPriceKey(pm.price);
           })[0];
-          if (dup) return;                        // 同じ(子ASIN,売価)が既にあれば足さない
+          if (dup) return;
           pd.children.push({
             id: adSimNextId("adc"), sku: sku, price: adSimNum(pm.price),
-            cost: adSimNum(pm.cost), amazonFee: adSimNum(pm.amazonFee), sharePct: 0
+            cost: adSimNum(pm.cost), amazonFee: adSimNum(pm.amazonFee)
           });
         });
         delete pd.priceMaster;
         markDirty();
       }
-      pd.children.forEach(function(c){ if (typeof c.consultFee !== "undefined") delete c.consultFee; });
-      if (!Array.isArray(pd.patterns)) pd.patterns = [];
-      if (pd.patterns.length > ADSIM_MAX_PATTERNS) pd.patterns = pd.patterns.slice(0, ADSIM_MAX_PATTERNS);
-      pd.patterns.forEach(function(pt){
-        if (!pt.id) pt.id = adSimNextId("adpt");
-        if (typeof pt.name !== "string") pt.name = "";
-        pt.cpc = adSimNum(pt.cpc);
-        pt.cvr = adSimNum(pt.cvr);
-        pt.m1 = adSimNum(pt.m1);
-        pt.m2 = adSimNum(pt.m2);
-        pt.m3 = adSimNum(pt.m3);
+
+      if (!Array.isArray(pd.children) || !pd.children.length) pd.children = [adSimDefaultChild("normal")];
+      pd.children.forEach(function(c){
+        if (!c.id) c.id = adSimNextId("adc");
+        if (typeof c.sku !== "string") c.sku = "";
+        c.price = adSimNum(c.price);
+        c.cost = adSimNum(c.cost);
+        c.amazonFee = adSimNum(c.amazonFee);
+        if (typeof c.consultFee !== "undefined") delete c.consultFee;
       });
-      // 日別目標（PL管理＆販売スケジュール）
+
+      // 想定販売比率を「行ごと（sharePct）」から「子ASINごと（pd.shares）」へ移行。
+      // 1行＝子ASIN×区分になったので、比率を行に持たせると同じ子ASINで矛盾しうるため。
+      if (!pd.shares || typeof pd.shares !== "object") pd.shares = {};
+      var movedShare = false;
+      pd.children.forEach(function(c){
+        if (typeof c.sharePct !== "undefined"){
+          var v = adSimNum(c.sharePct);
+          // 同じSKUに複数行ある場合は大きい方を残す（0の行に上書きされないように）
+          if (v > adSimNum(pd.shares[c.sku])) pd.shares[c.sku] = v;
+          delete c.sharePct;
+          movedShare = true;
+        }
+      });
+      if (movedShare) markDirty();
+
+      // 売価区分を割り当てる。未設定の既存データは、同じSKU内で売価の高い順に
+      // 通常 → SALE① → SALE② → SALE③ とみなす（SALEは値下げなので高い方が通常）。
+      var needType = pd.children.some(function(c){ return !adSimIsPriceType(c.priceType); });
+      if (needType){
+        var bySku = {};
+        pd.children.forEach(function(c){
+          if (!bySku[c.sku]) bySku[c.sku] = [];
+          bySku[c.sku].push(c);
+        });
+        Object.keys(bySku).forEach(function(sku){
+          var list = bySku[sku].slice().sort(function(a, b){ return adSimNum(b.price) - adSimNum(a.price); });
+          list.forEach(function(c, i){
+            if (!adSimIsPriceType(c.priceType)){
+              c.priceType = ADSIM_PRICE_TYPES[Math.min(i, ADSIM_PRICE_TYPES.length - 1)].key;
+            }
+          });
+        });
+        markDirty();
+      }
+
+      // 比率は登録済みSKUの分だけ残す（消えたSKUの値を持ち越さない）
+      var skuSet = {};
+      adSimSkuList(pd).forEach(function(sk){ skuSet[sk] = true; });
+      Object.keys(pd.shares).forEach(function(k){
+        if (!skuSet[k]) delete pd.shares[k];
+        else pd.shares[k] = adSimNum(pd.shares[k]);
+      });
+      // 子ASINが1つだけなら比率は100%固定でよい（入力を省ける）
+      var skus = adSimSkuList(pd);
+      if (skus.length === 1 && adSimNum(pd.shares[skus[0]]) === 0) pd.shares[skus[0]] = 100;
+
       if (!pd.daily || typeof pd.daily !== "object") pd.daily = adSimDefaultDaily();
       var dl = pd.daily;
       var dlDef = null;
       function dlFallback(){ if (!dlDef) dlDef = adSimDefaultDaily(); return dlDef; }
-      // 旧形式では行ID（childId）で対象を指していたが、合体後は1行＝子ASIN×売価なので
-      // 「どのSKUの日別目標か」を指す必要がある。旧IDが残っていればそのSKUに読み替える。
-      if (typeof dl.sku !== "string"){
-        var oldOwner = dl.childId ? pd.children.filter(function(c){ return c.id === dl.childId; })[0] : null;
-        dl.sku = oldOwner ? oldOwner.sku : "";
-        markDirty();
-      }
+      // 日別目標は親ASIN全体が対象になったので、対象SKUの指定は不要になった
+      if (typeof dl.sku !== "undefined") delete dl.sku;
       if (typeof dl.childId !== "undefined") delete dl.childId;
       if (typeof dl.consultPct !== "undefined") delete dl.consultPct;
       if (typeof dl.taxPct !== "undefined") delete dl.taxPct;
       if (typeof dl.fbaYen !== "undefined") delete dl.fbaYen;
-      var skus = adSimSkuList(pd);
-      if (skus.indexOf(dl.sku) === -1) dl.sku = skus.length ? skus[0] : "";
       if (!adSimParseDate(dl.startDate)) dl.startDate = dlFallback().startDate;
       if (!adSimParseDate(dl.endDate)) dl.endDate = dlFallback().endDate;
       if (dl.bulkMode !== "total") dl.bulkMode = "perDay";
@@ -4557,17 +4581,46 @@
       Object.keys(dl.rows).forEach(function(k){
         var r = dl.rows[k];
         if (!r || typeof r !== "object"){ delete dl.rows[k]; return; }
-        r.price = adSimNum(r.price);
+        // 旧形式は日ごとに売価の数値を持っていた。区分に読み替える
+        // （同じ売価のマスタ行があればその区分、無ければ通常）。
+        if (!adSimIsPriceType(r.priceType)){
+          var match = null;
+          if (typeof r.price !== "undefined"){
+            match = pd.children.filter(function(c){
+              return adSimPriceKey(c.price) === adSimPriceKey(r.price);
+            })[0];
+          }
+          r.priceType = match ? match.priceType : "normal";
+          markDirty();
+        }
+        if (typeof r.price !== "undefined") delete r.price;
         r.units = adSimNum(r.units);
         r.pv = adSimNum(r.pv);
       });
+
+      // パターン：月別の投下広告費（月キー→円）。旧 m1/m2/m3 は期間の先頭3ヶ月に移す。
+      if (!Array.isArray(pd.patterns)) pd.patterns = [];
+      if (pd.patterns.length > ADSIM_MAX_PATTERNS) pd.patterns = pd.patterns.slice(0, ADSIM_MAX_PATTERNS);
+      var monthKeys = adSimDailyMonths(dl).map(function(m){ return m.key; });
+      function normalizePattern(pt){
+        if (!pt.id) pt.id = adSimNextId("adpt");
+        if (typeof pt.name !== "string") pt.name = "";
+        pt.cpc = adSimNum(pt.cpc);
+        pt.cvr = adSimNum(pt.cvr);
+        if (!pt.spends || typeof pt.spends !== "object"){
+          pt.spends = {};
+          ["m1", "m2", "m3"].forEach(function(k, i){
+            if (typeof pt[k] !== "undefined" && monthKeys[i]) pt.spends[monthKeys[i]] = adSimNum(pt[k]);
+          });
+          markDirty();
+        }
+        ["m1", "m2", "m3"].forEach(function(k){ if (typeof pt[k] !== "undefined") delete pt[k]; });
+        Object.keys(pt.spends).forEach(function(k){ pt.spends[k] = adSimNum(pt.spends[k]); });
+      }
+      pd.patterns.forEach(normalizePattern);
       if (!pd.draft || typeof pd.draft !== "object") pd.draft = adSimDefaultDraft();
-      if (typeof pd.draft.name !== "string") pd.draft.name = "";
-      pd.draft.cpc = adSimNum(pd.draft.cpc);
-      pd.draft.cvr = adSimNum(pd.draft.cvr);
-      pd.draft.m1 = adSimNum(pd.draft.m1);
-      pd.draft.m2 = adSimNum(pd.draft.m2);
-      pd.draft.m3 = adSimNum(pd.draft.m3);
+      normalizePattern(pd.draft);
+      if (!pd.draft.id) pd.draft.id = "draft";
     });
     if (!s.products.some(function(p){ return p.id === s.selectedProductId; })){
       s.selectedProductId = s.products[0].id;
@@ -4581,29 +4634,8 @@
     return s.products.filter(function(p){ return p.id === s.selectedProductId; })[0] || s.products[0];
   }
   function adSimPatternColor(idx){ return ADSIM_PAT_COLORS[idx % ADSIM_PAT_COLORS.length]; }
+  function adSimPriceKey(n){ return String(Math.round(adSimNum(n) * 100)); }
 
-  // 1行（子ASIN×売価）の1点純粗利。コンサル手数料は率×税込で計算し、FBAコストも引く。
-  // 日別目標側とまったく同じコスト構造にしてある（片方だけ違う、を防ぐため）。
-  function adSimUnitConsult(pd, price){
-    return adSimNum(price) * (adSimNum(pd.consultPct) / 100) * (1 + adSimNum(pd.taxPct) / 100);
-  }
-  function adSimUnitNet(pd, c){
-    return adSimNum(c.price) - adSimNum(c.cost) - adSimNum(c.amazonFee)
-      - adSimNum(pd.fbaYen) - adSimUnitConsult(pd, c.price);
-  }
-  // 加重平均（想定販売比率は②で入力する）
-  //   加重平均単価      = Σ( 売価 × 想定販売比率 )
-  //   加重平均1点純粗利 = Σ( 1点純粗利 × 想定販売比率 )
-  // 複数の（子ASIN×売価）を、これで1つの経済性にまとめてから月次計算に入る。
-  function adSimWeightedAverages(pd){
-    var avgPrice = 0, avgNet = 0;
-    (pd.children || []).forEach(function(c){
-      var w = adSimNum(c.sharePct) / 100;
-      avgPrice += adSimNum(c.price) * w;
-      avgNet += adSimUnitNet(pd, c) * w;
-    });
-    return { avgPrice: avgPrice, avgNet: avgNet };
-  }
   // 登録されている子ASIN（SKU）の一覧。重複を除き、登録順を保つ。
   function adSimSkuList(pd){
     var out = [], seen = {};
@@ -4615,17 +4647,110 @@
     });
     return out;
   }
+  // (SKU, 区分) の行を引く。その区分の行が無ければ通常の行にフォールバックする
+  // （SALEを設定していない子ASINは通常価格で売る、という自然な扱い）。
+  function adSimFindRow(pd, sku, priceType){
+    var rows = (pd.children || []).filter(function(c){ return (c.sku || "") === (sku || ""); });
+    var hit = rows.filter(function(c){ return c.priceType === priceType; })[0];
+    if (hit) return hit;
+    return rows.filter(function(c){ return c.priceType === "normal"; })[0] || null;
+  }
+  // 1点あたりのコンサル手数料（税込）
+  function adSimUnitConsult(pd, price){
+    return adSimNum(price) * (adSimNum(pd.consultPct) / 100) * (1 + adSimNum(pd.taxPct) / 100);
+  }
+  // 1行の1点純粗利 ＝ 売価 − 原価 − 販売手数料 − FBAコスト − コンサル手数料(税込)
+  function adSimUnitNet(pd, c){
+    if (!c) return 0;
+    return adSimNum(c.price) - adSimNum(c.cost) - adSimNum(c.amazonFee)
+      - adSimNum(pd.fbaYen) - adSimUnitConsult(pd, c.price);
+  }
 
+  // 指定した売価区分での加重平均（想定販売比率で加重）。
+  //   加重平均単価 = Σ( その区分の売価 × 比率 )   ほか原価・手数料も同様
+  // 比率の合計が0のときは null を返す（計算不能）。
+  function adSimWeightedAt(pd, priceType){
+    var out = { price: 0, cost: 0, amazonFee: 0, net: 0, totalShare: 0, missing: [] };
+    adSimSkuList(pd).forEach(function(sku){
+      var share = adSimNum(pd.shares[sku]);
+      if (share <= 0) return;
+      var row = adSimFindRow(pd, sku, priceType);
+      if (!row || adSimNum(row.price) <= 0){ out.missing.push(sku); return; }
+      var w = share / 100;
+      out.price += adSimNum(row.price) * w;
+      out.cost += adSimNum(row.cost) * w;
+      out.amazonFee += adSimNum(row.amazonFee) * w;
+      out.net += adSimUnitNet(pd, row) * w;
+      out.totalShare += share;
+    });
+    return out;
+  }
+
+  // ---------- 日別目標：計算 ----------
+  // 1日分。売価・原価・手数料は「その日の区分の加重平均」から出す。
+  //   売上       = 目標個数 × 加重平均単価
+  //   原価合計   = 目標個数 × 加重平均原価
+  //   販売手数料 = 目標個数 × 加重平均販売手数料
+  //   FBAコスト  = 目標個数 × FBA単価
+  //   コンサル料 = 売上 × 料率 ×（1＋税率）
+  //   VC         = 原価合計 + 販売手数料 + FBAコスト + コンサル料
+  //   MQ(粗利)   = 売上 − VC          ※広告費はここでは引かない（③で月別に引く）
+  //   粗利率     = MQ ÷ 売上 × 100
+  function adSimComputeDailyRow(pd, iso){
+    var dl = pd.daily;
+    var r = dl.rows[iso] || { priceType: "normal", units: 0, pv: 0 };
+    var units = adSimNum(r.units), pv = adSimNum(r.pv);
+    var ptype = adSimIsPriceType(r.priceType) ? r.priceType : "normal";
+    var p = parseNewsDate(iso);
+    var dow = p ? new Date(p.y, p.m - 1, p.d).getDay() : 0;
+    var avg = adSimWeightedAt(pd, ptype);
+    var out = {
+      iso: iso, month: iso.slice(0, 7), dow: dow, weekday: NEWS_WEEKDAY[dow],
+      priceType: ptype, priceTypeLabel: adSimPriceTypeLabel(ptype),
+      unitPrice: avg.price, units: units, pv: pv,
+      revenue: 0, cost: 0, amazonFee: 0, fba: 0, consult: 0, vc: 0, mq: 0, marginPct: null,
+      noMaster: (avg.totalShare <= 0)
+    };
+    if (out.noMaster) return out;   // 比率が入っていない／マスタが無い＝計算できない
+    out.revenue = units * avg.price;
+    out.cost = units * avg.cost;
+    out.amazonFee = units * avg.amazonFee;
+    out.fba = units * adSimNum(pd.fbaYen);
+    out.consult = out.revenue * (adSimNum(pd.consultPct) / 100) * (1 + adSimNum(pd.taxPct) / 100);
+    out.vc = out.cost + out.amazonFee + out.fba + out.consult;
+    out.mq = out.revenue - out.vc;
+    out.marginPct = out.revenue > 0 ? (out.mq / out.revenue * 100) : null;
+    return out;
+  }
+
+  // 月ごと・全期間の合計（広告費を引く前の粗利まで）
+  function adSimDailyTotals(pd){
+    var months = adSimDailyMonths(pd.daily);
+    var blank = function(){
+      return { revenue:0, units:0, pv:0, cost:0, amazonFee:0, fba:0, consult:0, vc:0, mq:0, noMaster:0 };
+    };
+    var all = blank();
+    var perMonth = months.map(function(m){
+      var t = blank();
+      t.key = m.key; t.label = m.label; t.days = m.dates.length;
+      m.dates.forEach(function(iso){
+        var row = adSimComputeDailyRow(pd, iso);
+        if (row.noMaster){ t.noMaster++; all.noMaster++; return; }
+        ["revenue","units","pv","cost","amazonFee","fba","consult","vc","mq"].forEach(function(k){
+          t[k] += row[k]; all[k] += row[k];
+        });
+      });
+      t.marginPct = t.revenue > 0 ? (t.mq / t.revenue * 100) : null;
+      return t;
+    });
+    all.marginPct = all.revenue > 0 ? (all.mq / all.revenue * 100) : null;
+    all.days = months.reduce(function(a, m){ return a + m.dates.length; }, 0);
+    return { months: perMonth, all: all };
+  }
+
+  // ---------- ③ 月次シミュ：日別の合算 − 月別の広告費 ----------
   // 単月ステータス（2つのしきい値で4段階）。maxPctがnullなら許容外判定はしない。
-  //   実質粗利率 < 最大許容粗利率        → 許容外（警告対象）
-  //   最大許容粗利率 以上 かつ 0未満     → 赤字（許容範囲内の赤字）
-  //   0以上 かつ 目標粗利率未満          → 黄字
-  //   目標粗利率 以上                    → 黒字
-  // ★判定順が重要：先に「許容外」を見る。最大許容粗利率にプラス値を入れた場合
-  //   （＝最低これだけは粗利率が欲しい、という使い方）でも矛盾なく判定できる。
-  // ★実質粗利率は小数第1位までしか表示しないので、判定も同じ丸めた値で行う。
-  //   そうしないと実際の値が12.99999%のときに「表示13.0%・目標13%なのに黄字」という
-  //   表示と判定の食い違いが起きる（想定販売比率の100%判定と同じ方針）。
+  // 判定は表示と同じ小数第1位に丸めた値で行う（表示13.0%なのに黄字、を防ぐ）。
   function adSimMonthStatus(marginPct, targetPct, maxPct){
     if (marginPct == null) return "none";
     var m = adSimRound1(marginPct);
@@ -4642,64 +4767,59 @@
     none: { icon: "—", label: "判定不可", cls: "none", rowCls: "" }
   };
 
-  // 1パターン分の3ヶ月シミュレーション。
-  //   ① クリック数     = 広告費 ÷ CPC
-  //   ② 販売点数       = クリック数 × CVR
-  //   ③ 売上           = 販売点数 × 加重平均単価
-  //   ④ 月次粗利       = 販売点数 × 加重平均1点純粗利
-  //   ⑤ 月次損益       = 月次粗利 − 広告費
-  //   ⑥ 月次実質粗利率 = 月次損益 ÷ 売上 × 100
-  //   ⑦ 累積損益       = 当月までの月次損益の合計
-  // ※クリック数は「広告費 ÷ CPC」で機械的に出した簡易モデルで、Amazon広告管理画面の
-  //   セッション数とは異なる。CPCの上振れ（投下額を増やすとCPCが上がる）はv1では扱わない。
+  // 1パターン分。売上・個数・粗利は②日別目標の月合計（固定）で、
+  // そこから月別の投下広告費を引いて損益・実質粗利率・累積損益を出す。
   function adSimComputePattern(pd, pat){
-    var avg = adSimWeightedAverages(pd);
-    var spends = [adSimNum(pat.m1), adSimNum(pat.m2), adSimNum(pat.m3)];
-    var cpc = adSimNum(pat.cpc);
-    var cvr = adSimNum(pat.cvr);
+    var tot = adSimDailyTotals(pd);
     var rows = [];
-    var cum = 0;
-    var totalSpend = 0;
-    for (var i = 0; i < ADSIM_MONTHS; i++){
-      var spend = spends[i];
+    var cum = 0, totalSpend = 0, totalRevenue = 0, totalMq = 0, totalUnits = 0;
+    tot.months.forEach(function(t){
+      var spend = adSimNum(pat.spends[t.key]);
+      var pl = t.mq - spend;
+      cum += spend ? pl : pl;   // 広告費0の月も月次損益はそのまま積む
       totalSpend += spend;
-      // CPCはバリデーションで1円以上を強制しているが、計算側でもゼロ除算を防いでおく
-      var clicks = cpc > 0 ? (spend / cpc) : 0;
-      // 販売点数の端数は丸めない（丸めると売上・粗利がずれて実質粗利率の判定が揺れるため）
-      var units = clicks * (cvr / 100);
-      var revenue = units * avg.avgPrice;
-      var gross = units * avg.avgNet;
-      var pl = gross - spend;
-      cum += pl;
-      // 売上0（広告費0など）のときは実質粗利率が定義できないのでnull＝「—」表示にする
-      var marginPct = revenue > 0 ? (pl / revenue * 100) : null;
+      totalRevenue += t.revenue;
+      totalMq += t.mq;
+      totalUnits += t.units;
+      // 売上0（目標未入力）の月は実質粗利率が定義できないのでnull＝「—」表示にする
+      var marginPct = t.revenue > 0 ? (pl / t.revenue * 100) : null;
       rows.push({
-        month: i + 1, spend: spend, clicks: clicks, units: units, revenue: revenue,
-        gross: gross, pl: pl, marginPct: marginPct, cum: cum,
-        status: adSimMonthStatus(marginPct, pd.targetMarginPct, pd.maxLossPct)
+        key: t.key, label: t.label, days: t.days,
+        revenue: t.revenue, units: t.units, mq: t.mq,
+        spend: spend,
+        spendRate: t.revenue > 0 ? (spend / t.revenue * 100) : null,
+        pl: pl, marginPct: marginPct, cum: cum,
+        status: adSimMonthStatus(marginPct, pd.targetMarginPct, pd.maxLossPct),
+        noMaster: t.noMaster
       });
-    }
-    // ガードレール：実質粗利率が「最大許容粗利率」を下回る月が1つでもあれば警告する。
-    // 仕様書は月1・月2時点と書いているが、月3が谷になる入力もあり得るため
-    // 3ヶ月すべてを見ている（見逃しを防ぐための上位互換）。
-    var worstMargin = null;
-    var worstCum = rows[0].cum;
+    });
+    var worstMargin = null, worstCum = rows.length ? rows[0].cum : 0;
     rows.forEach(function(r){
       if (r.cum < worstCum) worstCum = r.cum;
       if (r.marginPct != null && (worstMargin === null || r.marginPct < worstMargin)) worstMargin = r.marginPct;
     });
-    var finalCum = rows[ADSIM_MONTHS - 1].cum;
+    var finalCum = rows.length ? rows[rows.length - 1].cum : 0;
     return {
       rows: rows,
       totalSpend: totalSpend,
+      totalRevenue: totalRevenue,
+      totalMq: totalMq,
+      totalUnits: totalUnits,
+      totalPl: totalMq - totalSpend,
+      totalMarginPct: totalRevenue > 0 ? ((totalMq - totalSpend) / totalRevenue * 100) : null,
       finalCum: finalCum,
       recovered: finalCum > 0,
       worstCum: worstCum,
       worstMarginPct: worstMargin,
-      guardBreach: rows.some(function(r){ return r.status === "over"; }),
-      avgPrice: avg.avgPrice,
-      avgNet: avg.avgNet
+      guardBreach: rows.some(function(r){ return r.status === "over"; })
     };
+  }
+
+  // 参考：CPC・CVRを入れているときの「必要広告費の目安」＝ 目標個数 ÷ CVR × CPC
+  function adSimRequiredSpend(pat, units){
+    var cpc = adSimNum(pat.cpc), cvr = adSimNum(pat.cvr);
+    if (cpc <= 0 || cvr <= 0) return null;
+    return units / (cvr / 100) * cpc;
   }
 
   // 編集中の入力欄＋保存済みパターンを、グラフ・表で使う共通の系列配列にまとめる。
@@ -4719,8 +4839,7 @@
       calc: adSimComputePattern(pd, pd.draft)
     });
     pd.patterns.forEach(function(pt, idx){
-      // 編集中のパターンは上のdraftとして描いているので、二重に重ねない
-      if (editing && pt.id === editing.id) return;
+      if (editing && pt.id === editing.id) return;   // 編集中はdraftとして描くので二重に重ねない
       out.push({
         key: pt.id,
         name: pt.name || "（無名パターン）",
@@ -4732,7 +4851,7 @@
     return out;
   }
 
-  // ---------- 広告投資回収シミュレーター：バリデーション ----------
+  // ---------- バリデーション ----------
   function adSimValidate(){
     var pd = adSimCurrentProduct();
     var errs = [];
@@ -4747,78 +4866,86 @@
         errs.push("最大許容粗利率は-100〜100%の範囲で入力してください。");
         addField("maxLossPct", "-100〜100");
       } else if (mx > tgt){
-        // 許容下限が目標を上回っていると「目標達成なのに許容外」という矛盾が起きる
         errs.push("最大許容粗利率（" + adSimPct(mx) + "）は目標粗利率（" + adSimPct(tgt) + "）以下にしてください。");
         addField("maxLossPct", "目標粗利率以下に");
       }
     }
-
-    // ① 商品マスタ（子ASIN）
-    var sum = 0;
-    pd.children.forEach(function(c, i){
-      sum += adSimNum(c.sharePct);
-      var no = (i + 1) + "行目";
-      if (adSimNum(c.price) < 1){ errs.push(no + "の売価は1円以上で入力してください。"); addField("c" + c.id + "price", "1円以上"); }
-      if (adSimNum(c.cost) < 0){ errs.push(no + "の原価が0未満です。"); addField("c" + c.id + "cost", "0以上"); }
-      if (adSimNum(c.amazonFee) < 0){ errs.push(no + "のAmazon手数料が0未満です。"); addField("c" + c.id + "amazonFee", "0以上"); }
-      if (adSimNum(c.sharePct) < 0){ errs.push(no + "の想定販売比率が0未満です。"); addField("c" + c.id + "sharePct", "0以上"); }
-    });
-    // 判定と表示のときだけ小数第1位に丸める（内部値は丸めない）
-    var sumRounded = adSimRound1(sum);
-    var shareOk = (sumRounded === 100);
-    if (!shareOk) errs.push("想定販売比率の合計が100.0%ではありません（現在 " + sumRounded.toFixed(1) + "%）。");
-
-    // 商品マスタ（同じ子ASIN×売価の重複を禁止する。重複するとどちらを引くか決まらない）
-    var pmSeen = {};
-    pd.children.forEach(function(c){
-      var k = (c.sku || "") + "@" + adSimPriceKey(c.price);
-      if (pmSeen[k]){
-        errs.push("商品マスタに同じ子ASIN・同じ売価の行が複数あります（" + (c.sku || "未入力") + " / " + adSimYen(c.price) + "）。日別目標でどちらを引くか決まらないため1行にしてください。");
-        addField("childRows", "同じ子ASIN・売価の重複");
-      }
-      pmSeen[k] = true;
-    });
-    // コンサル料率・税率・FBAコスト（月次シミュと日別目標の共通パラメータ）
     if (adSimNum(pd.consultPct) < 0 || adSimNum(pd.consultPct) > 100) errs.push("コンサル料率は0〜100%の範囲で入力してください。");
     if (adSimNum(pd.taxPct) < 0 || adSimNum(pd.taxPct) > 100) errs.push("税率は0〜100%の範囲で入力してください。");
     if (adSimNum(pd.fbaYen) < 0) errs.push("FBAコストは0以上で入力してください。");
 
-    // 日別目標の期間
-    var dl = pd.daily;
-    if (dl){
-      var sd = adSimParseDate(dl.startDate), ed = adSimParseDate(dl.endDate);
-      if (!sd || !ed){ errs.push("日別目標の開始日・終了日を正しく入力してください。"); addField("dailyRange", "日付が不正"); }
-      else if (sd > ed){ errs.push("日別目標の開始日が終了日より後になっています。"); addField("dailyRange", "開始日＞終了日"); }
-      else if (adSimDateSeq(dl.startDate, dl.endDate, 900).length >= 800){
-        errs.push("日別目標の期間が長すぎます（800日以内にしてください）。");
-        addField("dailyRange", "800日以内に");
+    // ① 商品マスタ（同じ子ASIN×同じ区分は1行だけ）
+    var seen = {};
+    pd.children.forEach(function(c, i){
+      var no = (i + 1) + "行目";
+      if (adSimNum(c.price) < 1){ errs.push(no + "の売価は1円以上で入力してください。"); addField("c" + c.id + "price", "1円以上"); }
+      if (adSimNum(c.cost) < 0){ errs.push(no + "の原価が0未満です。"); addField("c" + c.id + "cost", "0以上"); }
+      if (adSimNum(c.amazonFee) < 0){ errs.push(no + "の販売手数料が0未満です。"); addField("c" + c.id + "amazonFee", "0以上"); }
+      var k = (c.sku || "") + "@" + c.priceType;
+      if (seen[k]){
+        errs.push("商品マスタに同じ子ASIN・同じ売価区分の行が複数あります（" + (c.sku || "未入力") + " / " + adSimPriceTypeLabel(c.priceType) + "）。区分ごとに1行にしてください。");
+        addField("childRows", "同じ子ASIN・区分の重複");
       }
+      seen[k] = true;
+    });
+    // 通常売価の行が無い子ASINは、SALE以外の日を計算できない
+    adSimSkuList(pd).forEach(function(sku){
+      if (adSimNum(pd.shares[sku]) <= 0) return;
+      if (!pd.children.some(function(c){ return (c.sku || "") === sku && c.priceType === "normal"; })){
+        errs.push("子ASIN「" + (sku || "未入力") + "」に通常売価の行がありません。通常の行を1つ登録してください。");
+        addField("childRows", "通常売価の行が必要");
+      }
+    });
+
+    // 想定販売比率（合計100.0%）。判定と表示のときだけ小数第1位に丸める。
+    var sum = 0;
+    adSimSkuList(pd).forEach(function(sku){
+      var v = adSimNum(pd.shares[sku]);
+      sum += v;
+      if (v < 0){ errs.push("想定販売比率が0未満です（" + (sku || "未入力") + "）。"); addField("share_" + sku, "0以上"); }
+    });
+    var sumRounded = adSimRound1(sum);
+    var shareOk = (sumRounded === 100);
+    if (!shareOk) errs.push("想定販売比率の合計が100.0%ではありません（現在 " + sumRounded.toFixed(1) + "%）。");
+
+    // ② 日別目標の期間
+    var dl = pd.daily;
+    var sd = adSimParseDate(dl.startDate), ed = adSimParseDate(dl.endDate);
+    if (!sd || !ed){ errs.push("日別目標の開始日・終了日を正しく入力してください。"); addField("dailyRange", "日付が不正"); }
+    else if (sd > ed){ errs.push("日別目標の開始日が終了日より後になっています。"); addField("dailyRange", "開始日＞終了日"); }
+    else if (adSimDateSeq(dl.startDate, dl.endDate, 900).length >= 800){
+      errs.push("日別目標の期間が長すぎます（800日以内にしてください）。");
+      addField("dailyRange", "800日以内に");
     }
 
-    // ② 投下パターン（編集中の入力欄）
+    // ③ 月別の投下広告費（0以上）。CPC・CVRは参考値なので0でもエラーにしない。
     var d = pd.draft;
-    if (adSimNum(d.cpc) < 1){ errs.push("CPCは1円以上で入力してください。"); addField("cpc", "1円以上"); }
-    var cvr = adSimNum(d.cvr);
-    if (cvr < 0.01 || cvr > 100){ errs.push("CVRは0.01〜100%の範囲で入力してください。"); addField("cvr", "0.01〜100"); }
-    ["m1", "m2", "m3"].forEach(function(k, i){
-      if (adSimNum(d[k]) < 0){ errs.push("月" + (i + 1) + "の投下広告費が0未満です。"); addField(k, "0以上"); }
+    Object.keys(d.spends || {}).forEach(function(k){
+      if (adSimNum(d.spends[k]) < 0) errs.push("投下広告費が0未満の月があります（" + k + "）。");
     });
+    if (adSimNum(d.cpc) < 0) errs.push("参考CPCは0以上で入力してください。");
+    var cvr = adSimNum(d.cvr);
+    if (cvr < 0 || cvr > 100) errs.push("参考CVRは0〜100%の範囲で入力してください。");
 
     return { ok: (errs.length === 0), errors: errs, fieldErrs: fieldErrs, shareSum: sumRounded, shareOk: shareOk };
   }
 
-  // ---------- 広告投資回収シミュレーター：描画 ----------
+  // ---------- 描画 ----------
   // 【再描画の方針】テーブルのinnerHTML再構築は「構造が変わったとき」だけに限定する
-  // （親ASIN切替・子ASIN行の追加削除・パターンの保存/削除/読み込み）。値の入力中に
+  // （親ASIN切替・行の追加削除・期間変更・パターンの保存/削除/読み込み）。値の入力中に
   // 再描画すると入力欄が作り直されてフォーカスとカーソル位置が飛ぶため、inputイベントでは
-  // バリデーション表示・加重平均チップ・ボタンのdisabledだけを更新し、テーブルには触らない。
+  // バリデーション表示・派生セル・ボタンのdisabledだけを更新し、テーブルには触らない。
 
   // 既存の attr() は attr(0) が "" を返す（v||"" のため）ので、数値は String() を通す。
-  // そうしないと 0 の項目が空欄でレンダリングされてしまう。
   function adSimNumCell(key, value, step, min){
     return "<td><input type='number' data-adsim-key='" + attr(key) + "' value='" + attr(String(value)) +
       "' step='" + attr(String(step)) + "'" + (min != null ? " min='" + attr(String(min)) + "'" : "") +
       "><p class='adsimFieldErr' data-fe='" + attr(key) + "'></p></td>";
+  }
+  function adSimPriceTypeSelect(attrName, selected){
+    return "<select data-adsim-" + attrName + ">" + ADSIM_PRICE_TYPES.map(function(t){
+      return "<option value='" + attr(t.key) + "'" + (t.key === selected ? " selected" : "") + ">" + esc(t.label) + "</option>";
+    }).join("") + "</select>";
   }
 
   function renderAdSimProductTabs(){
@@ -4845,13 +4972,13 @@
     document.getElementById("adsimProductAsin").value = pd.asin;
     document.getElementById("adsimProductName").value = pd.name;
     document.getElementById("adsimTargetMargin").value = pd.targetMarginPct;
-    // null（未設定）は空欄で表示する
     document.getElementById("adsimMaxLossPct").value = (pd.maxLossPct === null ? "" : pd.maxLossPct);
     document.getElementById("adsimConsultPct").value = pd.consultPct;
     document.getElementById("adsimTaxPct").value = pd.taxPct;
     document.getElementById("adsimFbaYen").value = pd.fbaYen;
   }
 
+  // ① 商品マスタ（1行＝子ASIN × 売価区分）
   function renderAdSimChildTable(){
     var pd = adSimCurrentProduct();
     var body = document.getElementById("adsimChildBody");
@@ -4859,6 +4986,7 @@
     body.innerHTML = pd.children.map(function(c){
       return "<tr data-cid='" + attr(c.id) + "'>" +
         "<td><input type='text' data-adsim-key='c" + attr(c.id) + "sku' value='" + attr(c.sku) + "' placeholder='例: B0XXXXXXXX'></td>" +
+        "<td>" + adSimPriceTypeSelect("ptype", c.priceType) + "</td>" +
         adSimNumCell("c" + c.id + "price", c.price, "1", "0") +
         adSimNumCell("c" + c.id + "cost", c.cost, "0.1", "0") +
         adSimNumCell("c" + c.id + "amazonFee", c.amazonFee, "1", "0") +
@@ -4866,6 +4994,14 @@
         "<td class='rmCell'><button type='button' class='btn small ghost' data-act='adsimDelChild' data-cid='" + attr(c.id) + "'>削除</button></td>" +
       "</tr>";
     }).join("");
+
+    function afterStructureChange(){
+      renderAdSimShareTable();
+      renderAdSimBulkPriceOptions();
+      renderAdSimDailyResult();
+      adSimResyncIfComputed();
+      adSimRefreshValidationUI();
+    }
 
     body.querySelectorAll("input[data-adsim-key]").forEach(function(inp){
       inp.addEventListener("input", function(){
@@ -4881,11 +5017,18 @@
         if (netTd) netTd.textContent = adSimYen(adSimUnitNet(pd, child));
         adSimRefreshValidationUI();
       });
-      // 入力を終えた時点で、②の比率表と日別目標の選択肢を作り直す
-      inp.addEventListener("change", function(){
-        renderAdSimShareTable();
-        renderAdSimBulkPriceOptions();
-        renderAdSimDailyCfg();
+      inp.addEventListener("change", afterStructureChange);
+    });
+    body.querySelectorAll("[data-adsim-ptype]").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        var tr = sel.closest("tr");
+        var child = pd.children.filter(function(x){ return x.id === tr.dataset.cid; })[0];
+        if (!child) return;
+        child.priceType = sel.value;
+        markDirty();
+        var netTd = tr.querySelector("[data-out='net']");
+        if (netTd) netTd.textContent = adSimYen(adSimUnitNet(pd, child));
+        afterStructureChange();
       });
     });
     body.querySelectorAll("[data-act='adsimDelChild']").forEach(function(btn){
@@ -4897,525 +5040,159 @@
         pd.children = pd.children.filter(function(x){ return x.id !== btn.dataset.cid; });
         markDirty();
         renderAdSimChildTable();      // 構造が変わったので再描画してよい
-        renderAdSimShareTable();
-        renderAdSimBulkPriceOptions();
-        renderAdSimDailyCfg();
-        adSimResyncIfComputed();
-        adSimRefreshValidationUI();
+        afterStructureChange();
       });
     });
   }
 
-  // ② 想定販売比率（全パターン共通）。①の各行に比率を割り当てる。
+  // 想定販売比率（1行＝1子ASIN）
   function renderAdSimShareTable(){
     var pd = adSimCurrentProduct();
     var body = document.getElementById("adsimShareBody");
     if (!body) return;
-    body.innerHTML = pd.children.map(function(c){
-      return "<tr data-cid='" + attr(c.id) + "'>" +
-        "<td>" + esc(c.sku || "（未入力）") + "</td>" +
-        "<td class='adsimNum'>" + adSimYen(c.price) + "</td>" +
-        "<td class='adsimNum'>" + adSimYen(adSimUnitNet(pd, c)) + "</td>" +
-        adSimNumCell("s" + c.id + "sharePct", c.sharePct, "0.1", "0") +
+    var skus = adSimSkuList(pd);
+    body.innerHTML = skus.map(function(sku){
+      var normal = adSimFindRow(pd, sku, "normal");
+      return "<tr data-sku='" + attr(sku) + "'>" +
+        "<td>" + esc(sku || "（未入力）") + "</td>" +
+        "<td class='adsimNum'>" + (normal ? adSimYen(normal.price) : "—") + "</td>" +
+        "<td><input type='number' data-adsim-share value='" + attr(String(adSimNum(pd.shares[sku]))) + "' step='0.1' min='0'>" +
+          "<p class='adsimFieldErr' data-fe='share_" + attr(sku) + "'></p></td>" +
       "</tr>";
     }).join("");
-    body.querySelectorAll("input[data-adsim-key]").forEach(function(inp){
+    body.querySelectorAll("[data-adsim-share]").forEach(function(inp){
       inp.addEventListener("input", function(){
-        var cid = inp.closest("tr").dataset.cid;
-        var child = pd.children.filter(function(x){ return x.id === cid; })[0];
-        if (!child) return;
-        child.sharePct = adSimNum(inp.value);
+        var sku = inp.closest("tr").dataset.sku;
+        pd.shares[sku] = adSimNum(inp.value);
         markDirty();
         adSimRefreshValidationUI();   // テーブルは再描画しない（フォーカス保持）
+      });
+      inp.addEventListener("change", function(){
+        renderAdSimDailyResult();
+        adSimResyncIfComputed();
       });
     });
   }
 
-  // 加重平均の結果チップ。入力欄を含まないので入力中に描き直しても安全。
+  // 区分ごとの加重平均チップ（入力欄を含まないので入力中に描き直しても安全）
   function renderAdSimAvgRow(){
     var el = document.getElementById("adsimAvgRow");
     if (!el) return;
     var pd = adSimCurrentProduct();
-    var avg = adSimWeightedAverages(pd);
-    var marginPct = avg.avgPrice > 0 ? (avg.avgNet / avg.avgPrice * 100) : null;
-    el.innerHTML =
-      "<span class='adsimAvgChip'>加重平均単価 <b>" + adSimYen(avg.avgPrice) + "</b></span>" +
-      "<span class='adsimAvgChip'>加重平均1点純粗利 <b>" + adSimYen(avg.avgNet) + "</b></span>" +
-      "<span class='adsimAvgChip'>1点あたり粗利率 <b>" + adSimPct(marginPct) + "</b></span>";
-  }
-
-  function renderAdSimDraftFields(){
-    var pd = adSimCurrentProduct();
-    document.getElementById("adsimDraftName").value = pd.draft.name;
-    document.getElementById("adsimDraftCpc").value = pd.draft.cpc;
-    document.getElementById("adsimDraftCvr").value = pd.draft.cvr;
-    document.getElementById("adsimDraftM1").value = pd.draft.m1;
-    document.getElementById("adsimDraftM2").value = pd.draft.m2;
-    document.getElementById("adsimDraftM3").value = pd.draft.m3;
-  }
-
-  // 「新規として保存」か「読み込んだパターンの上書き保存」かを見た目で明示する
-  function adSimUpdateEditingUI(){
-    var pd = adSimCurrentProduct();
-    var editing = adSimEditingPatternId
-      ? pd.patterns.filter(function(p){ return p.id === adSimEditingPatternId; })[0]
-      : null;
-    var note = document.getElementById("adsimEditingNote");
-    var saveBtn = document.getElementById("adsimSaveBtn");
-    var cancelBtn = document.getElementById("adsimCancelEditBtn");
-    if (note){
-      note.hidden = !editing;
-      note.textContent = editing ? ("✏️ 保存済みパターン「" + (editing.name || "（無名）") + "」を編集中です。") : "";
-    }
-    if (saveBtn) saveBtn.textContent = editing ? "💾 このパターンを上書き保存" : "💾 パターンを保存";
-    if (cancelBtn) cancelBtn.hidden = !editing;
-  }
-
-  function renderAdSimPatternList(){
-    var pd = adSimCurrentProduct();
-    var el = document.getElementById("adsimPatternList");
-    if (!el) return;
-    if (!pd.patterns.length){
-      el.innerHTML = "<p class='hint' style='margin:0;'>保存済みパターンはまだありません。上の「② 投下パターンを入力」で入力して「💾 パターンを保存」を押すと、ここに追加され、グラフとサマリー表で比較できるようになります（最大" + ADSIM_MAX_PATTERNS + "件）。</p>";
-      return;
-    }
-    el.innerHTML = pd.patterns.map(function(pt, idx){
-      var editing = (pt.id === adSimEditingPatternId) ? " editing" : "";
-      var meta = "CPC " + adSimYen(pt.cpc) + "／CVR " + adSimPct(pt.cvr) +
-        "／月1 " + adSimYen(pt.m1) + "・月2 " + adSimYen(pt.m2) + "・月3 " + adSimYen(pt.m3) +
-        "（総投下 " + adSimYen(adSimNum(pt.m1) + adSimNum(pt.m2) + adSimNum(pt.m3)) + "）";
-      return "<div class='adsimPatRow" + editing + "' data-ptid='" + attr(pt.id) + "'>" +
-        "<span class='adsimPatSwatch' style='background:" + adSimPatternColor(idx) + ";'></span>" +
-        "<div>" +
-          "<div class='adsimPatName'>" + esc(pt.name || "（無名パターン）") + "</div>" +
-          "<div class='adsimPatMeta'>" + esc(meta) + "</div>" +
-        "</div>" +
-        "<div class='adsimPatActions'>" +
-          "<button type='button' class='btn small ghost' data-act='adsimLoadPat'>読み込む</button>" +
-          "<button type='button' class='btn small ghost' data-act='adsimDelPat'>削除</button>" +
-        "</div>" +
-      "</div>";
+    var used = {};
+    pd.children.forEach(function(c){ used[c.priceType] = true; });
+    el.innerHTML = ADSIM_PRICE_TYPES.filter(function(t){ return used[t.key]; }).map(function(t){
+      var a = adSimWeightedAt(pd, t.key);
+      var mp = a.price > 0 ? (a.net / a.price * 100) : null;
+      return "<span class='adsimAvgChip'>" + esc(t.label) + " 加重平均単価 <b>" + adSimYen(a.price) +
+        "</b>／1点純粗利 <b>" + adSimYen(a.net) + "</b>（" + adSimPct(mp) + "）</span>";
     }).join("");
-
-    el.querySelectorAll(".adsimPatRow").forEach(function(row){
-      var ptid = row.dataset.ptid;
-      row.querySelector("[data-act='adsimLoadPat']").addEventListener("click", function(){
-        var pt = pd.patterns.filter(function(p){ return p.id === ptid; })[0];
-        if (!pt) return;
-        pd.draft = { name: pt.name, cpc: pt.cpc, cvr: pt.cvr, m1: pt.m1, m2: pt.m2, m3: pt.m3 };
-        adSimEditingPatternId = pt.id;
-        markDirty();
-        renderAdSimDraftFields();
-        renderAdSimPatternList();
-        adSimUpdateEditingUI();
-        adSimResyncIfComputed();
-        adSimRefreshValidationUI();
-        adSimShowSaveMsg("「" + (pt.name || "（無名）") + "」を入力欄に読み込みました。", false);
-      });
-      row.querySelector("[data-act='adsimDelPat']").addEventListener("click", function(){
-        pd.patterns = pd.patterns.filter(function(p){ return p.id !== ptid; });
-        if (adSimEditingPatternId === ptid) adSimEditingPatternId = null;
-        markDirty();
-        renderAdSimPatternList();
-        adSimUpdateEditingUI();
-        adSimResyncIfComputed();
-        adSimRefreshValidationUI();
-        adSimShowSaveMsg("パターンを削除しました。", false);
-      });
-    });
   }
 
-  function adSimShowSaveMsg(msg, isErr){
-    var el = document.getElementById("adsimSaveMsg");
-    if (!el) return;
-    el.style.color = isErr ? "var(--danger)" : "var(--status-good)";
-    el.textContent = msg || "";
-  }
-
-  // エラー表示・加重平均チップ・ボタンのdisabledだけを更新する（テーブルは再描画しない）
-  function adSimRefreshValidationUI(){
-    var v = adSimValidate();
-
-    renderAdSimAvgRow();
-
-    var sumEl = document.getElementById("adsimShareSum");
-    if (sumEl){
-      sumEl.className = "adsimShareSum " + (v.shareOk ? "ok" : "ng");
-      if (v.shareOk){
-        sumEl.textContent = "想定販売比率の合計：100.0%（OK）";
-      } else {
-        var diff = adSimRound1(100 - v.shareSum);
-        sumEl.textContent = "想定販売比率の合計：" + v.shareSum.toFixed(1) + "%　"
-          + (diff > 0 ? ("→ " + diff.toFixed(1) + "% 不足") : ("→ " + Math.abs(diff).toFixed(1) + "% 超過"));
-      }
-    }
-
-    document.querySelectorAll("#view-adsim .adsimFieldErr[data-fe]").forEach(function(p){
-      var msg = v.fieldErrs[p.dataset.fe];
-      p.textContent = msg || "";
-      p.classList.toggle("show", !!msg);
-    });
-
-    var sum2 = document.getElementById("adsimErrSummary");
-    if (sum2){
-      if (v.ok){ sum2.hidden = true; sum2.textContent = ""; }
-      else {
-        sum2.hidden = false;
-        var shown = v.errors.slice(0, 6);
-        sum2.textContent = "⚠ 入力エラー（" + v.errors.length + "件）\n" + shown.join("\n")
-          + (v.errors.length > shown.length ? ("\nほか " + (v.errors.length - shown.length) + "件") : "");
-      }
-    }
-
-    // エラーが1件でもあれば計算・保存を両方無効化
-    var calcBtn = document.getElementById("adsimCalcBtn");
-    var saveBtn = document.getElementById("adsimSaveBtn");
-    if (calcBtn) calcBtn.disabled = !v.ok;
-    if (saveBtn) saveBtn.disabled = !v.ok;
-
-    adSimApplyChartState(v.ok);
-    return v;
-  }
-
-  // 現在の親ASINの計算結果があるかどうか（親ASINを切り替えたら未計算扱いに戻す）
-  function adSimHasResult(){
-    var s = adSimEnsureState();
-    return !!(s.lastResult && s.lastResult.productId === s.selectedProductId);
-  }
-
-  // グラフの3状態（①未計算／②正常／③エラーで凍結表示）を切り替える
-  function adSimApplyChartState(isValid){
-    var overlay = document.getElementById("adsimOverlay");
-    var vEl = document.getElementById("adsimVerdict");
-    var hasResult = adSimHasResult();
-    if (overlay) overlay.hidden = (isValid || !hasResult);
-    if (vEl) vEl.classList.toggle("stale", (!isValid && hasResult));
-    var note = vEl ? vEl.querySelector(".adsimVerdictNote") : null;
-    if (note) note.textContent = (!isValid && hasResult) ? "（※直前の入力に基づく参考値）" : "";
-
-    // 未入力かつ未計算のときは、凍結表示ではなくプレースホルダーを出す
-    if (!hasResult){
-      var area = document.getElementById("adsimChartArea");
-      if (area && !area.querySelector(".adsimPlaceholder")){
-        area.innerHTML = "<div class='adsimPlaceholder'>パラメータを入力してください</div>";
-      }
-      if (vEl && !vEl.querySelector(".adsimVerdictNote")){
-        vEl.innerHTML = "<span class='adsimVerdictMain'></span><span class='adsimVerdictNote'></span>";
-      }
-      var legend = document.getElementById("adsimLegend");
-      if (legend) legend.innerHTML = "";
+  // ---------- ② 日別目標：描画 ----------
+  function renderAdSimDailyCfg(){
+    var pd = adSimCurrentProduct();
+    var dl = pd.daily;
+    document.getElementById("adsimDailyStart").value = dl.startDate;
+    document.getElementById("adsimDailyEnd").value = dl.endDate;
+    document.getElementById("adsimBulkMode").value = dl.bulkMode;
+    var prm = document.getElementById("adsimDailyParamRow");
+    if (prm){
+      prm.innerHTML =
+        "<span class='adsimAvgChip'>コンサル料率 <b>" + adSimPct(pd.consultPct) + "</b></span>" +
+        "<span class='adsimAvgChip'>税率 <b>" + adSimPct(pd.taxPct) + "</b></span>" +
+        "<span class='adsimAvgChip'>FBAコスト <b>" + adSimYen(pd.fbaYen) + "/個</b></span>";
     }
   }
 
-  // ---------- 広告投資回収シミュレーター：SVGグラフ ----------
-  // 既存 renderAirChart() と同じ idiom（SVG文字列を組み立てて innerHTML、色は
-  // var(--...) 参照でダークモードに自動追従、ホバーは共通の #tooltip を流用）。
-  function adSimAxisLabel(v){
-    var man = v / 10000;
-    return (Math.round(man * 10) / 10) + "万";
-  }
-  function adSimRenderChart(result){
-    var area = document.getElementById("adsimChartArea");
-    var legend = document.getElementById("adsimLegend");
-    var vEl = document.getElementById("adsimVerdict");
-    if (!area || !result) return;
-
-    var W = 860, H = 320;
-    var padL = 78, padR = 26, padT = 18, padB = 40;
-    var plotW = W - padL - padR, plotH = H - padT - padB;
-
-    var vals = [0];
-    result.series.forEach(function(sr){ sr.calc.rows.forEach(function(r){ vals.push(r.cum); }); });
-    var vMin = Math.min.apply(null, vals);
-    var vMax = Math.max.apply(null, vals);
-    if (vMin === vMax){ vMin -= 1; vMax += 1; }
-    var padV = (vMax - vMin) * 0.1;
-    vMin -= padV; vMax += padV;
-    function yFor(v){ return padT + plotH * (1 - (v - vMin) / (vMax - vMin)); }
-    function xFor(m){ return ADSIM_MONTHS > 1 ? (padL + plotW * (m - 1) / (ADSIM_MONTHS - 1)) : (padL + plotW / 2); }
-
-    var svg = "";
-    var steps = 5;
-    for (var i = 0; i <= steps; i++){
-      var gy = padT + plotH * i / steps;
-      svg += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="var(--grid)" stroke-width="1"/>';
-      var gv = vMax - (vMax - vMin) * i / steps;
-      svg += '<text x="' + (padL - 6) + '" y="' + (gy + 3.5).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--text-secondary)">' + adSimAxisLabel(gv) + '</text>';
-    }
-    for (var m = 1; m <= ADSIM_MONTHS; m++){
-      svg += '<text x="' + xFor(m).toFixed(1) + '" y="' + (H - padB + 20) + '" font-size="11.5" font-weight="600" text-anchor="middle" fill="var(--text-secondary)">月' + m + '</text>';
-    }
-
-    // 損益分岐（累積0円）のライン
-    var zy = yFor(0);
-    svg += '<line x1="' + padL + '" y1="' + zy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zy.toFixed(1) + '" stroke="var(--text-muted)" stroke-width="1.3" stroke-dasharray="5 4"/>';
-    svg += '<text x="' + (W - padR) + '" y="' + (zy - 5).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--text-muted)">損益分岐（0円）</text>';
-
-    // ガードレールが「粗利率(%)」になったので、円建ての累積損益グラフには固定の
-    // 上限ラインを引けない（率のしきい値は売上に比例した傾きのある境界になる）。
-    // 許容外の警告は下の警告ボックス・単月表の判定・サマリー表の⚠で示している。
-
-    result.series.forEach(function(sr){
-      var pts = sr.calc.rows.map(function(r){ return xFor(r.month).toFixed(1) + "," + yFor(r.cum).toFixed(1); }).join(" ");
-      // 編集中の入力欄は保存済みパターンと区別できるよう破線にする
-      var dash = sr.isDraft ? ' stroke-dasharray="6 3"' : '';
-      svg += '<polyline points="' + pts + '" fill="none" stroke="' + sr.color + '" stroke-width="2.4" stroke-linejoin="round"' + dash + '/>';
-      sr.calc.rows.forEach(function(r){
-        svg += '<circle class="adsimDot" cx="' + xFor(r.month).toFixed(1) + '" cy="' + yFor(r.cum).toFixed(1) +
-          '" r="5" fill="var(--surface-1)" stroke="' + sr.color + '" stroke-width="2.5" data-tip="' +
-          attr(sr.name + " ／ 月" + r.month + " 累積損益 " + adSimSignedYen(r.cum)) + '"/>';
-      });
-    });
-
-    area.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; height:auto; display:block;">' + svg + '</svg>';
-
-    // 回収判定（3ヶ月目終了時点で累積損益がプラスに転換しているか）を上部に明示する
-    var verdictLines = result.series.map(function(sr){
-      return esc(sr.name) + "：" + (sr.calc.recovered
-        ? ("3ヶ月で回収（累積 " + adSimSignedYen(sr.calc.finalCum) + "）")
-        : ("未回収（累積 " + adSimSignedYen(sr.calc.finalCum) + "）"));
-    }).join("<br>");
-    if (vEl) vEl.innerHTML = "<span class='adsimVerdictMain'>" + verdictLines + "</span><span class='adsimVerdictNote'></span>";
-
-    if (legend){
-      legend.innerHTML = result.series.map(function(sr){
-        return "<span class='legendItem'><span class='sw' style='background:" + sr.color + ";'></span>" + esc(sr.name) + "</span>";
+  function renderAdSimBulkPriceOptions(){
+    var pd = adSimCurrentProduct();
+    var sel = document.getElementById("adsimBulkPriceVal");
+    if (sel){
+      sel.innerHTML = ADSIM_PRICE_TYPES.map(function(t){
+        var a = adSimWeightedAt(pd, t.key);
+        return "<option value='" + attr(t.key) + "'>" + esc(t.label) +
+          (a.price > 0 ? "（加重平均 " + adSimYen(a.price) + "）" : "") + "</option>";
       }).join("");
     }
-
-    // ホバーは既存のグローバル #tooltip を流用する
-    area.querySelectorAll(".adsimDot").forEach(function(dot){
-      dot.addEventListener("mousemove", function(e){
-        tooltipEl.hidden = false;
-        tooltipEl.textContent = dot.dataset.tip;
-        tooltipEl.style.left = (e.clientX + 12) + "px";
-        tooltipEl.style.top = (e.clientY + 12) + "px";
-      });
-      dot.addEventListener("mouseleave", function(){ tooltipEl.hidden = true; });
+    var months = adSimDailyMonths(pd.daily);
+    var opts = months.map(function(m){ return "<option value='" + attr(m.key) + "'>" + esc(m.label) + "</option>"; }).join("");
+    ["adsimCopyFrom", "adsimCopyTo"].forEach(function(id, idx){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = opts;
+      if (months.length > 1) el.selectedIndex = idx === 0 ? 0 : 1;
     });
   }
 
-  // ③ 単月損益の推移（月1〜3を赤字/黄字/黒字で色分け）
-  function renderAdSimMonthTable(result){
-    var body = document.getElementById("adsimMonthBody");
-    var warn = document.getElementById("adsimWarnBox");
+  function renderAdSimMonthlyInput(){
+    var pd = adSimCurrentProduct();
+    var body = document.getElementById("adsimMonthlyInputBody");
     if (!body) return;
-    if (!result){
-      body.innerHTML = "<tr><td colspan='11' class='hint'>「▶ 計算実行」を押すと月次の内訳が表示されます。</td></tr>";
-      if (warn){ warn.hidden = true; warn.textContent = ""; }
+    var months = adSimDailyMonths(pd.daily);
+    if (!months.length){
+      body.innerHTML = "<tr><td colspan='6' class='hint'>期間が正しくありません。開始日と終了日を確認してください。</td></tr>";
       return;
     }
-
-    var html = "";
-    result.series.forEach(function(sr){
-      sr.calc.rows.forEach(function(r, i){
-        var meta = ADSIM_STATUS_META[r.status];
-        var cls = [];
-        if (meta.rowCls) cls.push(meta.rowCls);
-        if (i === 0) cls.push("adsimGroupTop");
-        html += "<tr class='" + cls.join(" ") + "'>" +
-          "<td class='adsimPatName'>" + (i === 0 ? esc(sr.name) : "") + "</td>" +
-          "<td class='adsimNum'>月" + r.month + "</td>" +
-          "<td class='adsimNum'>" + adSimYen(r.spend) + "</td>" +
-          "<td class='adsimNum'>" + adSimQty(r.clicks) + "</td>" +
-          "<td class='adsimNum'>" + adSimQty(r.units) + "</td>" +
-          "<td class='adsimNum'>" + adSimYen(r.revenue) + "</td>" +
-          "<td class='adsimNum'>" + adSimYen(r.gross) + "</td>" +
-          "<td class='adsimNum'>" + adSimSignedYen(r.pl) + "</td>" +
-          "<td class='adsimNum'>" + adSimPct(r.marginPct) + "</td>" +
-          "<td><span class='adsimStatus " + meta.cls + "'>" + meta.icon + " " + meta.label + "</span></td>" +
-          "<td class='adsimNum'>" + adSimSignedYen(r.cum) + "</td>" +
-        "</tr>";
-      });
-    });
-    body.innerHTML = html;
-
-    // ガードレール警告（実質粗利率が最大許容粗利率を下回る＝許容外のパターン）
-    if (warn){
-      var breached = result.series.filter(function(sr){ return sr.calc.guardBreach; });
-      if (!breached.length){ warn.hidden = true; warn.textContent = ""; }
-      else {
-        warn.hidden = false;
-        warn.textContent = "⚠ 最大許容粗利率（" + adSimPct(result.guardPct) + "）を下回る見込みのパターンがあります\n" +
-          breached.map(function(sr){
-            return "・" + sr.name + "：最も低い実質粗利率 " + adSimPct(sr.calc.worstMarginPct) +
-              "（3ヶ月目時点の累積損益 " + adSimSignedYen(sr.calc.finalCum) + "）";
-          }).join("\n");
-      }
-    }
-  }
-
-  // ⑤ パターン別サマリー（総投下額・3ヶ月目時点の累積損益・黒字転換の有無）
-  function renderAdSimSummaryTable(result){
-    var body = document.getElementById("adsimSummaryBody");
-    if (!body) return;
-    if (!result){
-      body.innerHTML = "<tr><td colspan='4' class='hint'>「▶ 計算実行」を押すと比較表が表示されます。</td></tr>";
-      return;
-    }
-    body.innerHTML = result.series.map(function(sr){
-      var warnMark = sr.calc.guardBreach ? " <span class='adsimStatus over'>⚠ 許容外</span>" : "";
-      return "<tr>" +
-        "<td class='adsimPatName'><span class='adsimPatSwatch' style='background:" + sr.color + "; display:inline-block; margin-right:6px;'></span>" + esc(sr.name) + "</td>" +
-        "<td class='adsimNum'>" + adSimYen(sr.calc.totalSpend) + "</td>" +
-        "<td class='adsimNum'>" + adSimSignedYen(sr.calc.finalCum) + "</td>" +
-        "<td>" + (sr.calc.recovered
-          ? "<span class='adsimStatus good'>⚫ 黒字転換</span>"
-          : "<span class='adsimStatus loss'>🔴 未回収</span>") + warnMark + "</td>" +
+    body.innerHTML = months.map(function(m){
+      return "<tr data-mkey='" + attr(m.key) + "'>" +
+        "<td class='adsimPatName'>" + esc(m.label) + "</td>" +
+        "<td class='adsimNum'>" + m.dates.length + "日</td>" +
+        "<td><select data-mf='priceType'><option value=''>（変更しない）</option>" +
+          ADSIM_PRICE_TYPES.map(function(t){ return "<option value='" + attr(t.key) + "'>" + esc(t.label) + "</option>"; }).join("") +
+        "</select></td>" +
+        "<td><input type='number' data-mf='units' step='1' min='0' placeholder='—'></td>" +
+        "<td><input type='number' data-mf='pv' step='1' min='0' placeholder='—'></td>" +
+        "<td class='rmCell'><button type='button' class='btn small primary' data-act='adsimApplyMonth'>この月に反映</button></td>" +
       "</tr>";
     }).join("");
-  }
-
-  // 計算実行：編集中の入力欄＋保存済みパターンをまとめて計算し lastResult に保存する
-  function adSimRunCalculation(){
-    var v = adSimValidate();
-    if (!v.ok) return false;
-    var s = adSimEnsureState();
-    var pd = adSimCurrentProduct();
-    s.lastResult = {
-      productId: pd.id,
-      guardPct: pd.maxLossPct,
-      targetMarginPct: adSimNum(pd.targetMarginPct),
-      series: adSimBuildSeries(pd)
-    };
-    markDirty();
-    return true;
-  }
-
-  // すでに計算済みなら、構造変更（子ASIN追加削除・パターン保存/削除/読み込み）のあとに
-  // 結果を作り直して表示を合わせる。未計算のときは何もしない（①未計算状態を保つ）。
-  function adSimResyncIfComputed(){
-    if (!adSimHasResult()) return;
-    if (adSimValidate().ok) adSimRunCalculation();
-    renderAdSimResult();
-  }
-
-  function renderAdSimResult(){
-    var s = adSimEnsureState();
-    if (!adSimHasResult()){
-      renderAdSimMonthTable(null);
-      renderAdSimSummaryTable(null);
-      return;
-    }
-    adSimRenderChart(s.lastResult);
-    renderAdSimMonthTable(s.lastResult);
-    renderAdSimSummaryTable(s.lastResult);
-  }
-
-  // 画面全体の描画エントリポイント（goToView と renderAll から呼ばれる）
-  function renderAdSimAll(){
-    if (!document.getElementById("view-adsim")) return;
-    adSimEnsureState();
-    adSimApplyActiveTab();
-    renderAdSimProductTabs();
-    renderAdSimProductFields();
-    renderAdSimChildTable();
-    renderAdSimDraftFields();
-    renderAdSimPatternList();
-    adSimUpdateEditingUI();
-    renderAdSimShareTable();
-    renderAdSimDailyAll();
-    renderAdSimResult();
-    adSimRefreshValidationUI();
-  }
-
-  // ---------- 商品マスタの売価引き（1行＝子ASIN × 売価） ----------
-  // 同じ子ASINでも売価によって原価や販売手数料が変わるため、①商品マスタは
-  // 売価ごとに1行持つ。日別目標は各日の売価から (sku, 売価) で該当行を引く。
-  // 売価は小数を持たない運用だが、念のため丸め誤差を避けて小数第2位までで突き合わせる。
-  function adSimPriceKey(n){ return String(Math.round(adSimNum(n) * 100)); }
-  function adSimFindPriceRow(pd, sku, price){
-    var key = adSimPriceKey(price);
-    return (pd.children || []).filter(function(c){
-      return (c.sku || "") === (sku || "") && adSimPriceKey(c.price) === key;
-    })[0] || null;
-  }
-  // 対象子ASINに登録されている売価の一覧（昇順）。一括入力のプルダウンに使う。
-  function adSimPriceOptions(pd, sku){
-    return (pd.children || [])
-      .filter(function(c){ return (c.sku || "") === (sku || "") && adSimNum(c.price) > 0; })
-      .map(function(c){ return adSimNum(c.price); })
-      .sort(function(a, b){ return a - b; });
-  }
-
-  // ---------- 日別目標：計算 ----------
-  // 1日分の計算。スプレッドシートの数式（実データ92日で検算済み）をそのまま実装する。
-  //   P(売上)    = 売価 × 個数
-  //   原価合計   = 原価単価(価格マスタ) × 個数
-  //   販売手数料 = 販売手数料単価(価格マスタ) × 個数
-  //   FBAコスト  = FBA単価 × 個数
-  //   コンサル料 = P × コンサル率/100 × (1 + 税率/100)
-  //   VC         = 原価合計 + 販売手数料 + FBAコスト + コンサル料
-  //   MQ         = P − VC
-  //   M(粗利率)  = MQ ÷ P × 100
-  // 売価が価格マスタに無い日は原価・手数料が確定できないので noMaster:true とし、
-  // 表では「⚠ マスタ未登録」を出して集計から除外する（シートが #N/A になっていた挙動に対応）。
-  function adSimComputeDailyRow(pd, iso){
-    var dl = pd.daily;
-    var r = dl.rows[iso] || { price: 0, units: 0, pv: 0 };
-    var price = adSimNum(r.price), units = adSimNum(r.units), pv = adSimNum(r.pv);
-    var p = parseNewsDate(iso);
-    var dow = p ? new Date(p.y, p.m - 1, p.d).getDay() : 0;
-    var out = {
-      iso: iso, month: iso.slice(0, 7), dow: dow, weekday: NEWS_WEEKDAY[dow],
-      price: price, units: units, pv: pv,
-      revenue: 0, cost: 0, amazonFee: 0, fba: 0, consult: 0, vc: 0, mq: 0, marginPct: null,
-      noMaster: false, empty: (price <= 0 && units <= 0 && pv <= 0)
-    };
-    out.revenue = price * units;
-    var pm = price > 0 ? adSimFindPriceRow(pd, dl.sku, price) : null;
-    if (price > 0 && !pm){
-      out.noMaster = true;
-      return out;   // 原価・手数料が出せないので以降は計算しない
-    }
-    if (pm){
-      out.cost = adSimNum(pm.cost) * units;
-      out.amazonFee = adSimNum(pm.amazonFee) * units;
-    }
-    out.fba = adSimNum(pd.fbaYen) * units;
-    out.consult = out.revenue * (adSimNum(pd.consultPct) / 100) * (1 + adSimNum(pd.taxPct) / 100);
-    out.vc = out.cost + out.amazonFee + out.fba + out.consult;
-    out.mq = out.revenue - out.vc;
-    out.marginPct = out.revenue > 0 ? (out.mq / out.revenue * 100) : null;
-    return out;
-  }
-
-  // 月ごと・全期間の合計。マスタ未登録の日は集計に入れず件数だけ数える。
-  function adSimDailyTotals(pd){
-    var months = adSimDailyMonths(pd.daily);
-    var blank = function(){
-      return { revenue:0, units:0, pv:0, cost:0, amazonFee:0, fba:0, consult:0, vc:0, mq:0, noMaster:0 };
-    };
-    var all = blank();
-    var perMonth = months.map(function(m){
-      var t = blank();
-      t.key = m.key; t.label = m.label; t.days = m.dates.length;
-      m.dates.forEach(function(iso){
-        var row = adSimComputeDailyRow(pd, iso);
-        if (row.noMaster){ t.noMaster++; all.noMaster++; return; }
-        ["revenue","units","pv","cost","amazonFee","fba","consult","vc","mq"].forEach(function(k){
-          t[k] += row[k]; all[k] += row[k];
-        });
+    body.querySelectorAll("[data-act='adsimApplyMonth']").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var tr = btn.closest("tr");
+        if (!adSimApplyMonthRow(tr)){
+          adSimShowDailyMsg("この月に反映する値が入っていません。売価区分・目標個数・目標アクセス数のいずれかを入力してください。", true);
+          return;
+        }
+        renderAdSimDailyResult();
+        adSimResyncIfComputed();
+        adSimShowDailyMsg(tr.querySelector(".adsimPatName").textContent + " に反映しました。", false);
       });
-      t.marginPct = t.revenue > 0 ? (t.mq / t.revenue * 100) : null;
-      return t;
     });
-    all.marginPct = all.revenue > 0 ? (all.mq / all.revenue * 100) : null;
-    all.days = months.reduce(function(a, m){ return a + m.dates.length; }, 0);
-    return { months: perMonth, all: all };
   }
 
-  // ---------- 日別目標：一括入力 ----------
+  function adSimApplyMonthRow(tr){
+    var pd = adSimCurrentProduct();
+    var dl = pd.daily;
+    var month = adSimDailyMonths(dl).filter(function(m){ return m.key === tr.dataset.mkey; })[0];
+    if (!month) return 0;
+    var applied = 0;
+    var pt = tr.querySelector("[data-mf='priceType']");
+    if (pt && pt.value){
+      adSimFillDates(dl, month.dates, "priceType", pt.value, "perDay");
+      applied++;
+    }
+    ["units", "pv"].forEach(function(f){
+      var inp = tr.querySelector("[data-mf='" + f + "']");
+      if (!inp || String(inp.value).trim() === "") return;   // 空欄はスキップ
+      adSimFillDates(dl, month.dates, f, inp.value, dl.bulkMode);
+      applied++;
+    });
+    if (applied) markDirty();
+    return applied;
+  }
+
   function adSimDailyRow(dl, iso){
-    if (!dl.rows[iso]) dl.rows[iso] = { price: 0, units: 0, pv: 0 };
+    if (!dl.rows[iso]) dl.rows[iso] = { priceType: "normal", units: 0, pv: 0 };
     return dl.rows[iso];
   }
   // 指定した日付群に値を書き込む。mode="total" のときは均等割りし、
   // 端数は最終日で吸収して合計が指定値とぴったり一致するようにする。
   function adSimFillDates(dl, dates, field, value, mode){
     if (!dates.length) return 0;
-    if (field === "price" || mode !== "total"){
-      dates.forEach(function(iso){ adSimDailyRow(dl, iso)[field] = adSimNum(value); });
+    if (field === "priceType" || mode !== "total"){
+      dates.forEach(function(iso){
+        adSimDailyRow(dl, iso)[field] = (field === "priceType") ? String(value) : adSimNum(value);
+      });
       return dates.length;
     }
     var total = adSimNum(value);
@@ -5434,98 +5211,11 @@
     el.style.color = isErr ? "var(--danger)" : "var(--status-good)";
     el.textContent = msg || "";
   }
-
-  // ---------- 日別目標：描画 ----------
-  function renderAdSimDailyCfg(){
-    var pd = adSimCurrentProduct();
-    var dl = pd.daily;
-    var sel = document.getElementById("adsimDailyChild");
-    if (sel){
-      var skus = adSimSkuList(pd);
-      sel.innerHTML = skus.map(function(sk){
-        return "<option value='" + attr(sk) + "'" + (sk === dl.sku ? " selected" : "") + ">" +
-          esc(sk || "（未入力の子ASIN）") + "</option>";
-      }).join("");
-    }
-    document.getElementById("adsimDailyStart").value = dl.startDate;
-    document.getElementById("adsimDailyEnd").value = dl.endDate;
-    document.getElementById("adsimBulkMode").value = dl.bulkMode;
-    // 親ASIN側で設定した共通パラメータを、日別目標タブでも確認できるように表示する
-    var prm = document.getElementById("adsimDailyParamRow");
-    if (prm){
-      prm.innerHTML =
-        "<span class='adsimAvgChip'>コンサル料率 <b>" + adSimPct(pd.consultPct) + "</b></span>" +
-        "<span class='adsimAvgChip'>税率 <b>" + adSimPct(pd.taxPct) + "</b></span>" +
-        "<span class='adsimAvgChip'>FBAコスト <b>" + adSimYen(pd.fbaYen) + "/個</b></span>";
-    }
-  }
-
-  // 一括入力の売価プルダウンと、月コピーのプルダウンを作り直す（入力欄を含まないので安全）
-  function renderAdSimBulkPriceOptions(){
-    var pd = adSimCurrentProduct();
-    var sel = document.getElementById("adsimBulkPriceVal");
-    if (sel){
-      var prices = adSimPriceOptions(pd, pd.daily.sku);
-      sel.innerHTML = prices.length
-        ? prices.map(function(v){ return "<option value='" + attr(String(v)) + "'>" + adSimYen(v) + "</option>"; }).join("")
-        : "<option value=''>（価格マスタに登録がありません）</option>";
-    }
-    var months = adSimDailyMonths(pd.daily);
-    var opts = months.map(function(m){ return "<option value='" + attr(m.key) + "'>" + esc(m.label) + "</option>"; }).join("");
-    ["adsimCopyFrom", "adsimCopyTo"].forEach(function(id, idx){
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.innerHTML = opts;
-      if (months.length > 1) el.selectedIndex = idx === 0 ? 0 : 1;
-    });
-  }
-
-  function renderAdSimMonthlyInput(){
-    var pd = adSimCurrentProduct();
-    var dl = pd.daily;
-    var body = document.getElementById("adsimMonthlyInputBody");
-    if (!body) return;
-    var months = adSimDailyMonths(dl);
-    if (!months.length){
-      body.innerHTML = "<tr><td colspan='6' class='hint'>期間が正しくありません。開始日と終了日を確認してください。</td></tr>";
-      return;
-    }
-    body.innerHTML = months.map(function(m){
-      return "<tr data-mkey='" + attr(m.key) + "'>" +
-        "<td class='adsimPatName'>" + esc(m.label) + "</td>" +
-        "<td class='adsimNum'>" + m.dates.length + "日</td>" +
-        "<td><input type='number' data-mf='price' step='1' min='0' placeholder='—'></td>" +
-        "<td><input type='number' data-mf='units' step='1' min='0' placeholder='—'></td>" +
-        "<td><input type='number' data-mf='pv' step='1' min='0' placeholder='—'></td>" +
-        "<td class='rmCell'><button type='button' class='btn small primary' data-act='adsimApplyMonth'>この月に反映</button></td>" +
-      "</tr>";
-    }).join("");
-    body.querySelectorAll("[data-act='adsimApplyMonth']").forEach(function(btn){
-      btn.addEventListener("click", function(){
-        var tr = btn.closest("tr");
-        adSimApplyMonthRow(tr);
-        renderAdSimDailyResult();
-        adSimShowDailyMsg(tr.querySelector(".adsimPatName").textContent + " に反映しました。", false);
-      });
-    });
-  }
-
-  // 月別入力の1行を、その月の全日に書き込む。空欄の項目は触らない。
-  function adSimApplyMonthRow(tr){
-    var pd = adSimCurrentProduct();
-    var dl = pd.daily;
-    var mkey = tr.dataset.mkey;
-    var month = adSimDailyMonths(dl).filter(function(m){ return m.key === mkey; })[0];
-    if (!month) return 0;
-    var applied = 0;
-    ["price", "units", "pv"].forEach(function(f){
-      var inp = tr.querySelector("[data-mf='" + f + "']");
-      if (!inp || String(inp.value).trim() === "") return;   // 空欄はスキップ
-      adSimFillDates(dl, month.dates, f, inp.value, dl.bulkMode);
-      applied++;
-    });
-    if (applied) markDirty();
-    return applied;
+  function adSimShowSaveMsg(msg, isErr){
+    var el = document.getElementById("adsimSaveMsg");
+    if (!el) return;
+    el.style.color = isErr ? "var(--danger)" : "var(--status-good)";
+    el.textContent = msg || "";
   }
 
   function renderAdSimDailySummary(){
@@ -5560,14 +5250,13 @@
       if (!tot.all.noMaster){ warn.hidden = true; warn.textContent = ""; }
       else {
         warn.hidden = false;
-        warn.textContent = "⚠ 売価が価格マスタに無い日が " + tot.all.noMaster + "日あります\n" +
-          "その日は原価・販売手数料が計算できないため、上の集計から除外しています。「価格マスタ」にその売価を登録するか、日別の売価を登録済みの値に直してください。";
+        warn.textContent = "⚠ 計算できない日が " + tot.all.noMaster + "日あります\n" +
+          "想定販売比率が入っていないか、その区分の売価がマスタに無い可能性があります。①商品マスタと想定販売比率を確認してください。";
       }
     }
   }
 
-  // 日別テーブル：月ごとに<details>で折りたたむ。開いたときに中身を作る（遅延描画）ので、
-  // 184日×3入力＝552個の入力欄を一度に生成しない。
+  // 日別テーブル：月ごとに<details>で折りたたみ、開いたときに行を作る（遅延描画）
   function renderAdSimDailyTable(){
     var pd = adSimCurrentProduct();
     var wrap = document.getElementById("adsimDailyMonthBlocks");
@@ -5580,52 +5269,55 @@
     var tot = adSimDailyTotals(pd);
     var byKey = {};
     tot.months.forEach(function(t){ byKey[t.key] = t; });
+    var openKeys = {};
+    wrap.querySelectorAll(".adsimMonthBlock").forEach(function(d){ if (d.open) openKeys[d.dataset.mkey] = true; });
 
     wrap.innerHTML = months.map(function(m){
       var t = byKey[m.key] || {};
-      var sum = "売上 " + adSimYen(t.revenue || 0) + "／" + adSimQty(t.units || 0) + "個／MQ " + adSimSignedYen(t.mq || 0) +
-        (t.noMaster ? "／⚠ マスタ未登録 " + t.noMaster + "日" : "");
-      return "<details class='adsimMonthBlock' data-mkey='" + attr(m.key) + "'>" +
-        "<summary>" + esc(m.label) + "（" + m.dates.length + "日）<span class='adsimMonthSum'>" + esc(sum) + "</span></summary>" +
+      return "<details class='adsimMonthBlock' data-mkey='" + attr(m.key) + "'" + (openKeys[m.key] ? " open" : "") + ">" +
+        "<summary>" + esc(m.label) + "（" + m.dates.length + "日）<span class='adsimMonthSum'>" + esc(adSimMonthSumText(t)) + "</span></summary>" +
         "<div class='adsimMonthBody'></div>" +
       "</details>";
     }).join("");
 
     wrap.querySelectorAll(".adsimMonthBlock").forEach(function(det){
-      det.addEventListener("toggle", function(){
-        if (det.open) adSimRenderMonthRows(det);
-      });
+      det.addEventListener("toggle", function(){ if (det.open) adSimRenderMonthRows(det); });
+      if (det.open) adSimRenderMonthRows(det);
     });
+  }
+
+  function adSimMonthSumText(t){
+    return "売上 " + adSimYen(t.revenue || 0) + "／" + adSimQty(t.units || 0) + "個／粗利 " + adSimSignedYen(t.mq || 0) +
+      (t.noMaster ? "／⚠ 計算できない日 " + t.noMaster + "日" : "");
   }
 
   function adSimRenderMonthRows(det){
     var pd = adSimCurrentProduct();
     var dl = pd.daily;
-    var mkey = det.dataset.mkey;
-    var month = adSimDailyMonths(dl).filter(function(m){ return m.key === mkey; })[0];
+    var month = adSimDailyMonths(dl).filter(function(m){ return m.key === det.dataset.mkey; })[0];
     var host = det.querySelector(".adsimMonthBody");
     if (!month || !host) return;
 
     var rows = month.dates.map(function(iso){
       var row = adSimComputeDailyRow(pd, iso);
-      var r = dl.rows[iso] || { price: 0, units: 0, pv: 0 };
+      var r = dl.rows[iso] || { priceType: "normal", units: 0, pv: 0 };
       var p = parseNewsDate(iso);
-      var dowCls = row.dow === 6 ? " adsimSat" : (row.dow === 0 ? " adsimSun" : "");
+      var dowCls = row.dow === 6 ? "adsimSat" : (row.dow === 0 ? "adsimSun" : "");
       var trCls = row.noMaster ? " class='adsimRowNoMaster'" : "";
       var calc = row.noMaster
-        ? "<td colspan='7' class='adsimNoMaster'>⚠ 売価 " + adSimYen(row.price) + " が価格マスタに未登録です</td>"
-        : "<td class='adsimNum'>" + adSimYen(row.cost) + "</td>" +
+        ? "<td colspan='8' class='adsimNoMaster'>⚠ 想定販売比率またはマスタが未設定のため計算できません</td>"
+        : "<td class='adsimNum'>" + adSimYen(row.unitPrice) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(row.revenue) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(row.cost) + "</td>" +
           "<td class='adsimNum'>" + adSimYen(row.amazonFee) + "</td>" +
-          "<td class='adsimNum'>" + adSimYen(row.fba) + "</td>" +
           "<td class='adsimNum'>" + adSimYen(row.consult) + "</td>" +
           "<td class='adsimNum'>" + adSimYen(row.vc) + "</td>" +
           "<td class='adsimNum'>" + adSimSignedYen(row.mq) + "</td>" +
           "<td class='adsimNum'>" + adSimPct(row.marginPct) + "</td>";
       return "<tr" + trCls + " data-iso='" + attr(iso) + "'>" +
         "<td class='adsimNum'>" + p.m + "/" + p.d + "</td>" +
-        "<td" + (dowCls ? " class='" + dowCls.replace(/^ /, "") + "'" : "") + ">" + row.weekday + "</td>" +
-        "<td><input type='number' data-df='price' value='" + attr(String(r.price)) + "' step='1' min='0'></td>" +
-        "<td class='adsimNum' data-out='revenue'>" + adSimYen(row.revenue) + "</td>" +
+        "<td" + (dowCls ? " class='" + dowCls + "'" : "") + ">" + row.weekday + "</td>" +
+        "<td>" + adSimPriceTypeSelect("dtype", r.priceType) + "</td>" +
         "<td><input type='number' data-df='units' value='" + attr(String(r.units)) + "' step='1' min='0'></td>" +
         "<td><input type='number' data-df='pv' value='" + attr(String(r.pv)) + "' step='1' min='0'></td>" +
         calc +
@@ -5633,23 +5325,32 @@
     }).join("");
 
     host.innerHTML = "<div class='tableWrap'><table class='dataTable adsimTable'>" +
-      "<thead><tr><th>日付</th><th>曜</th><th>売価</th><th>P(売上)</th><th>VQ(個数)</th><th>PV(アクセス)</th>" +
-      "<th>原価合計</th><th>販売手数料</th><th>FBA</th><th>コンサル料</th><th>VC(変動費)</th><th>MQ(粗利額)</th><th>M(粗利率)</th></tr></thead>" +
+      "<thead><tr><th>日付</th><th>曜</th><th>売価区分</th><th>目標個数</th><th>目標アクセス</th>" +
+      "<th>加重平均単価</th><th>売上</th><th>原価合計</th><th>販売手数料</th><th>コンサル料</th><th>VC</th><th>粗利(MQ)</th><th>粗利率</th></tr></thead>" +
       "<tbody>" + rows + "</tbody></table></div>";
 
-    // 入力中はテーブルを作り直さない。値を書き換えたら、その行の計算セルだけを更新する。
     host.querySelectorAll("input[data-df]").forEach(function(inp){
       inp.addEventListener("input", function(){
         var tr = inp.closest("tr");
-        var iso = tr.dataset.iso;
-        adSimDailyRow(dl, iso)[inp.dataset.df] = adSimNum(inp.value);
+        adSimDailyRow(dl, tr.dataset.iso)[inp.dataset.df] = adSimNum(inp.value);
         markDirty();
-        adSimUpdateDailyRowCells(tr, iso);
+        adSimUpdateDailyRowCells(tr, tr.dataset.iso);
       });
-      // 入力を終えたタイミングでだけ、月サマリーと月次サマリーを更新する
       inp.addEventListener("change", function(){
         renderAdSimDailySummary();
         adSimUpdateMonthSummaryLabels();
+        adSimResyncIfComputed();
+      });
+    });
+    host.querySelectorAll("[data-adsim-dtype]").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        var tr = sel.closest("tr");
+        adSimDailyRow(dl, tr.dataset.iso).priceType = sel.value;
+        markDirty();
+        adSimUpdateDailyRowCells(tr, tr.dataset.iso);
+        renderAdSimDailySummary();
+        adSimUpdateMonthSummaryLabels();
+        adSimResyncIfComputed();
       });
     });
   }
@@ -5658,17 +5359,13 @@
   function adSimUpdateDailyRowCells(tr, iso){
     var pd = adSimCurrentProduct();
     var row = adSimComputeDailyRow(pd, iso);
-    var tds = tr.children;
-    var setTd = function(i, txt){ if (tds[i]) tds[i].textContent = txt; };
-    setTd(3, adSimYen(row.revenue));
-    // マスタ未登録⇔通常でセル構成が変わる場合だけ、その行を作り直す
     var isNoMasterRow = tr.classList.contains("adsimRowNoMaster");
+    // マスタ未設定⇔通常でセル構成（colspan）が変わる場合だけ行を作り直す
     if (isNoMasterRow !== row.noMaster){
       var det = tr.closest(".adsimMonthBlock");
       var active = document.activeElement;
       var key = active && active.dataset ? active.dataset.df : null;
       adSimRenderMonthRows(det);
-      // 作り直したので、同じ日・同じ項目の入力欄にフォーカスを戻す
       if (key){
         var back = det.querySelector("tr[data-iso='" + iso + "'] input[data-df='" + key + "']");
         if (back){ back.focus(); back.select && back.select(); }
@@ -5676,16 +5373,18 @@
       return;
     }
     if (row.noMaster) return;
-    setTd(6, adSimYen(row.cost));
-    setTd(7, adSimYen(row.amazonFee));
-    setTd(8, adSimYen(row.fba));
+    var tds = tr.children;
+    var setTd = function(i, txt){ if (tds[i]) tds[i].textContent = txt; };
+    setTd(5, adSimYen(row.unitPrice));
+    setTd(6, adSimYen(row.revenue));
+    setTd(7, adSimYen(row.cost));
+    setTd(8, adSimYen(row.amazonFee));
     setTd(9, adSimYen(row.consult));
     setTd(10, adSimYen(row.vc));
     setTd(11, adSimSignedYen(row.mq));
     setTd(12, adSimPct(row.marginPct));
   }
 
-  // 折りたたみ見出しの月サマリー文言だけを更新する（開いている月の行は作り直さない）
   function adSimUpdateMonthSummaryLabels(){
     var pd = adSimCurrentProduct();
     var tot = adSimDailyTotals(pd);
@@ -5694,9 +5393,7 @@
     document.querySelectorAll("#adsimDailyMonthBlocks .adsimMonthBlock").forEach(function(det){
       var t = byKey[det.dataset.mkey];
       var span = det.querySelector(".adsimMonthSum");
-      if (!t || !span) return;
-      span.textContent = "売上 " + adSimYen(t.revenue) + "／" + adSimQty(t.units) + "個／MQ " + adSimSignedYen(t.mq) +
-        (t.noMaster ? "／⚠ マスタ未登録 " + t.noMaster + "日" : "");
+      if (t && span) span.textContent = adSimMonthSumText(t);
     });
   }
 
@@ -5718,22 +5415,422 @@
     renderAdSimDailySummary();
   }
 
-  // ---------- 月次シミュ／日別目標のタブ切替 ----------
-  // 価格アラートの pwApplyActiveTab() と同じ idiom。
+  // ---------- ③ 月次シミュ：描画 ----------
+  // 月別の投下広告費テーブル（行＝月）。目標個数は②の合算なので読み取り専用。
+  function renderAdSimSpendTable(){
+    var pd = adSimCurrentProduct();
+    var body = document.getElementById("adsimSpendBody");
+    if (!body) return;
+    var tot = adSimDailyTotals(pd);
+    if (!tot.months.length){
+      body.innerHTML = "<tr><td colspan='4' class='hint'>②日別目標の期間が正しくありません。</td></tr>";
+      return;
+    }
+    var d = pd.draft;
+    body.innerHTML = tot.months.map(function(t){
+      var req = adSimRequiredSpend(d, t.units);
+      return "<tr data-mkey='" + attr(t.key) + "'>" +
+        "<td class='adsimPatName'>" + esc(t.label) + "</td>" +
+        "<td class='adsimNum'>" + adSimQty(t.units) + "個</td>" +
+        "<td><input type='number' data-spend value='" + attr(String(adSimNum(d.spends[t.key]))) + "' step='10000' min='0'></td>" +
+        "<td class='adsimNum' data-out='req'>" + (req == null ? "—" : adSimYen(req)) + "</td>" +
+      "</tr>";
+    }).join("");
+    body.querySelectorAll("[data-spend]").forEach(function(inp){
+      inp.addEventListener("input", function(){
+        var mkey = inp.closest("tr").dataset.mkey;
+        pd.draft.spends[mkey] = adSimNum(inp.value);
+        markDirty();
+        adSimRefreshValidationUI();   // テーブルは再描画しない（フォーカス保持）
+      });
+      inp.addEventListener("change", function(){ adSimResyncIfComputed(); });
+    });
+  }
+  // CPC・CVRを変えたときに「必要額の目安」列だけを更新する
+  function adSimUpdateReqCells(){
+    var pd = adSimCurrentProduct();
+    var tot = adSimDailyTotals(pd);
+    var byKey = {};
+    tot.months.forEach(function(t){ byKey[t.key] = t; });
+    document.querySelectorAll("#adsimSpendBody tr[data-mkey]").forEach(function(tr){
+      var t = byKey[tr.dataset.mkey];
+      var td = tr.querySelector("[data-out='req']");
+      if (!t || !td) return;
+      var req = adSimRequiredSpend(pd.draft, t.units);
+      td.textContent = (req == null ? "—" : adSimYen(req));
+    });
+  }
+
+  function renderAdSimDraftFields(){
+    var pd = adSimCurrentProduct();
+    document.getElementById("adsimDraftName").value = pd.draft.name;
+    document.getElementById("adsimDraftCpc").value = pd.draft.cpc;
+    document.getElementById("adsimDraftCvr").value = pd.draft.cvr;
+  }
+
+  function adSimUpdateEditingUI(){
+    var pd = adSimCurrentProduct();
+    var editing = adSimEditingPatternId
+      ? pd.patterns.filter(function(p){ return p.id === adSimEditingPatternId; })[0]
+      : null;
+    var note = document.getElementById("adsimEditingNote");
+    var saveBtn = document.getElementById("adsimSaveBtn");
+    var cancelBtn = document.getElementById("adsimCancelEditBtn");
+    if (note){
+      note.hidden = !editing;
+      note.textContent = editing ? ("✏️ 保存済みパターン「" + (editing.name || "（無名）") + "」を編集中です。") : "";
+    }
+    if (saveBtn) saveBtn.textContent = editing ? "💾 このパターンを上書き保存" : "💾 パターンを保存";
+    if (cancelBtn) cancelBtn.hidden = !editing;
+  }
+
+  function renderAdSimPatternList(){
+    var pd = adSimCurrentProduct();
+    var el = document.getElementById("adsimPatternList");
+    if (!el) return;
+    if (!pd.patterns.length){
+      el.innerHTML = "<p class='hint' style='margin:0;'>保存済みパターンはまだありません。上で月別の広告費を入れて「💾 パターンを保存」を押すと、ここに追加され、グラフとサマリー表で比較できるようになります（最大" + ADSIM_MAX_PATTERNS + "件）。</p>";
+      return;
+    }
+    el.innerHTML = pd.patterns.map(function(pt, idx){
+      var editing = (pt.id === adSimEditingPatternId) ? " editing" : "";
+      var total = 0;
+      Object.keys(pt.spends || {}).forEach(function(k){ total += adSimNum(pt.spends[k]); });
+      var months = Object.keys(pt.spends || {}).sort();
+      var meta = "総投下額 " + adSimYen(total) + "／" + months.length + "ヶ月分" +
+        (adSimNum(pt.cpc) > 0 || adSimNum(pt.cvr) > 0
+          ? "（参考 CPC " + adSimYen(pt.cpc) + "・CVR " + adSimPct(pt.cvr) + "）" : "");
+      return "<div class='adsimPatRow" + editing + "' data-ptid='" + attr(pt.id) + "'>" +
+        "<span class='adsimPatSwatch' style='background:" + adSimPatternColor(idx) + ";'></span>" +
+        "<div>" +
+          "<div class='adsimPatName'>" + esc(pt.name || "（無名パターン）") + "</div>" +
+          "<div class='adsimPatMeta'>" + esc(meta) + "</div>" +
+        "</div>" +
+        "<div class='adsimPatActions'>" +
+          "<button type='button' class='btn small ghost' data-act='adsimLoadPat'>読み込む</button>" +
+          "<button type='button' class='btn small ghost' data-act='adsimDelPat'>削除</button>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+
+    el.querySelectorAll(".adsimPatRow").forEach(function(row){
+      var ptid = row.dataset.ptid;
+      row.querySelector("[data-act='adsimLoadPat']").addEventListener("click", function(){
+        var pt = pd.patterns.filter(function(p){ return p.id === ptid; })[0];
+        if (!pt) return;
+        var spends = {};
+        Object.keys(pt.spends || {}).forEach(function(k){ spends[k] = adSimNum(pt.spends[k]); });
+        pd.draft = { id: "draft", name: pt.name, cpc: pt.cpc, cvr: pt.cvr, spends: spends };
+        adSimEditingPatternId = pt.id;
+        markDirty();
+        renderAdSimDraftFields();
+        renderAdSimSpendTable();
+        renderAdSimPatternList();
+        adSimUpdateEditingUI();
+        adSimResyncIfComputed();
+        adSimRefreshValidationUI();
+        adSimShowSaveMsg("「" + (pt.name || "（無名）") + "」を入力欄に読み込みました。", false);
+      });
+      row.querySelector("[data-act='adsimDelPat']").addEventListener("click", function(){
+        pd.patterns = pd.patterns.filter(function(p){ return p.id !== ptid; });
+        if (adSimEditingPatternId === ptid) adSimEditingPatternId = null;
+        markDirty();
+        renderAdSimPatternList();
+        adSimUpdateEditingUI();
+        adSimResyncIfComputed();
+        adSimRefreshValidationUI();
+        adSimShowSaveMsg("パターンを削除しました。", false);
+      });
+    });
+  }
+
+  // エラー表示・派生表示・ボタンのdisabledだけを更新する（テーブルは再描画しない）
+  function adSimRefreshValidationUI(){
+    var v = adSimValidate();
+    renderAdSimAvgRow();
+
+    var sumEl = document.getElementById("adsimShareSum");
+    if (sumEl){
+      sumEl.className = "adsimShareSum " + (v.shareOk ? "ok" : "ng");
+      if (v.shareOk) sumEl.textContent = "想定販売比率の合計：100.0%（OK）";
+      else {
+        var diff = adSimRound1(100 - v.shareSum);
+        sumEl.textContent = "想定販売比率の合計：" + v.shareSum.toFixed(1) + "%　"
+          + (diff > 0 ? ("→ " + diff.toFixed(1) + "% 不足") : ("→ " + Math.abs(diff).toFixed(1) + "% 超過"));
+      }
+    }
+
+    document.querySelectorAll("#view-adsim .adsimFieldErr[data-fe]").forEach(function(p){
+      var msg = v.fieldErrs[p.dataset.fe];
+      p.textContent = msg || "";
+      p.classList.toggle("show", !!msg);
+    });
+
+    var sum2 = document.getElementById("adsimErrSummary");
+    if (sum2){
+      if (v.ok){ sum2.hidden = true; sum2.textContent = ""; }
+      else {
+        sum2.hidden = false;
+        var shown = v.errors.slice(0, 6);
+        sum2.textContent = "⚠ 入力エラー（" + v.errors.length + "件）\n" + shown.join("\n")
+          + (v.errors.length > shown.length ? ("\nほか " + (v.errors.length - shown.length) + "件") : "");
+      }
+    }
+
+    var calcBtn = document.getElementById("adsimCalcBtn");
+    var saveBtn = document.getElementById("adsimSaveBtn");
+    if (calcBtn) calcBtn.disabled = !v.ok;
+    if (saveBtn) saveBtn.disabled = !v.ok;
+
+    adSimApplyChartState(v.ok);
+    return v;
+  }
+
+  function adSimHasResult(){
+    var s = adSimEnsureState();
+    return !!(s.lastResult && s.lastResult.productId === s.selectedProductId);
+  }
+
+  // グラフの3状態（①未計算／②正常／③エラーで凍結表示）
+  function adSimApplyChartState(isValid){
+    var overlay = document.getElementById("adsimOverlay");
+    var vEl = document.getElementById("adsimVerdict");
+    var hasResult = adSimHasResult();
+    if (overlay) overlay.hidden = (isValid || !hasResult);
+    if (vEl) vEl.classList.toggle("stale", (!isValid && hasResult));
+    var note = vEl ? vEl.querySelector(".adsimVerdictNote") : null;
+    if (note) note.textContent = (!isValid && hasResult) ? "（※直前の入力に基づく参考値）" : "";
+    if (!hasResult){
+      var area = document.getElementById("adsimChartArea");
+      if (area && !area.querySelector(".adsimPlaceholder")){
+        area.innerHTML = "<div class='adsimPlaceholder'>パラメータを入力してください</div>";
+      }
+      if (vEl && !vEl.querySelector(".adsimVerdictNote")){
+        vEl.innerHTML = "<span class='adsimVerdictMain'></span><span class='adsimVerdictNote'></span>";
+      }
+      var legend = document.getElementById("adsimLegend");
+      if (legend) legend.innerHTML = "";
+    }
+  }
+
+  // ---------- SVGグラフ（既存 renderAirChart と同じ idiom） ----------
+  function adSimAxisLabel(v){ return (Math.round(v / 10000 * 10) / 10) + "万"; }
+  function adSimRenderChart(result){
+    var area = document.getElementById("adsimChartArea");
+    var legend = document.getElementById("adsimLegend");
+    var vEl = document.getElementById("adsimVerdict");
+    if (!area || !result) return;
+    var base = result.series[0];
+    var n = base.calc.rows.length;
+    if (!n){
+      area.innerHTML = "<div class='adsimPlaceholder'>②日別目標の期間を設定してください</div>";
+      if (legend) legend.innerHTML = "";
+      return;
+    }
+
+    var W = 880, H = 330;
+    var padL = 78, padR = 26, padT = 18, padB = 44;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+
+    var vals = [0];
+    result.series.forEach(function(sr){ sr.calc.rows.forEach(function(r){ vals.push(r.cum); }); });
+    var vMin = Math.min.apply(null, vals), vMax = Math.max.apply(null, vals);
+    if (vMin === vMax){ vMin -= 1; vMax += 1; }
+    var padV = (vMax - vMin) * 0.1;
+    vMin -= padV; vMax += padV;
+    function yFor(v){ return padT + plotH * (1 - (v - vMin) / (vMax - vMin)); }
+    function xFor(i){ return n > 1 ? (padL + plotW * i / (n - 1)) : (padL + plotW / 2); }
+
+    var svg = "";
+    var steps = 5;
+    for (var i = 0; i <= steps; i++){
+      var gy = padT + plotH * i / steps;
+      svg += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="var(--grid)" stroke-width="1"/>';
+      var gv = vMax - (vMax - vMin) * i / steps;
+      svg += '<text x="' + (padL - 6) + '" y="' + (gy + 3.5).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--text-secondary)">' + adSimAxisLabel(gv) + '</text>';
+    }
+    // 月ラベル（多いときは間引く）
+    var every = n > 12 ? 2 : 1;
+    base.calc.rows.forEach(function(r, i){
+      if (i % every !== 0 && i !== n - 1) return;
+      svg += '<text x="' + xFor(i).toFixed(1) + '" y="' + (H - padB + 20) + '" font-size="10" text-anchor="middle" fill="var(--text-secondary)">' + esc(r.label.replace("年", "/").replace("月", "")) + '</text>';
+    });
+
+    var zy = yFor(0);
+    svg += '<line x1="' + padL + '" y1="' + zy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zy.toFixed(1) + '" stroke="var(--text-muted)" stroke-width="1.3" stroke-dasharray="5 4"/>';
+    svg += '<text x="' + (W - padR) + '" y="' + (zy - 5).toFixed(1) + '" font-size="9" text-anchor="end" fill="var(--text-muted)">損益分岐（0円）</text>';
+
+    result.series.forEach(function(sr){
+      var pts = sr.calc.rows.map(function(r, i){ return xFor(i).toFixed(1) + "," + yFor(r.cum).toFixed(1); }).join(" ");
+      var dash = sr.isDraft ? ' stroke-dasharray="6 3"' : '';
+      svg += '<polyline points="' + pts + '" fill="none" stroke="' + sr.color + '" stroke-width="2.4" stroke-linejoin="round"' + dash + '/>';
+      sr.calc.rows.forEach(function(r, i){
+        svg += '<circle class="adsimDot" cx="' + xFor(i).toFixed(1) + '" cy="' + yFor(r.cum).toFixed(1) +
+          '" r="4.5" fill="var(--surface-1)" stroke="' + sr.color + '" stroke-width="2.5" data-tip="' +
+          attr(sr.name + " ／ " + r.label + " 累積損益 " + adSimSignedYen(r.cum)) + '"/>';
+      });
+    });
+
+    area.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; height:auto; display:block;">' + svg + '</svg>';
+
+    var verdictLines = result.series.map(function(sr){
+      var last = sr.calc.rows[sr.calc.rows.length - 1];
+      return esc(sr.name) + "：" + (sr.calc.recovered
+        ? (last.label + "時点で回収（累積 " + adSimSignedYen(sr.calc.finalCum) + "）")
+        : ("未回収（累積 " + adSimSignedYen(sr.calc.finalCum) + "）"));
+    }).join("<br>");
+    if (vEl) vEl.innerHTML = "<span class='adsimVerdictMain'>" + verdictLines + "</span><span class='adsimVerdictNote'></span>";
+
+    if (legend){
+      legend.innerHTML = result.series.map(function(sr){
+        return "<span class='legendItem'><span class='sw' style='background:" + sr.color + ";'></span>" + esc(sr.name) + "</span>";
+      }).join("");
+    }
+    area.querySelectorAll(".adsimDot").forEach(function(dot){
+      dot.addEventListener("mousemove", function(e){
+        tooltipEl.hidden = false;
+        tooltipEl.textContent = dot.dataset.tip;
+        tooltipEl.style.left = (e.clientX + 12) + "px";
+        tooltipEl.style.top = (e.clientY + 12) + "px";
+      });
+      dot.addEventListener("mouseleave", function(){ tooltipEl.hidden = true; });
+    });
+  }
+
+  function renderAdSimMonthTable(result){
+    var body = document.getElementById("adsimMonthBody");
+    var warn = document.getElementById("adsimWarnBox");
+    if (!body) return;
+    if (!result){
+      body.innerHTML = "<tr><td colspan='11' class='hint'>「▶ 計算実行」を押すと月次の内訳が表示されます。</td></tr>";
+      if (warn){ warn.hidden = true; warn.textContent = ""; }
+      return;
+    }
+    var html = "";
+    result.series.forEach(function(sr){
+      sr.calc.rows.forEach(function(r, i){
+        var meta = ADSIM_STATUS_META[r.status];
+        var cls = [];
+        if (meta.rowCls) cls.push(meta.rowCls);
+        if (i === 0) cls.push("adsimGroupTop");
+        html += "<tr class='" + cls.join(" ") + "'>" +
+          "<td class='adsimPatName'>" + (i === 0 ? esc(sr.name) : "") + "</td>" +
+          "<td class='adsimNum'>" + esc(r.label) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(r.revenue) + "</td>" +
+          "<td class='adsimNum'>" + adSimQty(r.units) + "個</td>" +
+          "<td class='adsimNum'>" + adSimSignedYen(r.mq) + "</td>" +
+          "<td class='adsimNum'>" + adSimYen(r.spend) + "</td>" +
+          "<td class='adsimNum'>" + adSimPct(r.spendRate) + "</td>" +
+          "<td class='adsimNum'>" + adSimSignedYen(r.pl) + "</td>" +
+          "<td class='adsimNum'>" + adSimPct(r.marginPct) + "</td>" +
+          "<td><span class='adsimStatus " + meta.cls + "'>" + meta.icon + " " + meta.label + "</span></td>" +
+          "<td class='adsimNum'>" + adSimSignedYen(r.cum) + "</td>" +
+        "</tr>";
+      });
+    });
+    body.innerHTML = html;
+
+    if (warn){
+      var breached = result.series.filter(function(sr){ return sr.calc.guardBreach; });
+      if (!breached.length){ warn.hidden = true; warn.textContent = ""; }
+      else {
+        warn.hidden = false;
+        warn.textContent = "⚠ 最大許容粗利率（" + adSimPct(result.guardPct) + "）を下回る見込みのパターンがあります\n" +
+          breached.map(function(sr){
+            return "・" + sr.name + "：最も低い実質粗利率 " + adSimPct(sr.calc.worstMarginPct) +
+              "（最終累積損益 " + adSimSignedYen(sr.calc.finalCum) + "）";
+          }).join("\n");
+      }
+    }
+  }
+
+  function renderAdSimSummaryTable(result){
+    var body = document.getElementById("adsimSummaryBody");
+    if (!body) return;
+    if (!result){
+      body.innerHTML = "<tr><td colspan='7' class='hint'>「▶ 計算実行」を押すと比較表が表示されます。</td></tr>";
+      return;
+    }
+    body.innerHTML = result.series.map(function(sr){
+      var warnMark = sr.calc.guardBreach ? " <span class='adsimStatus over'>⚠ 許容外</span>" : "";
+      return "<tr>" +
+        "<td class='adsimPatName'><span class='adsimPatSwatch' style='background:" + sr.color + "; display:inline-block; margin-right:6px;'></span>" + esc(sr.name) + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(sr.calc.totalSpend) + "</td>" +
+        "<td class='adsimNum'>" + adSimYen(sr.calc.totalRevenue) + "</td>" +
+        "<td class='adsimNum'>" + adSimSignedYen(sr.calc.totalMq) + "</td>" +
+        "<td class='adsimNum'>" + adSimSignedYen(sr.calc.finalCum) + "</td>" +
+        "<td class='adsimNum'>" + adSimPct(sr.calc.totalMarginPct) + "</td>" +
+        "<td>" + (sr.calc.recovered
+          ? "<span class='adsimStatus good'>⚫ 黒字転換</span>"
+          : "<span class='adsimStatus loss'>🔴 未回収</span>") + warnMark + "</td>" +
+      "</tr>";
+    }).join("");
+  }
+
+  function adSimRunCalculation(){
+    if (!adSimValidate().ok) return false;
+    var s = adSimEnsureState();
+    var pd = adSimCurrentProduct();
+    s.lastResult = {
+      productId: pd.id,
+      guardPct: pd.maxLossPct,
+      targetMarginPct: adSimNum(pd.targetMarginPct),
+      series: adSimBuildSeries(pd)
+    };
+    markDirty();
+    return true;
+  }
+  function adSimResyncIfComputed(){
+    if (!adSimHasResult()) return;
+    if (adSimValidate().ok) adSimRunCalculation();
+    renderAdSimResult();
+  }
+  function renderAdSimResult(){
+    var s = adSimEnsureState();
+    if (!adSimHasResult()){
+      renderAdSimMonthTable(null);
+      renderAdSimSummaryTable(null);
+      return;
+    }
+    adSimRenderChart(s.lastResult);
+    renderAdSimMonthTable(s.lastResult);
+    renderAdSimSummaryTable(s.lastResult);
+  }
+
+  // ---------- タブ切替（価格アラートの pwApplyActiveTab と同じ idiom） ----------
   function adSimApplyActiveTab(){
-    var tab = state.ui.activeAdsimTab === "daily" ? "daily" : "sim";
-    var simSection = document.getElementById("adsimSimSection");
-    var dailySection = document.getElementById("adsimDailySection");
-    if (simSection) simSection.hidden = (tab !== "sim");
-    if (dailySection) dailySection.hidden = (tab !== "daily");
+    var tab = state.ui.activeAdsimTab;
+    if (tab !== "daily" && tab !== "sim") tab = "master";
+    var ids = { master: "adsimMasterSection", daily: "adsimDailySection", sim: "adsimSimSection" };
+    Object.keys(ids).forEach(function(k){
+      var el = document.getElementById(ids[k]);
+      if (el) el.hidden = (k !== tab);
+    });
     document.querySelectorAll("#adsimTabs .pwTab").forEach(function(btn){
       btn.classList.toggle("active", btn.dataset.tab === tab);
     });
   }
 
-  // ---------- 日別目標：イベント配線（起動時に1回だけ） ----------
-  (function adSimDailyWire(){
-    if (!document.getElementById("adsimDailySection")) return;
+  function renderAdSimAll(){
+    if (!document.getElementById("view-adsim")) return;
+    adSimEnsureState();
+    adSimApplyActiveTab();
+    renderAdSimProductTabs();
+    renderAdSimProductFields();
+    renderAdSimChildTable();
+    renderAdSimShareTable();
+    renderAdSimDailyAll();
+    renderAdSimDraftFields();
+    renderAdSimSpendTable();
+    renderAdSimPatternList();
+    adSimUpdateEditingUI();
+    renderAdSimResult();
+    adSimRefreshValidationUI();
+  }
+
+  // ---------- イベント配線（起動時に1回だけ） ----------
+  (function adSimWire(){
+    if (!document.getElementById("view-adsim")) return;
 
     document.querySelectorAll("#adsimTabs .pwTab").forEach(function(btn){
       btn.addEventListener("click", function(){
@@ -5741,134 +5838,11 @@
         markDirty();
         adSimApplyActiveTab();
         if (btn.dataset.tab === "daily") renderAdSimDailyAll();
+        if (btn.dataset.tab === "sim"){ renderAdSimSpendTable(); renderAdSimResult(); }
       });
     });
 
-    // 設定欄。入力中はテーブルを作り直さない（期間・対象は変更確定時に作り直す）。
-    function bindCfg(id, apply, rebuild){
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener("input", function(){
-        apply(adSimCurrentProduct().daily, el.value);
-        markDirty();
-        adSimRefreshValidationUI();
-        if (!rebuild) renderAdSimDailyResult();
-      });
-      if (rebuild){
-        el.addEventListener("change", function(){
-          adSimEnsureState();
-          renderAdSimDailyAll();
-        });
-      }
-    }
-    bindCfg("adsimDailyChild", function(dl, v){ dl.sku = v; }, true);
-    bindCfg("adsimDailyStart", function(dl, v){ dl.startDate = v; }, true);
-    bindCfg("adsimDailyEnd", function(dl, v){ dl.endDate = v; }, true);
-
-    document.getElementById("adsimBulkMode").addEventListener("change", function(){
-      adSimCurrentProduct().daily.bulkMode = this.value === "total" ? "total" : "perDay";
-      markDirty();
-    });
-
-    // 売価を期間で一律入力
-    document.getElementById("adsimBulkPriceBtn").addEventListener("click", function(){
-      var dl = adSimCurrentProduct().daily;
-      var from = document.getElementById("adsimBulkPriceFrom").value || dl.startDate;
-      var to = document.getElementById("adsimBulkPriceTo").value || dl.endDate;
-      var val = document.getElementById("adsimBulkPriceVal").value;
-      if (String(val).trim() === ""){
-        adSimShowDailyMsg("先に「価格マスタ」に売価を登録してください。", true);
-        return;
-      }
-      var dates = adSimDateSeq(from, to).filter(function(iso){ return iso >= dl.startDate && iso <= dl.endDate; });
-      if (!dates.length){
-        adSimShowDailyMsg("対象の日がありません。期間（開始日・終了日）を確認してください。", true);
-        return;
-      }
-      adSimFillDates(dl, dates, "price", val, "perDay");
-      markDirty();
-      renderAdSimDailyResult();
-      adSimShowDailyMsg(dates.length + "日分の売価を " + adSimYen(adSimNum(val)) + " にしました。", false);
-    });
-
-    // 目標個数・目標アクセス数を期間で一括入力
-    document.getElementById("adsimBulkQtyBtn").addEventListener("click", function(){
-      var dl = adSimCurrentProduct().daily;
-      var from = document.getElementById("adsimBulkQtyFrom").value || dl.startDate;
-      var to = document.getElementById("adsimBulkQtyTo").value || dl.endDate;
-      var field = document.getElementById("adsimBulkQtyField").value;
-      var raw = document.getElementById("adsimBulkQtyVal").value;
-      if (String(raw).trim() === ""){
-        adSimShowDailyMsg("値を入力してください。", true);
-        return;
-      }
-      var dates = adSimDateSeq(from, to).filter(function(iso){ return iso >= dl.startDate && iso <= dl.endDate; });
-      if (!dates.length){
-        adSimShowDailyMsg("対象の日がありません。期間（開始日・終了日）を確認してください。", true);
-        return;
-      }
-      adSimFillDates(dl, dates, field, raw, dl.bulkMode);
-      markDirty();
-      renderAdSimDailyResult();
-      var label = field === "units" ? "目標個数" : "目標アクセス数";
-      var how = dl.bulkMode === "total"
-        ? "期間合計 " + adSimQty(adSimNum(raw)) + " を " + dates.length + "日で日割り"
-        : dates.length + "日すべてに 1日あたり " + adSimQty(adSimNum(raw));
-      adSimShowDailyMsg(label + "：" + how + "で反映しました。", false);
-    });
-
-    // 月をコピー
-    document.getElementById("adsimCopyBtn").addEventListener("click", function(){
-      var dl = adSimCurrentProduct().daily;
-      var fromKey = document.getElementById("adsimCopyFrom").value;
-      var toKey = document.getElementById("adsimCopyTo").value;
-      if (!fromKey || !toKey || fromKey === toKey){
-        adSimShowDailyMsg("コピー元とコピー先に違う月を選んでください。", true);
-        return;
-      }
-      var months = adSimDailyMonths(dl);
-      var src = months.filter(function(m){ return m.key === fromKey; })[0];
-      var dst = months.filter(function(m){ return m.key === toKey; })[0];
-      if (!src || !dst) return;
-      dst.dates.forEach(function(iso, i){
-        // 日数が違う場合は元の月を先頭から繰り返して埋める
-        var sIso = src.dates[i % src.dates.length];
-        var s = dl.rows[sIso] || { price: 0, units: 0, pv: 0 };
-        var d = adSimDailyRow(dl, iso);
-        d.price = adSimNum(s.price); d.units = adSimNum(s.units); d.pv = adSimNum(s.pv);
-      });
-      markDirty();
-      renderAdSimDailyResult();
-      adSimShowDailyMsg(src.label + " を " + dst.label + " にコピーしました（" + dst.dates.length + "日分）。", false);
-    });
-
-    document.getElementById("adsimApplyAllMonthsBtn").addEventListener("click", function(){
-      var rows = document.querySelectorAll("#adsimMonthlyInputBody tr[data-mkey]");
-      var n = 0;
-      rows.forEach(function(tr){ if (adSimApplyMonthRow(tr)) n++; });
-      if (!n){
-        adSimShowDailyMsg("反映する値が入っていません。月別の欄に売価・目標個数・目標アクセス数を入力してください。", true);
-        return;
-      }
-      renderAdSimDailyResult();
-      adSimShowDailyMsg(n + "ヶ月分を反映しました。", false);
-    });
-
-    document.getElementById("adsimClearDailyBtn").addEventListener("click", function(){
-      var dl = adSimCurrentProduct().daily;
-      dl.rows = {};
-      markDirty();
-      renderAdSimDailyResult();
-      adSimShowDailyMsg("日別の入力をすべてクリアしました。", false);
-    });
-  })();
-
-  // ---------- 広告投資回収シミュレーター：イベント配線（起動時に1回だけ） ----------
-  (function adSimWire(){
-    if (!document.getElementById("view-adsim")) return;
-
-    // 入力中は再描画しない。タブのラベルはASIN・商品名に依存するので、入力を終えた
-    // 時点（changeイベント）でだけ描き直す。
+    // 親ASINの基本項目。入力中は再描画しない。
     function bindField(id, apply, relabel){
       var el = document.getElementById(id);
       if (!el) return;
@@ -5885,7 +5859,6 @@
     bindField("adsimProductAsin", function(pd, v){ pd.asin = v.trim(); }, true);
     bindField("adsimProductName", function(pd, v){ pd.name = v; }, true);
     bindField("adsimTargetMargin", function(pd, v){ pd.targetMarginPct = adSimNum(v); }, false);
-    // 空欄は0ではなくnull（未設定＝許容外判定をしない）として扱う
     bindField("adsimMaxLossPct", function(pd, v){
       pd.maxLossPct = (String(v).trim() === "") ? null : adSimNum(v);
     }, false);
@@ -5902,33 +5875,23 @@
         renderAdSimChildTable();
         renderAdSimShareTable();
         renderAdSimDailyCfg();
-        adSimResyncIfComputed();
         renderAdSimDailyResult();
+        adSimResyncIfComputed();
       });
     }
     bindShared("adsimConsultPct", function(pd, v){ pd.consultPct = adSimNum(v); });
     bindShared("adsimTaxPct", function(pd, v){ pd.taxPct = adSimNum(v); });
     bindShared("adsimFbaYen", function(pd, v){ pd.fbaYen = adSimNum(v); });
-    bindField("adsimDraftName", function(pd, v){ pd.draft.name = v; }, false);
-    bindField("adsimDraftCpc", function(pd, v){ pd.draft.cpc = adSimNum(v); }, false);
-    bindField("adsimDraftCvr", function(pd, v){ pd.draft.cvr = adSimNum(v); }, false);
-    bindField("adsimDraftM1", function(pd, v){ pd.draft.m1 = adSimNum(v); }, false);
-    bindField("adsimDraftM2", function(pd, v){ pd.draft.m2 = adSimNum(v); }, false);
-    bindField("adsimDraftM3", function(pd, v){ pd.draft.m3 = adSimNum(v); }, false);
 
     document.getElementById("adsimAddProductBtn").addEventListener("click", function(){
       var s = adSimEnsureState();
       var pd = adSimDefaultProduct();
       s.products.push(pd);
       s.selectedProductId = pd.id;
-      // lastResultは消さない。adSimHasResult()がproductIdで突き合わせるので、
-      // 追加直後の新しい親ASINは未計算（プレースホルダー）として表示され、
-      // 元の親ASINに戻ればその計算結果がそのまま復帰する。
       adSimEditingPatternId = null;
       markDirty();
       renderAdSimAll();
     });
-
     document.getElementById("adsimDeleteProductBtn").addEventListener("click", function(){
       var s = adSimEnsureState();
       if (s.products.length <= 1){
@@ -5938,7 +5901,6 @@
       var removedId = s.selectedProductId;
       s.products = s.products.filter(function(p){ return p.id !== removedId; });
       s.selectedProductId = s.products[0].id;
-      // 削除した親ASINの計算結果だけを捨てる（他の親ASINの結果は残す）
       if (s.lastResult && s.lastResult.productId === removedId) s.lastResult = null;
       adSimEditingPatternId = null;
       markDirty();
@@ -5948,18 +5910,167 @@
 
     document.getElementById("adsimAddChildBtn").addEventListener("click", function(){
       var pd = adSimCurrentProduct();
-      // 直前の行のSKUを引き継ぐ（同じ子ASINの別売価を足すのが一番多い使い方のため）
+      // 直前の行のSKUを引き継ぎ、まだ使っていない区分を自動で選ぶ
       var last = pd.children[pd.children.length - 1];
-      var row = adSimDefaultChild(0);
-      if (last) row.sku = last.sku;
+      var sku = last ? last.sku : "";
+      var used = {};
+      pd.children.forEach(function(c){ if ((c.sku || "") === sku) used[c.priceType] = true; });
+      var free = ADSIM_PRICE_TYPES.filter(function(t){ return !used[t.key]; })[0];
+      var row = adSimDefaultChild(free ? free.key : "normal");
+      row.sku = sku;
+      if (last){ row.price = adSimNum(last.price); row.cost = adSimNum(last.cost); row.amazonFee = adSimNum(last.amazonFee); }
       pd.children.push(row);
       markDirty();
       renderAdSimChildTable();
       renderAdSimShareTable();
       renderAdSimBulkPriceOptions();
-      renderAdSimDailyCfg();
+      renderAdSimDailyResult();
       adSimResyncIfComputed();
       adSimRefreshValidationUI();
+    });
+
+    // ---- ② 日別目標 ----
+    function bindDaily(id, apply, rebuild){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", function(){
+        apply(adSimCurrentProduct().daily, el.value);
+        markDirty();
+        adSimRefreshValidationUI();
+        if (!rebuild) renderAdSimDailyResult();
+      });
+      if (rebuild){
+        el.addEventListener("change", function(){
+          adSimEnsureState();
+          renderAdSimDailyAll();
+          renderAdSimSpendTable();
+          adSimResyncIfComputed();
+          adSimRefreshValidationUI();
+        });
+      }
+    }
+    bindDaily("adsimDailyStart", function(dl, v){ dl.startDate = v; }, true);
+    bindDaily("adsimDailyEnd", function(dl, v){ dl.endDate = v; }, true);
+
+    document.getElementById("adsimBulkMode").addEventListener("change", function(){
+      adSimCurrentProduct().daily.bulkMode = this.value === "total" ? "total" : "perDay";
+      markDirty();
+    });
+
+    document.getElementById("adsimBulkPriceBtn").addEventListener("click", function(){
+      var dl = adSimCurrentProduct().daily;
+      var from = document.getElementById("adsimBulkPriceFrom").value || dl.startDate;
+      var to = document.getElementById("adsimBulkPriceTo").value || dl.endDate;
+      var val = document.getElementById("adsimBulkPriceVal").value;
+      var dates = adSimDateSeq(from, to).filter(function(iso){ return iso >= dl.startDate && iso <= dl.endDate; });
+      if (!dates.length){
+        adSimShowDailyMsg("対象の日がありません。期間（開始日・終了日）を確認してください。", true);
+        return;
+      }
+      adSimFillDates(dl, dates, "priceType", val, "perDay");
+      markDirty();
+      renderAdSimDailyResult();
+      adSimResyncIfComputed();
+      adSimShowDailyMsg(dates.length + "日分の売価区分を「" + adSimPriceTypeLabel(val) + "」にしました。", false);
+    });
+
+    document.getElementById("adsimBulkQtyBtn").addEventListener("click", function(){
+      var dl = adSimCurrentProduct().daily;
+      var from = document.getElementById("adsimBulkQtyFrom").value || dl.startDate;
+      var to = document.getElementById("adsimBulkQtyTo").value || dl.endDate;
+      var field = document.getElementById("adsimBulkQtyField").value;
+      var raw = document.getElementById("adsimBulkQtyVal").value;
+      if (String(raw).trim() === ""){ adSimShowDailyMsg("値を入力してください。", true); return; }
+      var dates = adSimDateSeq(from, to).filter(function(iso){ return iso >= dl.startDate && iso <= dl.endDate; });
+      if (!dates.length){
+        adSimShowDailyMsg("対象の日がありません。期間（開始日・終了日）を確認してください。", true);
+        return;
+      }
+      adSimFillDates(dl, dates, field, raw, dl.bulkMode);
+      markDirty();
+      renderAdSimDailyResult();
+      adSimResyncIfComputed();
+      var label = field === "units" ? "目標個数" : "目標アクセス数";
+      var how = dl.bulkMode === "total"
+        ? "期間合計 " + adSimQty(adSimNum(raw)) + " を " + dates.length + "日で日割り"
+        : dates.length + "日すべてに 1日あたり " + adSimQty(adSimNum(raw));
+      adSimShowDailyMsg(label + "：" + how + "で反映しました。", false);
+    });
+
+    document.getElementById("adsimCopyBtn").addEventListener("click", function(){
+      var dl = adSimCurrentProduct().daily;
+      var fromKey = document.getElementById("adsimCopyFrom").value;
+      var toKey = document.getElementById("adsimCopyTo").value;
+      if (!fromKey || !toKey || fromKey === toKey){
+        adSimShowDailyMsg("コピー元とコピー先に違う月を選んでください。", true);
+        return;
+      }
+      var months = adSimDailyMonths(dl);
+      var src = months.filter(function(m){ return m.key === fromKey; })[0];
+      var dst = months.filter(function(m){ return m.key === toKey; })[0];
+      if (!src || !dst) return;
+      dst.dates.forEach(function(iso, i){
+        var s = dl.rows[src.dates[i % src.dates.length]] || { priceType: "normal", units: 0, pv: 0 };
+        var d = adSimDailyRow(dl, iso);
+        d.priceType = adSimIsPriceType(s.priceType) ? s.priceType : "normal";
+        d.units = adSimNum(s.units);
+        d.pv = adSimNum(s.pv);
+      });
+      markDirty();
+      renderAdSimDailyResult();
+      adSimResyncIfComputed();
+      adSimShowDailyMsg(src.label + " を " + dst.label + " にコピーしました（" + dst.dates.length + "日分）。", false);
+    });
+
+    document.getElementById("adsimApplyAllMonthsBtn").addEventListener("click", function(){
+      var n = 0;
+      document.querySelectorAll("#adsimMonthlyInputBody tr[data-mkey]").forEach(function(tr){
+        if (adSimApplyMonthRow(tr)) n++;
+      });
+      if (!n){
+        adSimShowDailyMsg("反映する値が入っていません。月別の欄に売価区分・目標個数・目標アクセス数を入力してください。", true);
+        return;
+      }
+      renderAdSimDailyResult();
+      adSimResyncIfComputed();
+      adSimShowDailyMsg(n + "ヶ月分を反映しました。", false);
+    });
+
+    document.getElementById("adsimClearDailyBtn").addEventListener("click", function(){
+      adSimCurrentProduct().daily.rows = {};
+      markDirty();
+      renderAdSimDailyResult();
+      adSimResyncIfComputed();
+      adSimShowDailyMsg("日別の入力をすべてクリアしました。", false);
+    });
+
+    // ---- ③ 月次シミュ ----
+    function bindDraft(id, apply){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", function(){
+        apply(adSimCurrentProduct().draft, el.value);
+        markDirty();
+        adSimUpdateReqCells();
+        adSimRefreshValidationUI();
+      });
+      el.addEventListener("change", function(){ adSimResyncIfComputed(); });
+    }
+    bindDraft("adsimDraftName", function(d, v){ d.name = v; });
+    bindDraft("adsimDraftCpc", function(d, v){ d.cpc = adSimNum(v); });
+    bindDraft("adsimDraftCvr", function(d, v){ d.cvr = adSimNum(v); });
+
+    document.getElementById("adsimSpendAllBtn").addEventListener("click", function(){
+      var pd = adSimCurrentProduct();
+      var raw = document.getElementById("adsimSpendAllVal").value;
+      if (String(raw).trim() === ""){ adSimShowSaveMsg("金額を入力してください。", true); return; }
+      var v = adSimNum(raw);
+      adSimDailyTotals(pd).months.forEach(function(t){ pd.draft.spends[t.key] = v; });
+      markDirty();
+      renderAdSimSpendTable();
+      adSimResyncIfComputed();
+      adSimRefreshValidationUI();
+      adSimShowSaveMsg("全月に " + adSimYen(v) + " を入れました。", false);
     });
 
     document.getElementById("adsimCalcBtn").addEventListener("click", function(){
@@ -5981,10 +6092,10 @@
       var editing = adSimEditingPatternId
         ? pd.patterns.filter(function(p){ return p.id === adSimEditingPatternId; })[0]
         : null;
+      var spends = {};
+      Object.keys(pd.draft.spends || {}).forEach(function(k){ spends[k] = adSimNum(pd.draft.spends[k]); });
       if (editing){
-        editing.name = name;
-        editing.cpc = pd.draft.cpc; editing.cvr = pd.draft.cvr;
-        editing.m1 = pd.draft.m1; editing.m2 = pd.draft.m2; editing.m3 = pd.draft.m3;
+        editing.name = name; editing.cpc = pd.draft.cpc; editing.cvr = pd.draft.cvr; editing.spends = spends;
         adSimEditingPatternId = null;
         markDirty();
         adSimShowSaveMsg("「" + name + "」を上書き保存しました。", false);
@@ -5997,17 +6108,12 @@
           adSimShowSaveMsg("同じ名前のパターンが既にあります。別の名前にするか、その行の「読み込む」から上書き保存してください。", true);
           return;
         }
-        pd.patterns.push({
-          id: adSimNextId("adpt"), name: name,
-          cpc: pd.draft.cpc, cvr: pd.draft.cvr,
-          m1: pd.draft.m1, m2: pd.draft.m2, m3: pd.draft.m3
-        });
+        pd.patterns.push({ id: adSimNextId("adpt"), name: name, cpc: pd.draft.cpc, cvr: pd.draft.cvr, spends: spends });
         markDirty();
         adSimShowSaveMsg("「" + name + "」を保存しました。", false);
       }
       renderAdSimPatternList();
       adSimUpdateEditingUI();
-      // 保存したパターンをグラフ・表に反映する
       if (adSimRunCalculation()) renderAdSimResult();
       adSimRefreshValidationUI();
     });
@@ -6016,8 +6122,10 @@
       var pd = adSimCurrentProduct();
       adSimEditingPatternId = null;
       pd.draft = adSimDefaultDraft();
+      pd.draft.id = "draft";
       markDirty();
       renderAdSimDraftFields();
+      renderAdSimSpendTable();
       renderAdSimPatternList();
       adSimUpdateEditingUI();
       adSimResyncIfComputed();
@@ -6934,7 +7042,7 @@
         if (typeof state.ui.selectedWatchItemId === "undefined") state.ui.selectedWatchItemId = null;
         if (typeof state.ui.selectedWatchKeywordId === "undefined") state.ui.selectedWatchKeywordId = null;
         if (typeof state.ui.watchDetailMode === "undefined") state.ui.watchDetailMode = "keyword";
-        if (typeof state.ui.activeAdsimTab === "undefined") state.ui.activeAdsimTab = "sim";
+        if (typeof state.ui.activeAdsimTab === "undefined") state.ui.activeAdsimTab = "master";
         // priceWatch が無い/旧形式（{prices:{}}）のファイルでも落ちないようにする。
         // 旧形式は商品名・内容量・キーワードを持たず今回のデータ構造と非互換のため、新形式の空状態にリセットする。
         state.priceWatch = (loaded.priceWatch && typeof loaded.priceWatch === "object" && Array.isArray(loaded.priceWatch.items)) ? loaded.priceWatch : {};
@@ -7192,7 +7300,7 @@
     el.querySelectorAll(".pwHistProductRow").forEach(function(row){
       row.addEventListener("click", function(){
         adSimEnsureState().selectedProductId = row.dataset.id;
-        state.ui.activeAdsimTab = "sim";   // 履歴からは月次シミュ側に着地させる
+        state.ui.activeAdsimTab = "sim";   // 履歴からは結果（③月次シミュ）に着地させる
         closeHistoryModal();
         goToView("adsim");
       });
