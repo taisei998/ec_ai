@@ -1143,6 +1143,82 @@ if (skus.length === 1 && typeof pd.shares[skus[0]] === "undefined") pd.shares[sk
   改行表示に対応できた（`textContent`で流し込んでいるので改行文字はエスケープ不要）。
   セルには `cursor:help` を付けてホバー可能であることを示す。
 
+#### ⚠⚠ 2026年9月8日：「③ 月次シミュ」を「③ 日次シミュ」に全面置き換え
+
+上記の`adSimComputePattern`／`renderAdSimResult`／保存済みパターン比較／累積損益グラフ／
+回収判定は、**このタイミングで丸ごと廃止**された。以降の記述は歴史的経緯として残すが、
+現在のコードには存在しない。ユーザーの要望：
+
+> ①日次の目標割合を引く。②月目標額×日次割合で日次目標を出す。③日次目標から規格
+> それぞれの目標売上・個数を出す。④日次でCVRとROASを手入力する。⑤ゴールは日次で
+> 粗利額と粗利率がどうなるのかのシミュレーションを立てること。（日次を出していく⇒
+> 月次がどうなっているかが最終的に出てくる）
+
+AskUserQuestionで詰めた設計判断（3点）：
+
+1. **日次比率の入力方法**：カレンダーの個別セル編集＋一括入力ツール（均等按分・曜日
+   パターン・期間一律入力・月コピー）の両方を用意。「一括入力は押した時に書き込む
+   一回きりのアクション」という既存方針をそのまま踏襲。
+2. **ROASの位置づけ**：ユーザー自身の逆質問「目標売上と目標広告予算があれば、CVRのみの
+   入力で粗利額・粗利率まで出せますか？」に「はい」と回答し、その設計にした。
+   **広告予算は日ごとの直接入力**（唯一の「動かして試す」シミュレーションレバー）、
+   **CVRは目標個数達成に必要なクリック数を出す参考値**、**ROAS・CPA・CPCは広告予算と
+   売上・個数から逆算する出力値**（入力ではない）。旧③はCPC・CVRを入力して積み上げる
+   方向（`広告費→クリック→個数→売上`）だったが、②側で既に売上・個数が確定している
+   ため、広告予算を直接入力してMQ・粗利率を出すほうが素直、という判断。
+3. **既存③との関係**：タブは追加せず、`data-tab="sim"` / `#adsimSimSection`（id・
+   タブ位置）はそのまま使い、中身を全面差し替え。パターン保存・比較機能は廃止。
+
+**データモデル**：`pd.daily.rows[iso]` を `{priceType}` から
+`{priceType, ratioPct, cvr, budget}` に拡張（`adSimEnsureState()`・`adSimDailyRow()`
+両方）。`ratioPct`＝月の広告流入売上に対するその日の配分割合(%、月内合計100%を検証)。
+`pd.patterns`／`pd.draft`／`s.lastResult`は`adSimEnsureState()`内で明示的に`delete`＋
+`markDirty()`（`priceMaster`・`maxLossYen`の旧移行と同じ扱い。ADSIM_VERSIONは据え置き
+＝それ以外の既存データは無傷）。`ADSIM_MAX_PATTERNS`・`adSimEditingPatternId`・
+`ADSIM_PAT_COLORS`・`ADSIM_DRAFT_COLOR`・`adSimPatternColor`も削除。
+
+**新設した計算**（`adSimMonthlyTargetsBySku`の直後）：
+- `adSimDailySimRow(pd, iso, monthAdRevenueByKey)` — 1日分。②の`t.revenue`（広告流入
+  売上）を`ratioPct`で按分→`adSimWeightedAt`の加重平均単価で個数→原価・手数料・FBA・
+  コンサル料・広告予算を引いてMQ。ROAS/CPA/CPCは`budget`からの逆算。
+- `adSimDailySimBySku(pd, iso, monthAdRevenueByKey)` — 規格ごとの目標売上・個数
+  （想定販売比率で日次分を配分。②の`adSimMonthlyTargetsBySku`と同じ考え方を1日に展開）。
+- `adSimDailySimMonthly(pd)` — 日次シミュの月次ロールアップ（日次を積み上げた実際の
+  売上・粗利・ROAS・CPA。②の目標売上との比較列も持つ）。既存の`adSimMonthStatus`／
+  `ADSIM_STATUS_META`（赤字/黄字/黒字/許容外の4段階）をそのまま判定バッジに再利用。
+
+**UI**：一括入力カード（均等按分／曜日パターン／CVR・広告予算の期間一律入力／月コピー）
+→ 月次ロールアップ表（`adsimSimSummaryBody`、常時ライブ再計算。「計算実行」ボタンは
+廃止＝入力がそのまま結果になる）→ 日次カレンダー（`<details>`月ごと折りたたみ・遅延
+描画、既存の`adSimRenderMonthRows`パターンを踏襲）の3段構成。目標売上・目標個数の
+セルには②で導入した`data-tip`規格別内訳ツールチップをそのまま流用。
+
+**フォーカス対策**：カレンダーの`ratioPct`/`cvr`/`budget`入力は、`input`イベントで
+その行の派生セル（目標売上・個数・必要クリック数・ROAS・CPA・粗利・粗利率）だけを
+`innerHTML`で更新し、`change`（確定時）で月次ロールアップと月見出しの要約テキストを
+更新する。テーブル全体の再描画は月の`<details>`を開閉したときだけ（既存の①②と同じ
+「入力中は再描画しない」方針）。
+
+**巻き込まれた副作用**（見落としやすい）：
+- `adSimRefreshValidationUI()`は旧③の`calcBtn`/`saveBtn`/`adSimApplyChartState`参照を
+  削除。`adSimValidate()`は旧③の`pd.draft.spends/cpc/cvr`チェックを削除（新③には
+  「計算実行」ボタンが無いため、ブロッキングのエラーにはせず、日次比率の合計チェックは
+  `renderAdSimSimSummary()`の非ブロッキング警告バナーで表現する。②と同じ設計）。
+- `adSimResyncIfComputed()`は「保存済み結果があるときだけ再計算」から「③は常にライブ
+  なので無条件に`renderAdSimSimResult()`を呼ぶ」に単純化（①②の入力変更ハンドラ多数から
+  呼ばれている関数なので、名前は変えずに中身だけ差し替えた）。
+- 「📜履歴→広告シミュ」モーダル（`renderHistoryAdSimTab()`）が`pd.patterns.length`と
+  `s.lastResult.*`（回収判定）を参照していたため、新モデル向けに書き換えた
+  （日次シミュ設定済み日数・全期間粗利のヒント表示に変更）。
+- `adSimShowSaveMsg()`が表示先にしていた`#adsimSaveMsg`は旧③カードごと消えたため、
+  共有の「🗂 親ASIN」ヘッダーカード（タブの外、3タブ共通）に付け直した
+  （親ASIN追加/削除・①の行数下限などの一般的なメッセージ表示に使われているため）。
+- 実装中、大きなブロック差し替えの際に`adSimRefreshValidationUI()`自体を誤って
+  一緒に消してしまい、コンソールに`ReferenceError`が出る回帰を起こした
+  （Playwright検証の`page.on("pageerror")`で検出→`adSimValidate()`の直後に復元）。
+  大きな範囲を一括で書き換えるときは、置き換え後に**削除した関数の呼び出し側が
+  まだ残っていないか**を`grep`で全件確認するのが有効だった。
+
 ## ニュース機能
 
 - 下部ナビの「ニュース」から、ニュースの要約を日経新聞風レイアウトで表示します
