@@ -5569,7 +5569,7 @@
   function adSimSimMonthSumText(t){
     if (!t) return "";
     return "売上 " + adSimYen(t.revenue || 0) + "／広告費 " + adSimYen(t.budget || 0) +
-      "／粗利 " + adSimSignedYen(t.mq || 0);
+      "／粗利 " + adSimSignedYen(t.mq || 0) + "（" + adSimPct(t.marginPct) + "）";
   }
 
   // 規格別ツールチップ付きのセル内容だけを返す（HTML文字列。<td>の外側は呼び出し側で付与）。
