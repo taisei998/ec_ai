@@ -1262,7 +1262,7 @@
         <p class="hint" style="margin:0 0 10px;">複数の子ASINがある場合、売上がどの子ASINにどれくらい割れるかを入れてください。この比率で加重平均して1つの経済性にまとめ、<b>②日別目標の計算に使います</b>（区分ごとの加重平均単価を出します）。1行＝1子ASINなので、どの行に入れるか迷うことはありません。</p>
         <div class="tableWrap">
           <table class="dataTable adsimTable">
-            <thead><tr><th>子ASIN / SKU</th><th>通常売価</th><th>想定販売比率（％）</th></tr></thead>
+            <thead><tr><th>子ASIN / SKU</th><th>想定販売比率（％）</th></tr></thead>
             <tbody id="adsimShareBody"></tbody>
           </table>
         </div>
@@ -5116,10 +5116,8 @@
     if (!body) return;
     var skus = adSimSkuList(pd);
     body.innerHTML = skus.map(function(sku){
-      var normal = adSimFindRow(pd, sku, "normal");
       return "<tr data-sku='" + attr(sku) + "'>" +
         "<td>" + esc(sku || "（未入力）") + "</td>" +
-        "<td class='adsimNum'>" + (normal ? adSimYen(normal.price) : "—") + "</td>" +
         "<td><input type='number' data-adsim-share value='" + attr(String(adSimNum(pd.shares[sku]))) + "' step='0.1' min='0'>" +
           "<p class='adsimFieldErr' data-fe='share_" + attr(sku) + "'></p></td>" +
       "</tr>";
