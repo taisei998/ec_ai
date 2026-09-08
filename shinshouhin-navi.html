@@ -1201,6 +1201,17 @@
     <h2>📈 広告投資回収シミュレーター</h2>
     <p class="hint">注力商品（親ASIN単位）の月次目標を日次の目標割合で按分し、日ごとにCVR・広告予算を入れて「どこまで投下すると粗利率が何％になるか」を日次から積み上げて見ます。上長への特別枠投資の説明・承認用。対象はAmazonのみです。</p>
 
+    <!-- 日次目標（全商品共通）：ここで設定した割合が各商品の③日次シミュに自動で反映される -->
+    <div class="card" id="adsimGlobalRatioCard">
+      <h3 style="margin:0;">📅 ① 日次目標（全商品共通）</h3>
+      <p class="hint" style="margin:8px 0 10px;">Amazonの日次の目標割合は商品によらず一定という考え方です。ここに貼り付けた割合が、すべての商品の③日次シミュのカレンダーに自動で反映されます（商品ごとに個別入力で上書きした日はそちらが優先されます）。</p>
+      <label for="adsimGlobalRatioPaste" class="hint" style="display:block; margin-bottom:4px;">スプレッドシートから「割合」「日付」の2列をコピーしてそのまま貼り付けてください（順番・区切り記号・％の有無は自動で判定します）</label>
+      <textarea id="adsimGlobalRatioPaste" rows="4" placeholder="6.00%&#9;2026/09/01&#10;6.00%&#9;2026/09/02&#10;2.50%&#9;2026/09/04"></textarea>
+      <button type="button" class="btn small primary" id="adsimGlobalRatioApplyBtn" style="margin-top:8px;">反映</button>
+      <p class="pwMsg" id="adsimGlobalRatioMsg"></p>
+      <div id="adsimGlobalRatioMonthBlocks" style="margin-top:12px;"></div>
+    </div>
+
     <!-- 親ASINの選択（3タブ共通） -->
     <div class="card" id="adsimProductCard">
       <div class="cardHeader">
@@ -1336,19 +1347,19 @@
     <div id="adsimSimSection" hidden>
       <div class="card" id="adsimSimBulkCard">
         <h3 style="margin-top:0;">③ 日次比率・CVR・広告予算の一括入力</h3>
-        <p class="hint" style="margin:0 0 10px;"><b>①日次の目標割合を決める → ②月の広告流入売上×日次割合で日次目標売上を出す → ③規格ごとの目標個数まで出す → ④CVR・広告予算を日ごとに入れる → ⑤粗利額・粗利率が日次で見え、積み上げて月次の結果も出る</b>、という流れです。31日分を毎回手入力しなくて済むよう、ここでまとめて入れてから、下のカレンダーで個別に調整してください。</p>
+        <p class="hint" style="margin:0 0 10px;">目標割合（①）は通常、上の「📅 日次目標（全商品共通）」から自動で反映されます。ここでは<b>この商品だけ</b>を個別に上書きしたい場合の一括ツールと、②月の広告流入売上×日次割合で出た日次目標売上から③規格ごとの目標個数まで算出し、④CVR・広告予算を日ごとに入れると⑤粗利額・粗利率が日次で見え、積み上げて月次の結果も出る、という流れです。</p>
 
         <div class="adsimBulkBlock">
-          <div class="adsimBulkTitle">① 日次の目標割合を均等に按分</div>
+          <div class="adsimBulkTitle">目標割合をこの商品だけ均等に按分（上書き）</div>
           <div class="adsimBulkRow">
             <label>対象月 <select id="adsimRatioEqualMonth"></select></label>
-            <button type="button" class="btn small primary" id="adsimRatioEqualBtn">均等に按分</button>
+            <button type="button" class="btn small" id="adsimRatioEqualBtn">均等に按分</button>
           </div>
-          <p class="hint" style="margin:6px 0 0;">選んだ月の日数で100%を均等に割り、カレンダーの「目標割合」に反映します。</p>
+          <p class="hint" style="margin:6px 0 0;">選んだ月の日数で100%を均等に割り、この商品のカレンダーの「目標割合」だけを上書きします。</p>
         </div>
 
         <div class="adsimBulkBlock">
-          <div class="adsimBulkTitle">① 曜日パターンで日次の目標割合を反映</div>
+          <div class="adsimBulkTitle">目標割合をこの商品だけ曜日パターンで上書き</div>
           <div class="adsimBulkRow adsimWeekdayRow">
             <label>月<input type="number" class="adsimWeekdayInput" data-wd="1" min="0" step="0.1" value="1"></label>
             <label>火<input type="number" class="adsimWeekdayInput" data-wd="2" min="0" step="0.1" value="1"></label>
@@ -1362,7 +1373,15 @@
             <label>対象月 <select id="adsimRatioWeekdayMonth"></select></label>
             <button type="button" class="btn small" id="adsimRatioWeekdayBtn">この倍率で反映</button>
           </div>
-          <p class="hint" style="margin:6px 0 0;">曜日ごとの相対倍率を入れてください（例: 土1.5・日1.3で週末を厚めに）。選んだ月の対象曜日に按分し、月内合計が100%になるよう正規化します。</p>
+          <p class="hint" style="margin:6px 0 0;">曜日ごとの相対倍率を入れてください（例: 土1.5・日1.3で週末を厚めに）。選んだ月の対象曜日に按分し、月内合計が100%になるよう正規化して、この商品だけを上書きします。</p>
+        </div>
+
+        <div class="adsimBulkBlock">
+          <div class="adsimBulkTitle">この商品の上書きをリセット</div>
+          <div class="adsimBulkRow">
+            <button type="button" class="btn small ghost" id="adsimRatioResetBtn">グローバルの日次目標に戻す</button>
+          </div>
+          <p class="hint" style="margin:6px 0 0;">この商品で個別に上書きした目標割合をすべて解除し、上の「📅 日次目標（全商品共通）」の値に揃えます。</p>
         </div>
 
         <div class="adsimBulkBlock">
@@ -4401,7 +4420,7 @@
     // 旧形式（portfolios[]・週次52週・bull/base/bear）は非互換なのでリセットする。
     if (s.version !== ADSIM_VERSION || !Array.isArray(s.products)){
       var hadOldData = !!(s.portfolios || s.products);
-      state.adSim = { version: ADSIM_VERSION, products: [], selectedProductId: null };
+      state.adSim = { version: ADSIM_VERSION, products: [], selectedProductId: null, dailyRatios: {} };
       s = state.adSim;
       if (hadOldData) markDirty();
     }
@@ -4578,10 +4597,12 @@
         m.organicPct = adSimNum(m.organicPct);
       });
 
-      // ③日次シミュ：目標割合・CVR・広告予算を数値として正規化する（未設定なら0）。
+      // ③日次シミュ：CVR・広告予算を数値として正規化する（未設定なら0）。
+      // ratioPctだけは null/未設定を「商品ごとの上書きなし＝全商品共通の日次目標
+      // （s.dailyRatios）に従う」という意味に使うため、数値化は明示的に値がある時だけ行う。
       Object.keys(dl.rows).forEach(function(k){
         var r = dl.rows[k];
-        r.ratioPct = adSimNum(r.ratioPct);
+        if (r.ratioPct !== null && typeof r.ratioPct !== "undefined") r.ratioPct = adSimNum(r.ratioPct);
         r.cvr = adSimNum(r.cvr);
         r.budget = adSimNum(r.budget);
       });
@@ -4594,6 +4615,12 @@
       s.selectedProductId = s.products[0].id;
     }
     if (typeof s.lastResult !== "undefined"){ delete s.lastResult; markDirty(); }
+
+    // 日次目標（全商品共通）。"YYYY-MM-DD" -> 割合(%)。③日次シミュの各商品カレンダーの
+    // 既定値として使う（商品側で明示的に上書きした日はそちらを優先する）。
+    if (!s.dailyRatios || typeof s.dailyRatios !== "object") s.dailyRatios = {};
+    Object.keys(s.dailyRatios).forEach(function(k){ s.dailyRatios[k] = adSimNum(s.dailyRatios[k]); });
+
     return s;
   }
 
@@ -5216,7 +5243,8 @@
   }
 
   function adSimDailyRow(dl, iso){
-    if (!dl.rows[iso]) dl.rows[iso] = { priceType: "normal", ratioPct: 0, cvr: 0, budget: 0 };
+    // ratioPct: null＝商品側で未上書き（全商品共通の日次目標に従う）。既定はnullにする。
+    if (!dl.rows[iso]) dl.rows[iso] = { priceType: "normal", ratioPct: null, cvr: 0, budget: 0 };
     return dl.rows[iso];
   }
   // 指定した日付群の売価区分をまとめて書き換える。
@@ -5404,6 +5432,18 @@
   }
 
   // ---------- ③ 日次シミュ：計算 ----------
+  // 全商品共通の日次目標割合（state.adSim.dailyRatios）。
+  function adSimGlobalRatios(){
+    return adSimEnsureState().dailyRatios;
+  }
+  // その商品・その日の「実効」目標割合。商品側で明示的に上書き（null/未設定でない）して
+  // いればその値、していなければ全商品共通の日次目標（無ければ0）を使う。
+  function adSimEffectiveRatio(pd, iso){
+    var r = pd.daily.rows[iso];
+    if (r && r.ratioPct !== null && typeof r.ratioPct !== "undefined") return adSimNum(r.ratioPct);
+    return adSimNum(adSimGlobalRatios()[iso]);
+  }
+
   // 1日分。②の「月の広告流入売上」(monthAdRevenueByKey[月キー])を日次比率(ratioPct)で
   // 按分し、規格の加重平均単価(adSimWeightedAt)から個数を出す。原価・手数料・FBA・
   // コンサル料を引いた粗利からさらに当日の広告予算(budget)を引く。CVRは目標個数を
@@ -5413,7 +5453,7 @@
     var dl = pd.daily;
     var r = dl.rows[iso] || {};
     var ptype = adSimIsPriceType(r.priceType) ? r.priceType : "normal";
-    var ratioPct = adSimNum(r.ratioPct);
+    var ratioPct = adSimEffectiveRatio(pd, iso);
     var cvr = adSimNum(r.cvr);
     var budget = adSimNum(r.budget);
     var mkey = iso.slice(0, 7);
@@ -5635,7 +5675,8 @@
         "<td class='adsimNum'>" + p.m + "/" + p.d + "</td>" +
         "<td" + (dowCls ? " class='" + dowCls + "'" : "") + ">" + NEWS_WEEKDAY[dow] + "</td>" +
         "<td>" + adSimPriceTypeSelect("dtype", row.priceType) + "</td>" +
-        "<td><input type='number' data-adsim-simfield='ratioPct' value='" + attr(String(adSimNum(r.ratioPct))) + "' step='0.1' min='0'></td>" +
+        "<td><input type='number' data-adsim-simfield='ratioPct' value='" + attr(String(row.ratioPct)) + "' step='0.1' min='0'" +
+          ((r.ratioPct === null || typeof r.ratioPct === "undefined") ? " title='全商品共通の日次目標から自動反映（未上書き）'" : " title='この商品で上書き済み'") + "></td>" +
         "<td class='adsimNum' data-out='revenue'" + (revTip ? " data-tip=\"" + attr(revTip) + "\"" : "") + ">" + adSimSimCellContent(row, "revenue") + "</td>" +
         "<td class='adsimNum' data-out='units'" + (unitsTip ? " data-tip=\"" + attr(unitsTip) + "\"" : "") + ">" + adSimSimCellContent(row, "units") + "</td>" +
         "<td><input type='number' data-adsim-simfield='cvr' value='" + attr(String(adSimNum(r.cvr))) + "' step='0.01' min='0' max='100'></td>" +
@@ -5670,6 +5711,12 @@
       if (unitsTd){
         var unitsTip = adSimSimSkuTip(pd, iso, monthAdRevenueByKey, "units", function(n){ return adSimQty(n) + "個"; });
         if (unitsTip) unitsTd.setAttribute("data-tip", unitsTip); else unitsTd.removeAttribute("data-tip");
+      }
+      var ratioInp = tr.querySelector("[data-adsim-simfield='ratioPct']");
+      if (ratioInp){
+        var rawR = dl.rows[iso];
+        var overridden = !!(rawR && rawR.ratioPct !== null && typeof rawR.ratioPct !== "undefined");
+        ratioInp.title = overridden ? "この商品で上書き済み" : "全商品共通の日次目標から自動反映（未上書き）";
       }
     }
 
@@ -5736,6 +5783,130 @@
     el.textContent = msg || "";
   }
 
+  function adSimShowGlobalRatioMsg(msg, isErr){
+    var el = document.getElementById("adsimGlobalRatioMsg");
+    if (!el) return;
+    el.style.color = isErr ? "var(--danger)" : "var(--status-good)";
+    el.textContent = msg || "";
+  }
+
+  // スプレッドシートから貼り付けた「割合」「日付」の2列を読み取る。列の順番・区切り記号
+  // （タブ／カンマ／スペース）・％の有無・日付の区切り（/ か -）は問わない。
+  function adSimParseRatioPaste(text){
+    var out = {}, count = 0, skipped = 0;
+    String(text || "").split(/\r?\n/).forEach(function(line){
+      line = line.trim();
+      if (!line) return;
+      var parts = line.split(/\t+|,+|\s+/).map(function(s){ return s.trim(); }).filter(function(s){ return s !== ""; });
+      var datePart = null, pctPart = null;
+      parts.forEach(function(p){
+        if (/^\d{4}[\/-]\d{1,2}[\/-]\d{1,2}$/.test(p)) datePart = p;
+        else if (pctPart === null && /^-?\d+(\.\d+)?%?$/.test(p)) pctPart = p;
+      });
+      if (!datePart || pctPart === null){ skipped++; return; }
+      var segs = datePart.split(/[\/-]/);
+      var iso = segs[0] + "-" + (segs[1].length < 2 ? "0" + segs[1] : segs[1]) + "-" + (segs[2].length < 2 ? "0" + segs[2] : segs[2]);
+      out[iso] = adSimNum(pctPart.replace("%", ""));
+      count++;
+    });
+    return { ratios: out, count: count, skipped: skipped };
+  }
+
+  // 全商品共通の日次目標カレンダー（月ごとに<details>で折りたたみ）。
+  // 表示する月は s.dailyRatios に値がある月だけ（貼り付けで増える）。
+  function renderAdSimGlobalRatioCalendar(){
+    var wrap = document.getElementById("adsimGlobalRatioMonthBlocks");
+    if (!wrap) return;
+    var ratios = adSimGlobalRatios();
+    var monthKeys = {};
+    Object.keys(ratios).forEach(function(iso){ monthKeys[iso.slice(0, 7)] = true; });
+    var keys = Object.keys(monthKeys).sort();
+    if (!keys.length){
+      wrap.innerHTML = "<p class='hint' style='margin:0;'>まだ何も貼り付けられていません。上のスプレッドシートの割合・日付をコピーして貼り付けると、ここにカレンダーが表示されます。</p>";
+      return;
+    }
+    var openKeys = {};
+    wrap.querySelectorAll(".adsimMonthBlock").forEach(function(d){ if (d.open) openKeys[d.dataset.mkey] = true; });
+
+    wrap.innerHTML = keys.map(function(mkey){
+      var p = parseNewsDate(mkey + "-01");
+      var label = p.y + "年" + p.m + "月";
+      var daysInMonth = new Date(p.y, p.m, 0).getDate();
+      var sum = 0;
+      for (var d = 1; d <= daysInMonth; d++){
+        var iso = mkey + "-" + (d < 10 ? "0" + d : d);
+        sum += adSimNum(ratios[iso]);
+      }
+      var roundedSum = adSimRound1(sum);
+      var sumTxt = "合計 " + roundedSum.toFixed(1) + "%" + (roundedSum === 100 ? "" : " ⚠");
+      return "<details class='adsimMonthBlock' data-mkey='" + attr(mkey) + "'" + (openKeys[mkey] ? " open" : "") + ">" +
+        "<summary>" + esc(label) + "（" + daysInMonth + "日）<span class='adsimMonthSum'>" + esc(sumTxt) + "</span></summary>" +
+        "<div class='adsimMonthBody'></div>" +
+      "</details>";
+    }).join("");
+
+    wrap.querySelectorAll(".adsimMonthBlock").forEach(function(det){
+      det.addEventListener("toggle", function(){ if (det.open) adSimRenderGlobalRatioMonthRows(det); });
+      if (det.open) adSimRenderGlobalRatioMonthRows(det);
+    });
+  }
+
+  function adSimRenderGlobalRatioMonthRows(det){
+    var mkey = det.dataset.mkey;
+    var host = det.querySelector(".adsimMonthBody");
+    if (!host) return;
+    var ratios = adSimGlobalRatios();
+    var p = parseNewsDate(mkey + "-01");
+    var daysInMonth = new Date(p.y, p.m, 0).getDate();
+    var rows = "";
+    for (var d = 1; d <= daysInMonth; d++){
+      var iso = mkey + "-" + (d < 10 ? "0" + d : d);
+      var dow = new Date(p.y, p.m - 1, d).getDay();
+      var dowCls = dow === 6 ? "adsimSat" : (dow === 0 ? "adsimSun" : "");
+      rows += "<tr data-iso='" + attr(iso) + "'>" +
+        "<td class='adsimNum'>" + p.m + "/" + d + "</td>" +
+        "<td" + (dowCls ? " class='" + dowCls + "'" : "") + ">" + NEWS_WEEKDAY[dow] + "</td>" +
+        "<td><input type='number' data-adsim-globalratio value='" + attr(String(adSimNum(ratios[iso]))) + "' step='0.1' min='0'></td>" +
+      "</tr>";
+    }
+    host.innerHTML = "<div class='tableWrap'><table class='dataTable adsimTable'>" +
+      "<thead><tr><th>日付</th><th>曜</th><th>目標割合%</th></tr></thead>" +
+      "<tbody>" + rows + "</tbody></table></div>";
+
+    host.querySelectorAll("[data-adsim-globalratio]").forEach(function(inp){
+      inp.addEventListener("change", function(){
+        var iso = inp.closest("tr").dataset.iso;
+        adSimGlobalRatios()[iso] = adSimNum(inp.value);
+        markDirty();
+        // 自分自身を含むこの月のブロックはinnerHTMLで丸ごと作り直さない（今まさに
+        // changeを発火させている要素を巻き込んで壊してしまうため）。合計テキストだけ
+        // 派生更新し、別のDOMツリーである商品側③は通常どおり再描画する。
+        adSimUpdateGlobalRatioMonthSumLabel(mkey);
+        renderAdSimSimAll();
+      });
+    });
+  }
+
+  function adSimUpdateGlobalRatioMonthSumLabel(mkey){
+    var det = document.querySelector("#adsimGlobalRatioMonthBlocks .adsimMonthBlock[data-mkey='" + mkey + "']");
+    var span = det ? det.querySelector(".adsimMonthSum") : null;
+    if (!span) return;
+    var ratios = adSimGlobalRatios();
+    var p = parseNewsDate(mkey + "-01");
+    var daysInMonth = new Date(p.y, p.m, 0).getDate();
+    var sum = 0;
+    for (var d = 1; d <= daysInMonth; d++){
+      sum += adSimNum(ratios[mkey + "-" + (d < 10 ? "0" + d : d)]);
+    }
+    var roundedSum = adSimRound1(sum);
+    span.textContent = "合計 " + roundedSum.toFixed(1) + "%" + (roundedSum === 100 ? "" : " ⚠");
+  }
+
+  function renderAdSimGlobalRatioAll(){
+    if (!document.getElementById("adsimGlobalRatioCard")) return;
+    renderAdSimGlobalRatioCalendar();
+  }
+
   function renderAdSimSimBulkOptions(){
     var pd = adSimCurrentProduct();
     var months = adSimDailyMonths(pd.daily);
@@ -5779,6 +5950,7 @@
   function renderAdSimAll(){
     if (!document.getElementById("view-adsim")) return;
     adSimEnsureState();
+    renderAdSimGlobalRatioAll();
     adSimApplyActiveTab();
     renderAdSimProductTabs();
     renderAdSimProductFields();
@@ -5817,6 +5989,23 @@
       });
       vcHeader.addEventListener("mouseleave", function(){ tooltipEl.hidden = true; });
     }
+
+    // 日次目標（全商品共通）：スプレッドシートからの貼り付けを反映する。
+    document.getElementById("adsimGlobalRatioApplyBtn").addEventListener("click", function(){
+      var raw = document.getElementById("adsimGlobalRatioPaste").value;
+      var parsed = adSimParseRatioPaste(raw);
+      if (!parsed.count){
+        adSimShowGlobalRatioMsg("有効な行が見つかりませんでした。「割合」と「日付(例: 2026/09/01)」の2列を含む行を貼り付けてください。", true);
+        return;
+      }
+      var g = adSimGlobalRatios();
+      Object.keys(parsed.ratios).forEach(function(k){ g[k] = parsed.ratios[k]; });
+      markDirty();
+      renderAdSimGlobalRatioAll();
+      renderAdSimSimAll();
+      adSimShowGlobalRatioMsg(parsed.count + "日分を反映しました" +
+        (parsed.skipped ? "（" + parsed.skipped + "行は読み取れず無視しました）" : "") + "。", false);
+    });
 
     // 親ASINの基本項目。入力中は再描画しない。
     function bindField(id, apply, relabel){
@@ -5988,6 +6177,18 @@
       adSimShowSimMsg(m.label + "を均等に按分しました（" + m.dates.length + "日分）。", false);
     });
 
+    document.getElementById("adsimRatioResetBtn").addEventListener("click", function(){
+      var pd = adSimCurrentProduct();
+      var count = 0;
+      Object.keys(pd.daily.rows).forEach(function(iso){
+        var r = pd.daily.rows[iso];
+        if (r && r.ratioPct !== null && typeof r.ratioPct !== "undefined"){ r.ratioPct = null; count++; }
+      });
+      markDirty();
+      renderAdSimSimResult();
+      adSimShowSimMsg(count + "日分の上書きを解除し、全商品共通の日次目標に戻しました。", false);
+    });
+
     document.getElementById("adsimRatioWeekdayBtn").addEventListener("click", function(){
       var pd = adSimCurrentProduct();
       var mkey = document.getElementById("adsimRatioWeekdayMonth").value;
@@ -6049,9 +6250,13 @@
       var dst = months.filter(function(m){ return m.key === toKey; })[0];
       if (!src || !dst) return;
       dst.dates.forEach(function(iso, i){
-        var s = dl.rows[src.dates[i % src.dates.length]] || {};
+        var srcIso = src.dates[i % src.dates.length];
+        var s = dl.rows[srcIso] || {};
         var row = adSimDailyRow(dl, iso);
-        row.ratioPct = adSimNum(s.ratioPct);
+        // 目標割合はコピー元の日に実際表示されていた値（上書きか全商品共通の値かを問わず）を
+        // そのままコピー先の上書き値として固定する（コピー先の日付の全商品共通値を
+        // 拾ってしまわないように、実効値をここで解決してから代入する）。
+        row.ratioPct = adSimEffectiveRatio(pd, srcIso);
         row.cvr = adSimNum(s.cvr);
         row.budget = adSimNum(s.budget);
       });
@@ -7215,9 +7420,10 @@
     }
     el.innerHTML = s.products.map(function(pd){
       var label = pd.asin ? (pd.asin + (pd.name ? "／" + pd.name : "")) : (pd.name || "（未設定）");
-      var configuredDays = Object.keys(pd.daily.rows || {}).filter(function(k){
-        return adSimNum(pd.daily.rows[k].ratioPct) > 0;
-      }).length;
+      var configuredDays = 0;
+      adSimDailyMonths(pd.daily).forEach(function(m){
+        m.dates.forEach(function(iso){ if (adSimEffectiveRatio(pd, iso) > 0) configuredDays++; });
+      });
       var hint = pd.children.length + "件の子ASIN・日次シミュ設定済み " + configuredDays + "日分";
       if (configuredDays > 0){
         var all = adSimDailySimMonthly(pd).all;
