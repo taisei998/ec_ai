@@ -1250,7 +1250,7 @@
         <p class="hint" style="margin:0 0 10px;"><b>1行＝「子ASIN × 売価区分」</b>です。1ヶ月の中で通常売価とSALE売価を切り替えるので、<b>区分ごとに1行</b>登録してください（通常／SALE①／SALE②／SALE③）。SALEでもう一段階値下げする場合はSALE②を使います。金額はすべて<b>1点あたりの円</b>です。コンサル手数料は上の「コンサル料率」から自動計算するので、ここには入力しません。</p>
         <div class="tableWrap">
           <table class="dataTable adsimTable">
-            <thead><tr><th>子ASIN / SKU</th><th>売価区分</th><th>売価（円）</th><th>原価（円/個）</th><th>販売手数料（円/個）</th><th>1点純粗利</th><th></th></tr></thead>
+            <thead><tr><th>子ASIN / SKU</th><th>売価区分</th><th>売価（円）</th><th>原価（円/個）</th><th>販売手数料（円/個）</th><th>1点純粗利</th><th>粗利率</th><th></th></tr></thead>
             <tbody id="adsimChildBody"></tbody>
           </table>
         </div>
@@ -4659,6 +4659,12 @@
     return adSimNum(c.price) - adSimNum(c.cost) - adSimNum(c.amazonFee)
       - adSimNum(pd.fbaYen) - adSimUnitConsult(pd, c.price);
   }
+  // 1点純粗利率 ＝ 1点純粗利 ÷ 売価 × 100（広告費を引く前。広告費は日次・月次でしか
+  // 発生しないため、1点単位のこの粗利率には含まれない）
+  function adSimUnitMarginPct(pd, c){
+    var price = adSimNum(c && c.price);
+    return price > 0 ? (adSimUnitNet(pd, c) / price * 100) : null;
+  }
 
   // 指定した売価区分での加重平均（想定販売比率で加重）。
   //   加重平均単価 = Σ( その区分の売価 × 比率 )   ほか原価・手数料も同様
@@ -5055,6 +5061,7 @@
         adSimNumCell("c" + c.id + "cost", c.cost, "0.1", "0") +
         adSimNumCell("c" + c.id + "amazonFee", c.amazonFee, "1", "0") +
         "<td class='adsimNum' data-out='net'>" + adSimYen(adSimUnitNet(pd, c)) + "</td>" +
+        "<td class='adsimNum' data-out='marginPct'>" + adSimPct(adSimUnitMarginPct(pd, c)) + "</td>" +
         "<td class='rmCell'><button type='button' class='btn small ghost' data-act='adsimDelChild' data-cid='" + attr(c.id) + "'>削除</button></td>" +
       "</tr>";
     }).join("");
@@ -5076,9 +5083,11 @@
         var field = inp.dataset.adsimKey.slice(("c" + cid).length);
         child[field] = (field === "sku") ? inp.value : adSimNum(inp.value);
         markDirty();
-        // その行の「1点純粗利」だけを書き換える（テーブルは再描画しない＝フォーカス保持）
+        // その行の「1点純粗利」「粗利率」だけを書き換える（テーブルは再描画しない＝フォーカス保持）
         var netTd = tr.querySelector("[data-out='net']");
         if (netTd) netTd.textContent = adSimYen(adSimUnitNet(pd, child));
+        var marginTd = tr.querySelector("[data-out='marginPct']");
+        if (marginTd) marginTd.textContent = adSimPct(adSimUnitMarginPct(pd, child));
         adSimRefreshValidationUI();
       });
       inp.addEventListener("change", afterStructureChange);
@@ -5092,6 +5101,8 @@
         markDirty();
         var netTd = tr.querySelector("[data-out='net']");
         if (netTd) netTd.textContent = adSimYen(adSimUnitNet(pd, child));
+        var marginTd = tr.querySelector("[data-out='marginPct']");
+        if (marginTd) marginTd.textContent = adSimPct(adSimUnitMarginPct(pd, child));
         afterStructureChange();
       });
     });
