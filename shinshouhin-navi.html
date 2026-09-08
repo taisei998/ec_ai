@@ -650,7 +650,7 @@
   table.adsimTable td.adsimNum { text-align:right; white-space:nowrap; font-variant-numeric: tabular-nums; }
   table.adsimTable td.adsimPriceList { text-align:left; font-size:12.5px; line-height:1.6; font-variant-numeric: tabular-nums; }
   table.adsimTable td[data-tip] { cursor: help; }
-  table.adsimTable th[title] { cursor: help; text-decoration: underline dotted; text-underline-offset: 2px; }
+  table.adsimTable th[data-tip] { cursor: help; text-decoration: underline dotted; text-underline-offset: 2px; }
   table.adsimTable td.adsimPatName { font-weight:700; white-space:nowrap; }
   .adsimShareSum { font-size:12.5px; font-weight:700; margin:10px 0 0; }
   .adsimShareSum.ok { color: var(--status-good); }
@@ -1345,7 +1345,7 @@
         <div class="adsimWarnBox" id="adsimDailyWarn" hidden></div>
         <div class="tableWrap">
           <table class="dataTable adsimTable">
-            <thead><tr><th>月</th><th>広告流入売上</th><th>広告流入個数</th><th>原価合計</th><th>販売手数料</th><th>FBA</th><th>コンサル料</th><th title="VC(変動費) = 原価合計 + 販売手数料 + FBA + コンサル料&#10;（売上に比例して増減する費用の合計です）">VC(変動費)</th><th>粗利(MQ)</th><th>粗利率</th></tr></thead>
+            <thead><tr><th>月</th><th>広告流入売上</th><th>広告流入個数</th><th>原価合計</th><th>販売手数料</th><th>FBA</th><th>コンサル料</th><th id="adsimVcHeader" data-tip="VC(変動費) = 原価合計 + 販売手数料 + FBA + コンサル料&#10;（売上に比例して増減する費用の合計です）">VC(変動費)</th><th>粗利(MQ)</th><th>粗利率</th></tr></thead>
             <tbody id="adsimDailySummaryBody"></tbody>
           </table>
         </div>
@@ -5943,6 +5943,21 @@
         if (btn.dataset.tab === "sim"){ renderAdSimSpendTable(); renderAdSimResult(); }
       });
     });
+
+    // VC(変動費)列見出しの説明ツールチップ（静的な見出しなので起動時に1回だけ配線）。
+    // ネイティブのtitle属性は環境によって表示までの遅延やレイアウト崩れがあり、
+    // ユーザーから「？カーソルは出るが説明が出ない」と報告されたため、他の数値セルと
+    // 同じ「data-tip + マウス追従の共有#tooltip」方式に統一した。
+    var vcHeader = document.getElementById("adsimVcHeader");
+    if (vcHeader){
+      vcHeader.addEventListener("mousemove", function(e){
+        tooltipEl.hidden = false;
+        tooltipEl.textContent = vcHeader.dataset.tip;
+        tooltipEl.style.left = (e.clientX + 12) + "px";
+        tooltipEl.style.top = (e.clientY + 12) + "px";
+      });
+      vcHeader.addEventListener("mouseleave", function(){ tooltipEl.hidden = true; });
+    }
 
     // 親ASINの基本項目。入力中は再描画しない。
     function bindField(id, apply, relabel){
