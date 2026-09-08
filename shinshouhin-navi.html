@@ -5233,6 +5233,7 @@
       });
       inp.addEventListener("change", function(){
         renderAdSimDailySummary();
+        adSimUpdateMonthSummaryLabels();
         adSimResyncIfComputed();
       });
     });
@@ -5367,7 +5368,7 @@
 
   function adSimMonthSumText(t){
     return "目標売上 " + adSimYen(t.targetRevenue || 0) + "／広告流入 " + adSimYen(t.revenue || 0) +
-      "／粗利 " + adSimSignedYen(t.mq || 0) + (t.noMaster ? "／⚠ 計算不可" : "");
+      "／粗利 " + adSimSignedYen(t.mq || 0) + "（" + adSimPct(t.marginPct) + "）" + (t.noMaster ? "／⚠ 計算不可" : "");
   }
 
   function adSimRenderMonthRows(det){
