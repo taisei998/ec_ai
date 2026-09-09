@@ -1250,7 +1250,7 @@
         <p class="hint" style="margin:0 0 10px;"><b>1行＝「子ASIN × 売価区分」</b>です。1ヶ月の中で通常売価とSALE売価を切り替えるので、<b>区分ごとに1行</b>登録してください（通常／SALE①／SALE②／SALE③）。SALEでもう一段階値下げする場合はSALE②を使います。金額はすべて<b>1点あたりの円</b>です。コンサル手数料は上の「コンサル料率」から自動計算するので、ここには入力しません。</p>
         <div class="tableWrap">
           <table class="dataTable adsimTable">
-            <thead><tr><th>子ASIN / SKU</th><th>売価区分</th><th>売価（円）</th><th>原価（円/個）</th><th>販売手数料（円/個）</th><th>1点純粗利</th><th>粗利率</th><th></th></tr></thead>
+            <thead><tr><th>子ASIN / SKU</th><th>売価区分</th><th>売価（円）</th><th>原価（円/個）</th><th>販売手数料（円/個）</th><th id="adsimNetHeader" data-tip="1点純粗利 = 売価 − 原価 − 販売手数料 − FBAコスト − コンサル手数料（税込）&#10;コンサル手数料（税込） = 売価 × コンサル料率 ×（1＋税率）">1点純粗利</th><th id="adsimMarginHeader" data-tip="粗利率 = 1点純粗利 ÷ 売価 × 100&#10;（広告費を引く前、1点あたりの粗利率です）">粗利率</th><th></th></tr></thead>
             <tbody id="adsimChildBody"></tbody>
           </table>
         </div>
@@ -5985,20 +5985,22 @@
       });
     });
 
-    // VC(変動費)列見出しの説明ツールチップ（静的な見出しなので起動時に1回だけ配線）。
+    // 計算式の説明ツールチップ（静的な見出しなので起動時に1回だけ配線）。
     // ネイティブのtitle属性は環境によって表示までの遅延やレイアウト崩れがあり、
     // ユーザーから「？カーソルは出るが説明が出ない」と報告されたため、他の数値セルと
     // 同じ「data-tip + マウス追従の共有#tooltip」方式に統一した。
-    var vcHeader = document.getElementById("adsimVcHeader");
-    if (vcHeader){
-      vcHeader.addEventListener("mousemove", function(e){
+    function adSimWireHeaderTip(id){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("mousemove", function(e){
         tooltipEl.hidden = false;
-        tooltipEl.textContent = vcHeader.dataset.tip;
+        tooltipEl.textContent = el.dataset.tip;
         tooltipEl.style.left = (e.clientX + 12) + "px";
         tooltipEl.style.top = (e.clientY + 12) + "px";
       });
-      vcHeader.addEventListener("mouseleave", function(){ tooltipEl.hidden = true; });
+      el.addEventListener("mouseleave", function(){ tooltipEl.hidden = true; });
     }
+    ["adsimVcHeader", "adsimNetHeader", "adsimMarginHeader"].forEach(adSimWireHeaderTip);
 
     // 日次目標（全商品共通）：スプレッドシートからの貼り付けを反映する。
     document.getElementById("adsimGlobalRatioApplyBtn").addEventListener("click", function(){
